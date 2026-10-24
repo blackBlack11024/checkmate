@@ -415,7 +415,7 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 #modeRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 #modeRow .md { appearance: none; border: 1px solid var(--line); background: rgba(14, 11, 8, .7); border-radius: 8px; padding: 6px 2px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-size: 12px; color: var(--dim); }
 #modeRow .md .ic { width: 20px; height: 20px; } #modeRow .md.on { border-color: var(--gold); color: var(--gold); background: rgba(227, 180, 101, .1); } #modeRow .md small { font-size: 10px; color: var(--mute); }
-#bosspick { z-index: 32; } .bpwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(860px, 94vw); }
+.chessmode #abar { display: none; } #bosspick { z-index: 32; } .hsel { display: flex; gap: 6px; align-items: center; } .hsel i { width: 20px; height: 25px; cursor: pointer; border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; background: rgba(239, 230, 214, .12); border: 1px solid rgba(239, 230, 214, .3); transition: transform .12s; } .hsel i:hover { transform: scale(1.15); } .hsel i.on { background: radial-gradient(circle at 35% 30%, #c8402e, #4a0d08 72%); border-color: rgba(255, 140, 110, .6); box-shadow: 0 0 10px rgba(200, 64, 46, .45); } .hsel b { margin-left: 8px; font-size: 18px; min-width: 24px; } .bpwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(860px, 94vw); }
 .bpg { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; } .bp { appearance: none; background: var(--panel); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
 .bp:hover { border-color: var(--gold); transform: translateY(-2px); } .bp .pa .ic { width: 40px; height: 40px; color: var(--blood); } .bp.inv .pa .ic { transform: rotate(180deg); color: var(--silver); } .bp b { font-size: 15px; } .bp small { color: var(--dim); font-size: 12px; display: flex; align-items: center; gap: 2px; } .bp small .ic { width: 13px; height: 13px; }
 #end .modeline { display: flex; align-items: center; gap: 4px; color: var(--dim); font-size: 15px; } #end .modeline b { color: var(--ink); font-size: 18px; } #end .modeline .ic { width: 18px; height: 18px; }
@@ -826,7 +826,7 @@ void main(){
     gl.useProgram(PL.p); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, occTex); gl.uniform1i(PL.u.uOcc, 0);
     gl.uniform3fv(PL.u.uLP, lp); gl.uniform3fv(PL.u.uLC, lc); gl.uniform4f(PL.u.uRoom, room.x0, room.z0, room.w, room.h);
     gl.bindVertexArray(GEO.quad.vao); gl.drawArrays(gl.TRIANGLES, 0, 6);
-    const P = M4.persp(F.fov, W / H, 0.1, 80), V = M4.look(F.eye, F.tgt, [0, 1, 0]);
+    const P = M4.persp(F.fov, W / H, 0.1, 80), V = M4.look(F.eye, F.tgt, F.up || [0, 1, 0]);
     gl.enable(gl.DEPTH_TEST);
     // mirrors: render the FUTURE into each reflection target
     F.mirrors.forEach((m, i) => {
@@ -1438,11 +1438,13 @@ function buildMirror(R, i, j, face, hp) { // a free-standing mirror on square (i
   mm.frameM = M4.basis(p[0] - n[0] * 0.05, p[1] - n[1] * 0.05, p[2] - n[2] * 0.05, n, [0, 1, 0], 1.3, 1.85, 0.08);
   mm.glassM = M4.basis(p[0], p[1], p[2], n, [0, 1, 0], 1.08, 1.6, 1);
   const ry = dx ? Math.PI / 2 : 0, tx = -dz, tz = dx; // tangent along the glass
+  const st0 = R.statics.length;
   R.statics.push({ geo: 'box', m: mm.frameM, col: COL.gold, kind: 2 }, { geo: 'box', m: M4.trs(x - dx * 0.12, 0.08, z - dz * 0.12, ry, 1.2, 0.16, 0.55), col: [0.36, 0.26, 0.12], kind: 2 });
   for (const s of [-1, 1]) R.statics.push({ geo: 'box', m: M4.trs(x + tx * 0.5 * s - dx * 0.2, 0.5, z + tz * 0.5 * s - dz * 0.2, 0, 0.06, 1.0, 0.06), col: [0.3, 0.22, 0.1], kind: 2 });
   // the back: a dark silvered panel so the mirror reads from behind too
   R.statics.push({ geo: 'box', m: M4.basis(p[0] - n[0] * 0.1, p[1] - n[1] * 0.1, p[2] - n[2] * 0.1, n, [0, 1, 0], 1.12, 1.62, 0.02), col: [0.18, 0.2, 0.24], kind: 2 });
-  if (dx) R.solidRect(x - 0.42, z - 0.62, x + 0.42, z + 0.62); else R.solidRect(x - 0.62, z - 0.42, x + 0.62, z + 0.42);
+  mm.st = R.statics.slice(st0); mm.rect = dx ? [x - 0.42, z - 0.62, x + 0.42, z + 0.62] : [x - 0.62, z - 0.42, x + 0.62, z + 0.42];
+  R.solidRect(...mm.rect);
   R.mirrors.push(mm); return mm;
 }
 // which side of a mirror are you nearest to (front = the glass side)
@@ -1589,6 +1591,7 @@ function chessTick(e, W, dt) {
   }
   if (e.ph === 2) { e.ph = 0; if (!(R.mod === 'race' && e.type === 'pawn')) return; } // rest a beat (racing pawns don't)
   // plan
+  if (R.bossKind === 'bKing' && W.E.some(o => o !== e && !o.dead && o.spawnT <= 0 && (o.plan || o.mv) && (o.d.chess || o.type === 'bKing'))) return; // 孤王's side moves one piece at a time
   const calm = P.calmB > 0 || (P.mimic && P.mimic === e.type);
   const TP = W.decoy && W.decoy.t > 0 ? W.decoy : P, ps = calm && TP === P ? null : (P.hidden && TP === P) ? null : sqOf(R, TP.x, TP.z);
   const taken = new Set(); for (const o of W.E) if (o !== e && !o.dead) { const q = o.plan ? sqOf(R, o.plan.x, o.plan.z) : o.mv ? sqOf(R, o.mv.tx, o.mv.tz) : sqOf(R, o.x, o.z); taken.add(q[0] + ',' + q[1]); }
@@ -1623,8 +1626,9 @@ function chessTick(e, W, dt) {
 // W = { R, P:{x,z,r,hidden,dark}, E:[], B:[], fut:bool, t, events:[] }
 function stepWorld(W, dt) {
   const R = W.R, P = W.P;
+  const frz = !W.fut && clockFrozen('him');
   for (const e of W.E) {
-    if (e.dead) continue;
+    if (e.dead || (frz && !e.ally) || W.R.chess) continue;
     if (e.spawnT > 0) { e.spawnT -= dt; if (e.d.chess) { e.bt -= dt; if (e.bt <= 0) e.bt += R.beat; } continue; }
     e.flash = Math.max(0, e.flash - dt); if (e.reveal > 0) e.reveal -= dt;
     if (e.d.chess) { chessTick(e, W, dt); continue; }
@@ -1649,6 +1653,7 @@ function stepWorld(W, dt) {
   for (const b of W.B) {
     if (b.dead) continue;
     b.x += b.vx * dt; b.z += b.vz * dt; b.life -= dt;
+    if (boltMirror(W, b) && b.dead) continue;
     if (b.life <= 0 || gridAt(R, b.x, b.z) === 255 && !propAt(R, b.x, b.z)) { b.dead = true; continue; }
     if (!P.hidden && dist(b.x, b.z, P.x, P.z) < P.r + 0.12) { b.dead = true; W.events.push({ k: 'hitP', dmg: 1, x: P.x, z: P.z, src: 'bolt' }); }
   }
@@ -1784,7 +1789,7 @@ function startRun(mode = 'normal', opt) {
   UI.hud(true);
   const st = UNLOCK.get().pick; if (st && UNLOCK.has(st)) becomePiece(st);
   const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === cy); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
-  if (mode === 'challenge') { for (const u of UPG.roll(5, 2)) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
+  if (mode === 'challenge' && opt !== 'bKing') { for (const u of UPG.roll(5, 2)) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
   if (META.has('startUpg') || mode === 'rush') { const R = G.room, pick = UPG.roll(3, 2); R.peds = []; const ci = Math.floor(R.cols / 2); [ci - 2, ci, ci + 2].forEach((i, k) => { if (!pick[k]) return; const [x, z] = sqC(R, clamp(i, 0, R.cols - 1), R.rows - 2); if (!gridAt(R, x, z)) R.peds.push({ x, z, t: pick[k], rise: 0, alive: true }); }); }
   Snd.music(0, 0.2);
 }
@@ -1793,17 +1798,18 @@ function enterRoom(i) {
   if (G.run && G.mode === 'endless' && i >= G.run.floors.length - 2) { G.run.loops = (G.run.loops || 0) + 1; G.run.floors.push(...endlessBlock(G.run.loops)); }
   if (i >= 2 && G.state === 'play' && UNLOCK.give('knight')) G.newUnlock = 'knight';
   const R = genRoom(i, G.runSeed + i * 7919);
-  G.room = R; G.E = []; G.B = []; G.S = []; G.fx = []; G.exec = null; G.lightK = 1; G.fate = null; G.boss = null; G.devourUsed = false; G.summonT = 6; G.combo = null; G.beatT = 0; G.perfN = 0; G.trails = []; G.decoy = null;
+  G.room = R; G.E = []; G.B = []; G.S = []; G.fx = []; G.exec = null; G.lightK = 1; G.fate = null; G.boss = null; G.devourUsed = false; G.summonT = 6; G.combo = null; G.beatT = 0; G.perfN = 0; G.trails = []; G.decoy = null; G.clock = null; P0slide(); G.rollT = 0; G.rollA = 0; G.rollCd = undefined; G.rw = null;
   const P = G.P; [P.x, P.z] = sqC(R, Math.floor(R.cols / 2), R.rows - 1); P.vx = P.vz = 0; P.inMirror = null; P.lungeT = 0; P.jump = null; P.dash = null; P.hop = 0; P.face = -Math.PI / 2;
   if (!R.free(P.x, P.z, 0.6)) for (let k = 0; k < 40; k++) { const x = rnd(-3, 3), z = R.D / 2 - rnd(1.2, 3); if (R.free(x, z, 0.6)) { P.x = x; P.z = z; break; } }
   uploadOcc(R);
   R.spawnList.forEach((s, k) => { const e = makeEnemy(s.type, s.x, s.z, (G.runSeed + i * 131 + k * 17) % 1000, k); if (s.phantom) e.phantom = true; if (s.inv) e.inv = true; for (const el of [s.elite, s.elite2]) if (el) { e.elite = e.elite || el; e['el_' + el] = true; } if (e.el_big) { e.hp *= 2.5; e.maxHp = e.hp; e.big = 1.3; } if (e.el_shield) e.shieldN = 2; if (e.el_swift) e.swift = true; if (s.hpMul) { e.hp *= s.hpMul; e.maxHp = e.hp; } G.E.push(e); if (e.d.boss && !e.d.minor) { G.boss = e; e.spawnT = 1.6; bossInit(e); } });
+  if (R.bossKind === 'bKing') { chessStart(R); G.allies = []; } document.body.classList.toggle('chessmode', !!R.chess);
   G.cam.x = P.x; G.cam.z = P.z;
   if (typeof botField !== 'undefined') botField = null;
   UI.roomCard(i);
   if (i === G.pastRoom && G.state === 'play' && !R.special) spawnPast(R);
   G.allies = [];
-  if (G.state === 'play') { if (R.special) setupSpecial(R); armyEnter(R); if (G.dimRun) for (const c of R.candles) c.life *= 0.5; if (G.P.tr.behead) for (const e of G.E) if (e.type === 'king') { e.hp *= 0.5; e.maxHp = e.hp; } G.tacHeal = false; G.subUsed = false; }
+  if (G.state === 'play') { if (R.special) setupSpecial(R); if (!R.chess) armyEnter(R); if (G.dimRun) for (const c of R.candles) c.life *= 0.5; if (G.P.tr.behead) for (const e of G.E) if (e.type === 'king') { e.hp *= 0.5; e.maxHp = e.hp; } G.tacHeal = false; G.subUsed = false; }
   HIST.length = 0; G.crumbleT = undefined; G.twin = null; G.P.shield = G.P.shield || 0; G.P.form2 = G.P.form2 || null; setTimeout(() => hook('room', {}), 50);
   if (R.boss) { Snd.music(BOSS[R.bossKind].track, 0.8); Snd.phase(1); Snd.setInv(!!R.inv); UI.boss(true); } else { Snd.music(0, 0.35); Snd.setInv(false); UI.boss(false); }
 }
@@ -1912,12 +1918,13 @@ function formAttack(a) {
   }
   if (!(P.jump && P.jump.free)) P.charges--; tutDone('use_' + f0); UI.form(); return true;
 }
-function hook(ev, o) { if (typeof UPG !== 'undefined') UPG.fire(ev, o || {}); }
-function dmgMul(P) { let k = (P.mirrorStrike > 0 ? (P.mirror3 ? 3 : 2) : 1) * (P.perfT > 0 ? 1.5 : 1) * (1 + (G.combo && G.combo.t > 0 ? Math.min(G.combo.n, 4) * 0.25 : 0)); if (P.buffT > 0) k *= 2; if (P.dark) k *= P.tr.shade ? 3 : 2; if (P.glass) k *= 1.6; if (P.tacT > 0) k *= 3; if (P.tr.drum && G.allies) k *= 1 + 0.08 * G.allies.filter(a => a.army).length; return k; }
+function hook(ev, o) { if (G.room && G.room.chess) return; if (typeof UPG !== 'undefined') UPG.fire(ev, o || {}); } // (孤王's chess game: no upgrades)
+function dmgMul(P) { return dmgMul0(P) * (1 + 0.3 * ((P.tr && P.tr.might) || 0)); }
+function dmgMul0(P) { let k = (P.mirrorStrike > 0 ? (P.mirror3 ? 3 : 2) : 1) * (P.perfT > 0 ? 1.5 : 1) * (1 + (G.combo && G.combo.t > 0 ? Math.min(G.combo.n, 4) * 0.25 : 0)); if (P.buffT > 0) k *= 2; if (P.dark) k *= P.tr.shade ? 3 : 2; if (P.glass) k *= 1.6; if (P.tacT > 0) k *= 3; if (P.tr.drum && G.allies) k *= 1 + 0.08 * G.allies.filter(a => a.army).length; return k; }
 function onBeat(n) {
   G.beatN = n; Snd.beat(n, G.room);
   const P = G.P; if (P.calmB > 0) P.calmB--;
-  alliesBeat(n); trapsBeat(); pinsBeat(); hook('beat', { n });
+  if (!G.room.chess) { alliesBeat(n); trapsBeat(); pinsBeat(); } twistsBeat(); hook('beat', { n });
 }
 // how far from the beat? (seconds, 0 = exactly on it)
 function beatOff() { const b = G.room.beat || 0.5, ph = (G.beatT || 0) % b; return Math.min(ph, b - ph); }
@@ -2016,6 +2023,19 @@ function exitMirror() {
   burst(P.x, 0.5, P.z, 18, [0.85, 0.9, 1.0]);
   if (P.tr.quake) { const rr = 2.6; for (const e of G.E) if (!e.dead && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 2 * P.tr.quake, angTo(P.x, P.z, e.x, e.z)); ring(P.x, P.z, rr, [0.8, 0.85, 1]); }
 }
+// 鏡后's room: a broken mirror is gone — frame and all
+function mirrorVanish(m) { const R = G.room; m.gone = true; const HIDE = M4.trs(0, -99, 0, 0, 0.001, 0.001, 0.001); for (const it of m.st || []) it.m = HIDE;
+  if (m.rect) { const [x0, z0, x1, z1] = m.rect; for (let j = Math.max(0, Math.floor((z0 - R.z0) * CELL)); j < Math.min(R.gh, Math.ceil((z1 - R.z0) * CELL)); j++) for (let i = Math.max(0, Math.floor((x0 - R.x0) * CELL)); i < Math.min(R.gw, Math.ceil((x1 - R.x0) * CELL)); i++) R.grid[j * R.gw + i] = 0; }
+  if (m.i !== undefined) R.sqBlock[m.j * R.cols + m.i] = 0; uploadOcc(R);
+ }
+// bullets that fly into a standing mirror come out of another one
+function boltMirror(W, b) { const R = W.R; if (!R.mirrors.length || R.bossKind !== 'bQueen') return false;
+  for (const m of R.mirrors) { if (m.broken || m.i === undefined) continue; const [mx, mz] = sqC(R, m.i, m.j); if (Math.abs(b.x - mx) > 0.5 || Math.abs(b.z - mz) > 0.5) continue;
+    const others = R.mirrors.filter(o => !o.broken && o.i !== undefined && o !== m); if (!others.length) { b.dead = true; return true; }
+    const o = others[((b.tpN || 0) + m.idx) % others.length], [ox, oz] = sqC(R, o.i, o.j), nl = Math.hypot(o.n[0], o.n[2]) || 1, nx = o.n[0] / nl, nz = o.n[2] / nl, sp = Math.hypot(b.vx, b.vz);
+    if (!W.fut) G.fx.push({ k: 'zapline', x: mx, z: mz, tx: ox, tz: oz, life: 0.25, max: 0.25, col: [0.8, 0.9, 1.3] });
+    b.x = ox + nx * 0.8; b.z = oz + nz * 0.8; b.vx = nx * sp; b.vz = nz * sp; b.tpN = (b.tpN || 0) + 1; b.life = Math.max(b.life, 1.5); return true; }
+  return false; }
 function damageMirror(m, n, quiet) {
   if (m.broken) return;
   if (G.P && G.P.tr.evoMirror && G.room.bossKind !== 'bQueen') { m.flash = 0.2; return; }
@@ -2025,6 +2045,7 @@ function damageMirror(m, n, quiet) {
     for (let k = 0; k < 26; k++) G.fx.push({ k: 'shard', x: m.p[0], y: m.p[1] + rnd(-1, 1), z: m.p[2], vx: m.n[0] * rnd(2, 7) + rnd(-2, 2), vy: rnd(1, 4), vz: m.n[2] * rnd(2, 7) + rnd(-2, 2), life: rnd(0.8, 1.6), s: rnd(0.05, 0.14) });
     if (G.P.tr.shard) for (const e of G.E) if (!e.dead && dist(e.x, e.z, m.cx, m.cz) < 6) hurtEnemy(e, 3, angTo(m.cx, m.cz, e.x, e.z));
     UI.toast('mirror', '碎了', 1);
+    if (G.room.bossKind === 'bQueen' && m.wall === 'board') mirrorVanish(m);
     const B = G.boss; if (B && B.type === 'bQueen' && !B.dead) { if (B.exitIdx === m.idx) B.exitIdx = null;
       if ((B.inMir || B.goingIn) && B.inIdx === m.idx) { B.inMir = false; B.goingIn = false; B.mv = null; const R = G.room, q = sqOf(R, m.cx, m.cz), [x, z] = sqC(R, clamp(q[0], 0, R.cols - 1), clamp(q[1], 0, R.rows - 1)); B.x = x; B.z = z; B.stunB = 3; B.cnt = 5; B.hz = []; G.slowT = 0.5; G.flash = 0.6; Snd.S.bell(); UI.toast('queen', '摔出來了'); U.stun(B, 3); } }
   } else if (!quiet) Snd.S.crack(); else Snd.S.crack();
@@ -2040,6 +2061,8 @@ function hurtEnemy(e, dmg, a, src) {
   if (e.pinT > G.time) dmg *= G.P.tr.openLine ? 2.5 : 1.5;
   if (G.P.forkT > 0 && src === 'lunge') { dmg *= 2; G.P.forkT = 0; }
   e.hp -= dmg; e.flash = 0.12; e.reveal = 2.2; if (src === 'lunge') tutDone('hit');
+  if (e.marcher && e.hp <= 0 && src !== 'upg' && G.boss && !G.boss.dead) { // 逆行軍: a sand pawn you strike down flies on along your blow — aim it at the general
+    const B = G.boss; U.shot(e.x, e.z, a, Math.max(5, B.maxHp * 0.06), { sp: 12, life: 1.1, pierce: true, col: [1.4, 1.15, 0.6] }); burst(e.x, 0.8, e.z, 14, [1.0, 0.85, 0.5]); Snd.S.slam(); }
   if (e.d.chess) { if (e.state === 'plan' && e.plan) { e.plan = null; e.ph = 2; e.state = 'idle'; e.bt = Math.max(e.bt, (G.room.beat || 0.5) * 0.8); ring(e.x, e.z, 0.9, [0.95, 0.85, 0.6]); Snd.S.crack(); } }
   else if (!e.d.boss) { e.vx += Math.cos(a) * 6; e.vz += Math.sin(a) * 6; if (e.state === 'wind' && dmg >= 2) { e.state = 'recover'; e.st = 0.4; } }
   // impact: freeze a moment, punch the camera, make the piece reel, spray chips, show the number
@@ -2153,6 +2176,7 @@ function fixPos(R, P) { // nudge out of solids after landing on an enemy's spot
   for (let r = 0.25; r < 3; r += 0.25) for (let k = 0; k < 12; k++) { const a = k / 12 * TAU, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r; if (!gridAt(R, x, z)) { P.x = x; P.z = z; return; } }
 }
 function killEnemy(e, executed) {
+  if (G.room.bossKind === 'bKing' && e.d.chess && !e.d.boss && !e.ally && G.state === 'play') setTimeout(() => { if (G.room.bossKind === 'bKing') { becomePiece(e.type, e.inv); UI.toast(e.type, '吃子'); } }, 0); // real chess: take a piece and you become it
   e.dead = true; G.kills++; META.addSand(executed ? 2 : 1);
   if (!e.d.boss || e.d.minor) G.shards = (G.shards || 0) + (e.elite ? 4 * (G.P.tr.eliteHunter ? 2 : 1) : 1) * (G.P.tr.magnet ? 2 : 1) * (G.greed ? 2 : 1);
   if (e.el_split && G.room.bx0 !== undefined) { const R = G.room, [i, j] = sqOf(R, e.x, e.z); let n = 0; for (const [a, b] of DIRS.king) { if (n >= 2) break; const x = i + a, y = j + b; if (!onBoard(R, x, y) || R.sqBlock[y * R.cols + x] || G.E.some(o => !o.dead && sqOf(R, o.x, o.z).join() === x + ',' + y)) continue; const [wx, wz] = sqC(R, x, y), ne = makeEnemy('pawn', wx, wz, (Math.random() * 999) | 0, n); ne.spawnT = 0.4; G.E.push(ne); n++; } burst(e.x, 1, e.z, 16, [0.9, 0.6, 1.1]); }
@@ -2225,6 +2249,7 @@ const BUF_T = 0.2;
 function update(dtReal, ev) {
   const P = G.P, R = G.room;
   G.time += dtReal;
+  if (G.rollA && Math.abs(G.rollA) > 0.01) { const c = Math.cos(G.rollA), s = Math.sin(G.rollA), mx = Inp.st.mx, my = Inp.st.my; Inp.st.mx = mx * c - my * s; Inp.st.my = mx * s + my * c; }
   G.buf = G.buf || {}; for (const k of ['atk', 'jump', 'act', 'eat', 'swap']) if (ev[k]) G.buf[k] = G.time;
   const want = k => G.buf[k] !== undefined && G.time - G.buf[k] <= BUF_T;
   // time scale: fate slow-mo, gaze
@@ -2268,6 +2293,7 @@ function update(dtReal, ev) {
   if (P.inMirror) {
     P.inMirror.t -= dt;
     if (P.inMirror.t <= 0) exitMirror();
+  } else if (R.chess && playing && G.boss && !G.boss.dead) { chessFrame(dt, ev); // 孤王: a real game of chess — click the squares
   } else if (playing || G.state === 'won') {
     const lightHere = lightAt(P.x, P.z);
     P.dark = lightHere < DARK;
@@ -2304,6 +2330,8 @@ function update(dtReal, ev) {
       // knock candles over
       for (const pr of R.props) if (pr.alive && pr.candle && pr.candle.lit && dist(pr.x, pr.z, P.x, P.z) < pr.r + P.r + 0.2) { pr.candle.lit = false; Snd.S.candle(); burst(pr.x, 1.5, pr.z, 6, [1, 0.6, 0.3]); hook('candle', { x: pr.x, z: pr.z }); }
       P.vx = P.ldx * 0.2; P.vz = P.ldz * 0.2;
+    } else if (P.slide) { tiltTick(dt); P.vx = P.vz = 0;
+    } else if (clockFrozen('you')) { P.vx = expD(P.vx, 0, 14, dt); P.vz = expD(P.vz, 0, 14, dt);
     } else {
       P.vx = expD(P.vx, Inp.st.mx * sp, 14, dt); P.vz = expD(P.vz, Inp.st.my * sp, 14, dt);
       move(R, P, P.vx * dt, P.vz * dt);
@@ -2312,7 +2340,7 @@ function update(dtReal, ev) {
     if (P.form === 'pawn' && !P.finv && P.z < R.bz0 + SQ * (P.tr.pawnPromo ? R.rows / 2 : 0.9)) { becomePiece('queen'); G.flash = 0.5; Snd.S.bell(); tactic('promote', { force: true }); hook('promote', {}); }
     if (R.bx0 !== undefined) { const sq = sqOf(R, P.x, P.z); if (P.lastSq && (P.lastSq[0] !== sq[0] || P.lastSq[1] !== sq[1])) checkDiscover(P.lastSq); P.lastSq = sq; }
     if (P.tacT > 0) P.tacT -= dt;
-    if (playing) { // buffered: a press up to 0.2 s early still happens as soon as it can
+    if (playing && !P.slide && !clockFrozen('you')) { // buffered: a press up to 0.2 s early still happens as soon as it can
       if (want('atk') && !P.jump && !P.dash && !P.hopJ && P.atkCd <= 0 && !P.inMirror) { delete G.buf.atk; attack(); }
       if (want('jump')) { const was = P.hopJ; jump(); if (P.hopJ && P.hopJ !== was) delete G.buf.jump; }
       if (want('act')) { delete G.buf.act; act(); }
@@ -2320,6 +2348,8 @@ function update(dtReal, ev) {
       if (want('swap')) { delete G.buf.swap; swapForm(); }
     }
     if (!P.hopJ && !P.jump && !P.dash) unstick(R, P);
+    // no fighting from off the board: while the room is live the player stays on the squares
+    if (R.bx0 !== undefined && !R.cleared && !P.inMirror && G.E.some(o => !o.dead && !o.ally)) { const m = P.r * 0.6; P.x = clamp(P.x, R.bx0 + m, R.bx1 - m); P.z = clamp(P.z, R.bz0 + m, R.bz1 - m); }
     // pieces are solid: walk around them or jump over
     if (!P.hopJ && !P.jump && !P.dash && P.lungeT <= 0) for (const e of G.E) { if (e.dead || !e.d.chess || e.spawnT > 0 || e.mv) continue; const d = dist(P.x, P.z, e.x, e.z), rr = P.r + e.r * 0.8; if (d < rr && d > 0.001) move(R, P, (P.x - e.x) / d * (rr - d), (P.z - e.z) / d * (rr - d)); }
     // door
@@ -2336,8 +2366,8 @@ function update(dtReal, ev) {
     else if (evn.k === 'slash') { Snd.S.slash(); }
     else if (evn.k === 'bolt') { Snd.S.bolt(); }
     else if (evn.k === 'land') { Snd.S.land(); for (const pr of R.props) if (pr.alive && pr.type !== 'piece' && dist(pr.x, pr.z, evn.x, evn.z) < 0.7) { pr.alive = false; if (pr.candle) { pr.candle.lit = false; pr.candle.gone = true; } burst(pr.x, 0.5, pr.z, 12, [0.6, 0.55, 0.5]); Snd.S.hit(); rebuildGrid(R); } }
-    else if (['bossFire', 'spawnPawns', 'rubble', 'emerge', 'blocked', 'mirHop', 'summonMirror', 'rookBuild', 'smashRubble', 'pillarHit', 'rookFire'].includes(evn.k)) bossEvent(evn);
-    else if (['swapColours', 'diagWall', 'raise', 'shardTrap', 'kaleido', 'tyrantArmy', 'phalanx'].includes(evn.k)) invEvent(evn);
+    else if (['bossFire', 'spawnPawns', 'rubble', 'emerge', 'blocked', 'mirHop', 'summonMirror', 'mirrorVolley', 'rookBuild', 'smashRubble', 'pillarHit', 'rookFire', 'tiltWarn', 'tilt', 'burnLine', 'echoGhost', 'roll', 'rookWave'].includes(evn.k)) bossEvent(evn);
+    else if (['swapColours', 'diagWall', 'raise', 'shardTrap', 'kaleido', 'tyrantArmy', 'phalanx', 'collapse', 'noonWarn'].includes(evn.k)) invEvent(evn);
     else if (evn.k === 'castle') { if (UNLOCK.give('rook')) G.newUnlock = 'rook'; Snd.S.mirrorIn(); G.flash = 0.25; UI.toast('rook', '入堡'); }
     else if (evn.k === 'promote') { Snd.S.bell(); G.flash = 0.3; UI.toast('queen', '升變'); }
   }
@@ -2358,7 +2388,7 @@ function update(dtReal, ev) {
       if (!P.form || effKind(P.form, P.finv) === 'pawn' || effKind(P.form, P.finv) === 'pawnR') th = Math.max(Math.abs(ks[0] - ps[0]), Math.abs(ks[1] - ps[1])) <= 1;
       else { const occ = {}; for (const o of G.E) if (!o.dead && o !== K) { const q = sqOf(R, o.x, o.z); occ[q[0] + ',' + q[1]] = 1; } th = pieceMoves(R, effKind(P.form, P.finv), ps[0], ps[1], (a, b) => !!occ[a + ',' + b], ks).some(m => m[0] === ks[0] && m[1] === ks[1]) || !!(P.fuse && P.fuse.top && pieceMoves(R, P.fuse.top, ps[0], ps[1], (a, b) => !!occ[a + ',' + b], ks).some(m => m[0] === ks[0] && m[1] === ks[1])); }
       if (th) { G.check = K; if (!R.checked) { R.checked = true; UI.toast('king', '將軍'); Snd.S.warn(); } } } }
-  bossPresent(dt); invPresent(dt); bossFrame(dt); queenFrame(dt); alliesTick(dt); bombsTick(dtReal); twinTick(dt); hook('tick', dt);
+  bossPresent(dt); invPresent(dt); if (G.boss) twistsFrame(dt); else holesTick(dt); bossFrame(dt); queenFrame(dt); if (!R.chess) { alliesTick(dt); bombsTick(dtReal); twinTick(dt); } hook('tick', dt);
   // ---------------- future
   G.futT -= dtReal;
   if (G.futT <= 0 || !G.fut) { G.fut = predict(); G.futT = 0.05; }
@@ -2433,7 +2463,8 @@ function fireHaz(e, W, h) {
   const P = W.P, R = W.R;
   let hit = false; if (!P.hidden && h.dmg > 0) { const [i, j] = sqOf(R, P.x, P.z); if (sqsHas(h.sqs, i, j)) { hit = true; W.events.push({ k: 'hitP', dmg: h.dmg, x: P.x, z: P.z, src: e.type }); } }
   W.events.push({ k: 'bossFire', e, h });
-  if (h.tag === 'over') e.hot = 2;
+  if (h.tag === 'over' || h.tag === 'glow') e.hot = 2;
+  if (h.tag === 'glow' && !W.fut) W.events.push({ k: 'burnLine', sqs: h.sqs });
   if ((h.tag === 'wallRow' || h.tag === 'kick') && !W.fut) W.events.push({ k: 'rookBuild', h });
   if (h.to && h.to.length && !e.mv && (!h.capOnly || hit)) moveAlong(e, W, h.to, h.jump);
   if (h.tag === 'qdrop') { e.stuckB = bossPhase(e) >= 3 ? 3 : 4; if (e.mv) { e.mv.h = 2.4; e.mv.dur = 0.32; } const [sx, sz] = sqC(R, h.to[0][0], h.to[0][1]); W.events.push({ k: 'slam', x: sx, z: sz, e }); }
@@ -2453,26 +2484,30 @@ function psq(W) { return W.P.hidden ? null : sqOf(W.R, W.P.x, W.P.z); }
 AIX.bKnightC = function (e, W, dt) { return AIX.bKnight(e, W, dt); };
 AIX.bKnight = function (e, W, dt) {
   const R = W.R;
-  if (e.mv) { if (stepMv(e, dt, W)) { // landed
+  if (e.mv) { const wp = e.mv.wrap; if (stepMv(e, dt, W)) { // landed
+      if (wp) { e.x -= wp[0]; e.z -= wp[1]; } // it walked out through one edge; its other self has landed on this side
       const P = W.P; if (!P.hidden) { const [i, j] = sqOf(R, P.x, P.z); if (sqsHas(e.land || [], i, j)) W.events.push({ k: 'hitP', dmg: 1, x: P.x, z: P.z, src: e.type }); }
       W.events.push({ k: 'slam', x: e.x, z: e.z, e }); if (e.twin) W.events.push({ k: 'slam', x: sqC(R, e.twin[0], e.twin[1])[0], z: sqC(R, e.twin[0], e.twin[1])[1], e, small: true });
       e.land = null; const ph = bossPhase(e);
-      if (ph >= 3 && !e.dbl && e.type === 'bKnight') { e.dbl = true; e.st2 = 'idle'; } else { e.dbl = false; e.st2 = 'rear'; e.cnt = 3; }
+      if (ph >= 3 && !e.dbl && e.type === 'bKnight') { e.dbl = true; e.st2 = 'idle'; } else { e.dbl = false; e.st2 = 'rear'; e.cnt = 2; }
     } return; }
   bossTick(e, W, dt, () => {
     if (e.st2 === 'rear') { if (--e.cnt <= 0) e.st2 = 'idle'; return; }
-    if (e.st2 === 'warn') { if (--e.cnt <= 0) { const [x, z] = sqC(R, e.tgt[0], e.tgt[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.4, jump: true, h: 2.4 }; e.st2 = 'air'; } return; }
+    if (e.st2 === 'warn') { if (--e.cnt <= 0) { const [x, z] = sqC(R, e.tgt[0], e.tgt[1]), rw = e.tgtRaw || e.tgt, [rx, rz] = sqC(R, rw[0], rw[1]);
+        const wrap = rw[0] !== e.tgt[0] || rw[1] !== e.tgt[1] ? [rx - x, rz - z] : null; // crossing the edge: leap outward, arrive from the far side
+        e.mv = { fx: e.x, fz: e.z, tx: wrap ? rx : x, tz: wrap ? rz : z, t: 0, dur: wrap ? 0.5 : 0.4, jump: true, h: 2.4, wrap }; e.st2 = 'air'; } return; }
     // plan a leap whose eight knight-squares cover you
     const [i, j] = sqOf(R, e.x, e.z), ps = psq(W) || [Math.floor(R.cols / 2), R.rows - 1], ph = bossPhase(e);
     let best = null, bs = 1e9;
     const occK = occSet(W, e); for (const o of W.E) if (!o.dead && o !== e && o.tgt && (o.type === 'bKnight' || o.type === 'bKnightC')) occK.add(sqKey(o.tgt[0], o.tgt[1]));
-    for (const [a, b] of KN) { const ti = i + a, tj = j + b; if (!onBoard(R, ti, tj) || R.sqBlock[tj * R.cols + ti] || occK.has(sqKey(ti, tj))) continue;
-      const covers = KN.some(([c, d]) => ti + c === ps[0] && tj + d === ps[1]) || (ti === ps[0] && tj === ps[1]);
-      const sc = (covers ? 0 : Math.hypot(ti - ps[0], tj - ps[1])) + aiRand(e, ti * 5 + tj * 3 + (e.nb || 0)) * 0.9; if (sc < bs) { bs = sc; best = [ti, tj]; } }
+    const TW = true, wr = (v, n) => TW ? ((v % n) + n) % n : v;
+    for (const [a, b] of KN) { const ti = wr(i + a, R.cols), tj = wr(j + b, R.rows); if (!onBoard(R, ti, tj) || R.sqBlock[tj * R.cols + ti] || occK.has(sqKey(ti, tj))) continue;
+      const covers = KN.some(([c, d]) => wr(ti + c, R.cols) === ps[0] && wr(tj + d, R.rows) === ps[1]) || (ti === ps[0] && tj === ps[1]);
+      const sc = (covers ? 0 : Math.hypot(ti - ps[0], tj - ps[1])) + aiRand(e, ti * 5 + tj * 3 + (e.nb || 0)) * 0.9; if (sc < bs) { bs = sc; best = [ti, tj]; e.tgtRaw = [i + a, j + b]; } }
     if (!best) return;
-    const land = [best].concat(KN.map(([c, d]) => [best[0] + c, best[1] + d]).filter(q => onBoard(R, q[0], q[1])));
+    const land = [best].concat(KN.map(([c, d]) => [wr(best[0] + c, R.cols), wr(best[1] + d, R.rows)]).filter(q => onBoard(R, q[0], q[1])));
     e.twin = null;
-    e.tgt = best; e.land = land; e.st2 = 'warn'; e.cnt = 2; e.face = angTo(e.x, e.z, ...sqC(R, best[0], best[1]));
+    e.tgt = best; e.land = land; e.st2 = 'warn'; e.cnt = 1; e.face = angTo(e.x, e.z, ...sqC(R, best[0], best[1]));
     (e.hz = []).push({ sqs: land, n: 99, kind: 'red', dmg: 0, show: true }); // shown only; the landing does the damage
   });
   if (e.st2 !== 'warn' && e.st2 !== 'air' && e.hz) e.hz = e.hz.filter(h => !h.show);
@@ -2524,10 +2559,10 @@ AIX.bBishop = AIX.bBishop2 = function (e, W, dt) {
       for (const q of opts) { if (occ.has(sqKey(q[0], q[1]))) continue; const on = Math.abs(q[0] - ps[0]) === Math.abs(q[1] - ps[1]); const s = (on ? 0 : 3) + Math.hypot(q[0] - ps[0], q[1] - ps[1]) * 0.3 + aiRand(e, q[0] + q[1] * 9 + e.nb) * 1.5; if (s < bs && Math.hypot(q[0] - ps[0], q[1] - ps[1]) > 1.5) { bs = s; best = q; } }
       if (best) { const [x, z] = sqC(R, best[0], best[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.28 }; e.face = angTo(e.x, e.z, x, z); }
     }
-    if (b === 1) { const L = pickRay(R, i, j, DIRS.bishop, ps, 9, e); addHaz(e, ph >= 2 ? rays(R, i, j, DIRS.bishop) : L || [], 2, 'beam', 1, 'over', L); }
+    if (b === 1) { const L = pickRay(R, i, j, DIRS.bishop, ps, 9, e); addHaz(e, ph >= 2 ? rays(R, i, j, DIRS.bishop) : L || [], 2, 'beam', 1, twistOn(e) ? 'glow' : 'over', L); }
     if (b === 5 && (ph >= 2 || (e.nb / 8 | 0) % 2 === 1)) { // the whole colour lights up — stand on the other one
       const c = ph >= 2 && (e.nb / 8 | 0) % 2 === 0 ? 1 - col : col, sqs = []; for (let y = 0; y < R.rows; y++) for (let x = 0; x < R.cols; x++) if ((x + y) % 2 === c) sqs.push([x, y]);
-      addHaz(e, sqs, 2, 'flood', 1);
+      addHaz(e, sqs, 2, 'flood', 1); e.hz[e.hz.length - 1].tint = c === col ? [1.15, 0.85, 0.3] : [0.55, 0.2, 0.95]; // its own colour burns gold, the other colour violet
     }
   });
 };
@@ -2544,7 +2579,7 @@ AIX.bRook = function (e, W, dt) {
       else { e.seg = 0; e.stun = pillar ? 4.5 : ph >= 2 ? 2.4 : 3; e.dizzy = pillar; e.st2 = 'idle'; if (pillar) W.events.push({ k: 'pillarHit', e }); } } return; }
   bossTick(e, W, dt, () => {
     // its moves run on their own cooldowns (in beats) that keep ticking while it is stunned or charging
-    e.cdC = (e.cdC === undefined ? 3 : e.cdC) - 1; e.cdW = (e.cdW === undefined ? 2 : e.cdW) - 1; e.cdK = (e.cdK === undefined ? 2 : e.cdK) - 1;
+    e.cdC = (e.cdC === undefined ? 3 : e.cdC) - 1; e.cdW = (e.cdW === undefined ? 2 : e.cdW) - 1; e.cdK = (e.cdK === undefined ? 2 : e.cdK) - 1; e.cdR = (e.cdR === undefined ? 5 : e.cdR) - 1; e.cdV = (e.cdV === undefined ? 7 : e.cdV) - 1;
     if (e.stun > 0) return; e.dizzy = false;
     const [i, j] = sqOf(R, e.x, e.z), ps = psq(W), occ = occSet(W, e), ph = bossPhase(e), n = e.nb;
     if (e.st2 === 'warn') { if (--e.cnt <= 0) { const [x, z] = sqC(R, e.end[0], e.end[1]), L = Math.hypot(x - e.x, z - e.z); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.12 + L * 0.045, sweep: true, lin: true }; e.mvHit = false; e.charging = true; e.st2 = 'charge'; if (e.smash && e.smash.length && !W.fut) W.events.push({ k: 'smashRubble', sqs: e.smash }); } return; }
@@ -2555,6 +2590,13 @@ AIX.bRook = function (e, W, dt) {
     // the battlements fire: one shell in phase 1, three from phase 2 — each lands in a plus shape
     if (ps && e.cdC <= 0) { e.cdC = ph >= 2 ? 6 : 8; const tg = ph >= 2 ? [ps, [ps[0] + ((aiRand(e, n) * 5) | 0) - 2, ps[1] + ((aiRand(e, n + 1) * 3) | 0) - 1], [ps[0] + ((aiRand(e, n + 2) * 5) | 0) - 2, ps[1] - 2]] : [ps];
       for (const t of tg) { const q = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => [t[0] + a, t[1] + b]).filter(q => onBoard(R, q[0], q[1])); if (q.length) addHaz(e, q, 3, 'fire', 1, 'shell'); } if (!W.fut) W.events.push({ k: 'rookFire', e }); return; }
+    // the fortress turns the world: the view rolls (90° → 180° from phase 2 → a full spin in phase 3), and its four guns fire as it settles
+    if (e.cdR <= 0) { e.cdR = ph >= 3 ? 9 : 11; const r = aiRand(e, n * 3 + 1), d = ph >= 3 && r < 0.4 ? (r < 0.2 ? 1 : -1) * Math.PI * 2.5 : ph >= 2 && r < 0.75 && r > 0.4 ? Math.PI : (r < 0.5 ? 1 : -1) * Math.PI / 2;
+      if (!W.fut) W.events.push({ k: 'roll', d, spin: Math.abs(d) > 4 }); addHaz(e, rays(R, i, j, DIRS.rook), Math.abs(d) > 4 ? 5 : 3, 'beam', 1); return; }
+    // a shock wave rolls down the board one rank a beat, with one gap to stand in (two waves in phase 3)
+    if (ps && e.cdV <= 0 && ph >= 2) { e.cdV = 10; const dir = ps[1] >= j ? 1 : -1; for (let w = 0; w < (ph >= 3 ? 2 : 1); w++) { const gate = (aiRand(e, n * 7 + w) * R.cols) | 0;
+        for (let k = 1, y = j + dir; y >= 0 && y < R.rows; k++, y += dir) { const sqs = []; for (let x = 0; x < R.cols; x++) if (Math.abs(x - gate) > 0 && !R.sqBlock[y * R.cols + x]) sqs.push([x, y]); if (sqs.length) addHaz(e, sqs, 2 + k + w * 3, 'red', 1); } }
+      if (!W.fut) W.events.push({ k: 'rookWave' }); return; }
     // phase 2+: a wall across the board between you, with one gate
     if (ph >= 2 && ps && e.cdW <= 0) { // between you if there is room; otherwise right behind you, so you're boxed in with it
       const dy = ps[1] - j, dx = ps[0] - i, sqs = []; let ok = true;
@@ -2590,7 +2632,9 @@ AIX.bQueen = function (e, W, dt) {
     const ms = R.mirrors.filter(m => !m.broken), ph = bossPhase(e), ps = psq(W);
     const floorSq = m => { const q = sqOf(R, m.cx, m.cz); return [clamp(q[0], 0, R.cols - 1), clamp(q[1], 0, R.rows - 1)]; };
     // now and then she calls a new mirror up out of the floor (at most four in the room)
-    if (!W.fut && ph >= 2 && R.mirrors.length < 4 && e.nb % 9 === 4) W.events.push({ k: 'summonMirror', e });
+    if (!W.fut && ms.length < (ph >= 2 ? 6 : 5) && e.nb % 6 === 4) W.events.push({ k: 'summonMirror', e });
+    // from inside the glass she fires: a fan of bullets out of one of her other mirrors (bullets pass through mirrors)
+    if (!W.fut && e.inMir && ms.length > 1 && e.nb % (ph >= 3 ? 3 : 4) === 1) W.events.push({ k: 'mirrorVolley', n: ph >= 2 ? 5 : 3 });
     if (e.inMir) {
       if (!ms.length) { e.inMir = false; e.free = true; const m = R.mirrors[e.inIdx || 0]; if (m) { const q = floorSq(m), [x, z] = sqC(R, q[0], q[1]); e.x = x; e.z = z; } return; }
       if (e.exitIdx == null || !R.mirrors[e.exitIdx] || R.mirrors[e.exitIdx].broken) { // pick the way out and show it
@@ -2601,13 +2645,13 @@ AIX.bQueen = function (e, W, dt) {
       e.x = m.p[0]; e.z = m.p[2]; e.mv = { fx: m.p[0], fz: m.p[2], tx: x, tz: z, t: 0, dur: 0.4 }; // she steps out of the glass
       e.inMir = false; e.mirIdx = m.idx; e.inIdx = m.idx; e.exitIdx = null; e.cnt = 6; e.face = ps ? angTo(x, z, ...sqC(R, ps[0], ps[1])) : 0;
       W.events.push({ k: 'emerge', e, m });
-      { const L = pickRay(R, q[0], q[1], DIRS.queen, ps, 9, e); addHaz(e, rays(R, q[0], q[1], DIRS.queen), 2, 'beam', 1, 'over', L ? L.slice(0, 4) : null); }
+      { const L = pickRay(R, q[0], q[1], DIRS.queen, ps, 9, e); addHaz(e, twistOn(e) ? bounceRays(R, q[0], q[1], DIRS.queen) : rays(R, q[0], q[1], DIRS.queen), 2, 'beam', 1, 'over', L ? L.slice(0, 4) : null); }
       e.fake = null; if (ph >= 2 && ms.length > 1) { const o = ms.find(o => o !== m); const f = floorSq(o); e.fake = f; addHaz(e, rays(R, f[0], f[1], DIRS.queen), 2, 'beam', 1); }
       return;
     }
     if (e.free) { // no mirrors left: she walks the board like a queen
       const [i, j] = sqOf(R, e.x, e.z);
-      if (e.nb % 3 === 0) { const L = pickRay(R, i, j, DIRS.queen, ps, 9, e); addHaz(e, rays(R, i, j, DIRS.queen), 2, 'beam', 1, 'over', L ? L.slice(0, 4) : null); }
+      if (e.nb % 3 === 0) { const L = pickRay(R, i, j, DIRS.queen, ps, 9, e); addHaz(e, twistOn(e) ? bounceRays(R, i, j, DIRS.queen) : rays(R, i, j, DIRS.queen), 2, 'beam', 1, 'over', L ? L.slice(0, 4) : null); }
       if (ms.length) { e.free = false; e.cnt = 1; }
       return;
     }
@@ -2620,9 +2664,9 @@ AIX.bQueen = function (e, W, dt) {
 // a mirror that rises out of the board (for 鏡后)
 function makeMirrorAt(R, i, j) { const P = G.P, [pi, pj] = sqOf(R, P.x, P.z); const face = Math.abs(pi - i) > Math.abs(pj - j) ? (pi > i ? 'e' : 'w') : (pj > j ? 's' : 'n'); const mm = buildMirror(R, i, j, face, 3); R.sqBlock[j * R.cols + i] = 1; uploadOcc(R); mm.rise = 0; return mm; }
 function queenSummon() { // pick a square, show it forming for two beats, then raise the mirror
-  const R = G.room, P = G.P, ps = sqOf(R, P.x, P.z); if (R.mirrors.length + (R.forming ? 1 : 0) >= 4 || R.forming) return;
+  const R = G.room, P = G.P, ps = sqOf(R, P.x, P.z); if (R.mirrors.filter(m => !m.broken).length >= 6 || R.forming) return;
   for (let k = 0; k < 60; k++) { const i = (Math.random() * R.cols) | 0, j = 1 + ((Math.random() * (R.rows - 3)) | 0);
-    if (R.sqBlock[j * R.cols + i] || (j + 1 < R.rows && R.sqBlock[(j + 1) * R.cols + i]) || Math.hypot(i - ps[0], j - ps[1]) < 2.5 || G.E.some(o => !o.dead && sqOf(R, o.x, o.z).join() === i + ',' + j) || R.mirrors.some(m => Math.abs(m.i - i) + Math.abs(m.j - j) < 3)) continue;
+    if (R.sqBlock[j * R.cols + i] || (j + 1 < R.rows && R.sqBlock[(j + 1) * R.cols + i]) || Math.hypot(i - ps[0], j - ps[1]) < 2.5 || G.E.some(o => !o.dead && sqOf(R, o.x, o.z).join() === i + ',' + j) || R.mirrors.some(m => !m.gone && Math.abs(m.i - i) + Math.abs(m.j - j) < 3)) continue;
     R.forming = { i, j, t: R.beat * 2, max: R.beat * 2 }; Snd.S.mirrorIn(); return; }
 }
 function queenFrame(dt) {
@@ -2647,6 +2691,7 @@ AIX.bKing = function (e, W, dt) {
       const mate = W.E.find(o => !o.dead && o !== e && !o.mv && sqOf(R, o.x, o.z).join() === p[0] + ',' + p[1]); if (mate) { const [ox, oz] = sqC(R, i, j); mate.mv = { fx: mate.x, fz: mate.z, tx: ox, tz: oz, t: 0, dur: 0.28, jump: true, h: 0.4 }; mate.plan = null; } // his own piece steps aside
       e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.28, jump: true, h: 0.5, sweep: !!p.cap }; e.mvHit = false; return; }
     if (e.check && e.esc && e.esc.length && !W.fut) { const q = e.esc[(aiRand(e, e.nb) * e.esc.length) | 0]; e.plan = q; return; } // must get out of check
+    if (W.E.some(o => o !== e && !o.dead && o.spawnT <= 0 && o.d.chess && (o.plan || o.mv))) return; // one piece moves at a time
     if (e.nb % 3) return;
     const adj = DIRS.king.map(([a, b]) => [i + a, j + b]).filter(q => onBoard(R, q[0], q[1]) && !R.sqBlock[q[1] * R.cols + q[0]]);
     if (ps && Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j)) <= 1) { const q = [ps[0], ps[1]]; q.cap = true; e.plan = q; addHaz(e, [q], 1, 'red', 1); return; }
@@ -2694,7 +2739,7 @@ function bossPresent(dt) {
   if (B.type === 'bBishop' && bossPhase(B) >= 2 && !B.split) { B.split = true; const [i, j] = sqOf(R, B.x, B.z);
     for (let k = 0; k < 40; k++) { const x = Math.floor(Math.random() * R.cols), y = Math.floor(Math.random() * R.rows); if ((x + y) % 2 === (i + j) % 2 || R.sqBlock[y * R.cols + x]) continue; const [wx, wz] = sqC(R, x, y); if (dist(wx, wz, P.x, P.z) < 2.5) continue; const ne = makeEnemy('bBishop2', wx, wz, 77, 1); ne.spawnT = 0.8; ne.st2 = 'idle'; ne.hz = []; ne.nb = 0; G.E.push(ne); burst(wx, 1.5, wz, 20, [0.8, 0.85, 1]); Snd.S.mirrorOut(); break; } }
   // the king: check, escape squares, checkmate
-  if (B.type === 'bKing' && !B.down) {
+  if (B.type === 'bKing' && !B.down && !R.chess) {
     const th = playerThreats(R, P), [ki, kj] = sqOf(R, B.x, B.z), ps = sqOf(R, P.x, P.z);
     const occ = new Set(); for (const o of G.E) if (!o.dead && o !== B) { const q = sqOf(R, o.x, o.z); occ.add(sqKey(q[0], q[1])); }
     B.check = th.has(sqKey(ki, kj)) && !B.mv;
@@ -2705,7 +2750,7 @@ function bossPresent(dt) {
     if (B.check && !B.wasCheck && !mate) { Snd.S.warn(); }
     B.wasCheck = B.check;
   }
-  if (B.type === 'bKing' && B.down) { B.down -= dt; if (B.down <= 0) { B.down = 0; const [x, z] = sqC(R, Math.floor(R.cols / 2), 0); B.x = x; B.z = z; B.spawnT = 0.8; B.mated = false; kingArmy(B); Snd.S.mirrorOut(); } }
+  if (B.type === 'bKing' && B.down) { B.down -= dt; if (B.down <= 0) { B.down = 0; const [x, z] = sqC(R, Math.floor(R.cols / 2), 0); B.x = x; B.z = z; B.spawnT = 0.8; B.mated = false; kingArmy(B); Snd.S.mirrorOut(); if (R.chess) { R.chess.turn = 'you'; R.chess.anim = null; R.chess.last = null; UI.toast('king', '新的一盤'); } } }
   // the reflection falls into the abyss
   if (B.type === 'bReflect') {
     const ph = bossPhase(B);
@@ -2750,6 +2795,7 @@ function bossHurt(e, dmg, a) {
       e.lives = (e.lives || 3) - 1; e.mated = false; G.flash = 0.8; G.slowT = 0.8; Snd.S.bell(); Snd.S.shatter(); G.crack = 0.6;
       UI.boss(true); for (const o of G.E) if (!o.dead && o !== e) { o.dead = true; G.kills++; G.fx.push({ k: 'topple', type: o.type, inv: o.inv, x: o.x, z: o.z, a: rnd(0, TAU), dl: 0.1, life: 0.7, max: 0.7, col: o.d.col }); }
       if (e.lives <= 0) { e.hp = 0; return 999; }
+      { const P = G.P, R = G.room, pi = clamp(sqOf(R, P.x, P.z)[0], 0, R.cols - 1), [px, pz] = sqC(R, pi, R.rows - 1); P.x = px; P.z = pz; P.vx = P.vz = 0; P.lungeT = 0; P.dash = null; P.hopJ = null; P.inv = Math.max(P.inv, 1); burst(px, 0.6, pz, 20, [1, 0.85, 0.4]); } // a new game: back to your first rank
       G.fx.push({ k: 'topple', type: 'king', x: e.x, z: e.z, a: a, dl: 0, life: 1.2, max: 1.2, col: e.d.col, big: 2.0, nodrop: true });
       e.down = 1.6; e.x = 999; e.z = 999; return 0;
     }
@@ -2766,7 +2812,7 @@ function bossHurt(e, dmg, a) {
 function bossEvent(evn) {
   const R = G.room, P = G.P;
   if (evn.k === 'bossFire' && evn.h.kind === 'slide') { invEvent({ k: 'slideFire', h: evn.h }); return; }
-  if (evn.k === 'bossFire') { const h = evn.h; if (h.kind === 'beam' || h.kind === 'flood') { Snd.S.slash(); G.shake = Math.max(G.shake || 0, 0.25); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.3, max: 0.3, flood: h.kind === 'flood' }); } else if (h.dmg) { Snd.S.slam(); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.25, max: 0.25 }); } }
+  if (evn.k === 'bossFire') { const h = evn.h; if (h.kind === 'beam' || h.kind === 'flood') { Snd.S.slash(); G.shake = Math.max(G.shake || 0, 0.25); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.3, max: 0.3, flood: h.kind === 'flood', tint: h.tint }); } else if (h.dmg) { Snd.S.slam(); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.25, max: 0.25 }); } }
   else if (evn.k === 'spawnPawns') { const e = evn.e, [i, j] = sqOf(R, e.x, e.z); let n = evn.n; if (G.E.filter(o => !o.dead && o.type === 'pawn').length >= 8) return;
     for (let k = 0; k < 24 && n > 0; k++) { const ci = Math.floor(Math.random() * R.cols), cj = clamp(j + (Math.random() < 0.5 ? 0 : 1), 0, R.rows - 3), [x, z] = sqC(R, ci, cj);
       if (R.sqBlock[cj * R.cols + ci] || G.E.some(o => !o.dead && dist(o.x, o.z, x, z) < 0.8) || dist(x, z, P.x, P.z) < 2.2) continue;
@@ -2778,10 +2824,19 @@ function bossEvent(evn) {
   else if (evn.k === 'emerge') { Snd.S.mirrorOut(); G.flash = Math.max(G.flash, 0.2); const m = evn.m; for (let k = 0; k < 18; k++) G.fx.push({ k: 'shard', x: m.p[0], y: rnd(0.4, 2), z: m.p[2], vx: m.n[0] * 3 + rnd(-1.5, 1.5), vy: rnd(0.5, 2.5), vz: m.n[2] * 3 + rnd(-1, 2), life: rnd(0.4, 0.8), s: rnd(0.04, 0.09) }); }
   else if (evn.k === 'mirHop') { const a = R.mirrors[evn.from], b = R.mirrors[evn.to]; if (a && b && a !== b) G.fx.push({ k: 'zapline', x: a.p[0], z: a.p[2], tx: b.p[0], tz: b.p[2], life: 0.5, max: 0.5, col: [1.4, 0.25, 0.2] }); Snd.S.mirrorIn(); }
   else if (evn.k === 'summonMirror') queenSummon();
+  else if (evn.k === 'mirrorVolley') { const B = G.boss, ms = R.mirrors.filter(m => !m.broken && m.i !== undefined && m.idx !== B.inIdx); if (!ms.length) return; const m = ms[(Math.random() * ms.length) | 0], [x, z] = sqC(R, m.i, m.j), nl = Math.hypot(m.n[0], m.n[2]) || 1;
+    const sx = x + m.n[0] / nl * 0.8, sz = z + m.n[2] / nl * 0.8, a0 = angTo(sx, sz, P.x, P.z); m.flash = 0.3; Snd.S.mirrorOut();
+    for (let k = 0; k < evn.n; k++) { const a = a0 + (k - (evn.n - 1) / 2) * 0.26; G.B.push({ x: sx, z: sz, vx: Math.cos(a) * 5.5, vz: Math.sin(a) * 5.5, life: 3, glass: true }); } }
   else if (evn.k === 'rookBuild') { const h = evn.h; if (h.tag === 'wallRow') { for (const q of h.sqs) rubbleAdd(R, q[0], q[1], 11); uploadOcc(R); G.shake = Math.max(G.shake, 0.6); Snd.S.slam(); Snd.S.crunch(); }
     else if (h.tag === 'kick' && h.src) { if (rubbleRemove(R, h.src[0], h.src[1])) { G.fx.push({ k: 'zapline', x: sqC(R, ...h.src)[0], z: sqC(R, ...h.src)[1], tx: sqC(R, ...h.dst)[0], tz: sqC(R, ...h.dst)[1], life: 0.35, max: 0.35, col: [0.7, 0.6, 0.5] }); setTimeout(() => { rubbleAdd(R, h.dst[0], h.dst[1], 8); uploadOcc(R); }, 60); Snd.S.slam(); G.shake = Math.max(G.shake, 0.4); } } }
   else if (evn.k === 'smashRubble') { for (const q of evn.sqs) rubbleRemove(R, q[0], q[1]); G.shake = Math.max(G.shake, 0.7); Snd.S.crunch(); }
   else if (evn.k === 'rookFire') { const e = evn.e; Snd.S.slam(); G.shake = Math.max(G.shake, 0.3); for (const h of e.hz || []) if (h.tag === 'shell' && h.sqs.length) { const c = h.sqs[0], [tx, tz] = sqC(R, c[0], c[1]); G.fx.push({ k: 'shell', x: e.x, z: e.z, tx, tz, life: R.beat * 3, max: R.beat * 3 }); } burst(e.x, 3.2, e.z, 14, [1, 0.6, 0.3]); }
+  else if (evn.k === 'tiltWarn') { R.tiltWarn = { dir: evn.dir, t0: G.time }; Snd.S.warn(); G.shake = Math.max(G.shake, 0.3); }
+  else if (evn.k === 'tilt') tiltFire(evn.dir);
+  else if (evn.k === 'burnLine') { R.burn = R.burn || []; R.burn.push({ sqs: evn.sqs.slice(), until: G.time + R.beat * 6 }); }
+  else if (evn.k === 'echoGhost') { R.echoes = R.echoes || []; R.echoes.push({ x: evn.x, z: evn.z, until: G.time + R.beat * 2.2 }); }
+  else if (evn.k === 'roll') rollTo(evn);
+  else if (evn.k === 'rookWave') { UI.toast('rook', '衝擊波'); Snd.S.warn(); G.shake = Math.max(G.shake, 0.4); }
   else if (evn.k === 'pillarHit') { G.flash = Math.max(G.flash, 0.3); G.shake = 1; Snd.S.bell(); UI.toast('rook', '暈了'); }
   else if (evn.k === 'blocked') { evn.e.flash = 0.1; }
 }
@@ -2940,6 +2995,7 @@ const UPGS = [
   { id: 'reverb', name: '回音室', desc: '你造成的爆炸，一拍後會再炸一次', ic: 'echo', rar: R3, flag: true },
   { id: 'abyss', name: '鏡淵', desc: '每 24 拍，鏡子裡走出你的白色分身，重演你的動作並一起戰鬥', ic: 'ghost', rar: R3, on: { beat(o) { if (o.n % 24 === 12) { G.twin = { t: (G.room.beat || 0.5) * 10 }; UI.toast('ghost', '鏡淵'); Snd.S.mirrorOut(); } } } },
   { id: 'skin', name: '厚膜', desc: '生命上限 +1', ic: 'drop', rar: R1, max: 3 },
+  { id: 'might', name: '蠻力', desc: '所有傷害 +30%', ic: 'skull', rar: 2, max: 3, bossOnly: true },
   { id: 'sight', name: '遠見', desc: '凝視的時間多一倍', ic: 'eye', rar: R1, max: 2 },
   { id: 'beat3', name: '三連拍', desc: '連續三次準拍，下一擊必定處決', ic: 'lunge', rar: R2, max: 1 },
   { id: 'stomp', name: '踏拍', desc: '準拍跳躍，落地震傷周圍', ic: 'jumpI', rar: R1, max: 1 },
@@ -2953,10 +3009,12 @@ const UPGS = [
 // pedestal diagrams default to a picture of the icon on a board
 for (const u of UPGS) { u.max = u.max || 1; if (!u.diag) u.diag = { p: [[2, 2, u.ic === 'invi' ? 'rook' : u.ic, u.rar === 3 ? 'gold' : u.rar === 2 ? 'silver' : '']], hint: true }; }
 
+// boss rush / boss challenge: only what helps against one big opponent (no eating, kill-chains or room-start tricks)
+const BOSS_OK = new Set(['echoLunge', 'boomerang', 'trident', 'wallburst', 'charged', 'lance', 'dbljump', 'thunder', 'longjump', 'dive', 'featherJump', 'shadowJump', 'beatWave', 'heartbeat', 'metronome', 'downbeat', 'beatShield', 'resonance', 'freezeBeat', 'jazz', 'perfectDash', 'stomp', 'beat3', 'skin', 'sight', 'deepThink', 'kingslayer', 'undo', 'stalemate', 'escape', 'counter', 'brand', 'reverb', 'abyss', 'gambit', 'might']);
 const UPG = {
   list: UPGS,
   fire(ev, o) { const P = G.P; if (!P || !P.tr) return; for (const u of (typeof EVOS !== 'undefined' ? UPGS.concat(EVOS) : UPGS)) { const lv = P.tr[u.id]; if (!lv || !u.on || !u.on[ev]) continue; try { u.on[ev](o, lv); } catch (err) { console.error(u.id, err); } } },
-  roll(n, minRar = 1) { const P = G.P, pool = UPGS.filter(u => (P.tr[u.id] || 0) < u.max && u.rar >= minRar && !upgLocked(u)), out = [];
+  roll(n, minRar = 1) { const P = G.P, bm = G.mode === 'rush' || G.mode === 'challenge', pool = UPGS.filter(u => (P.tr[u.id] || 0) < (u.max || 1) && (u.rar >= minRar || (bm && BOSS_OK.has(u.id))) && !upgLocked(u) && (bm ? BOSS_OK.has(u.id) : !u.bossOnly)), out = [];
     // weights: commons often, legends rarely; things matching your current shape a bit more often
     while (out.length < n && pool.length) { const w = pool.map(u => (u.rar === 1 ? 6 : u.rar === 2 ? 3 : 1) * (P.form && u.ic === P.form ? 2 : 1) * (() => { const h = evoHint(u); return h && h.have >= 1 ? 2.5 : 1; })()); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); }
     return out; },
@@ -3056,10 +3114,12 @@ AIX.iHead = function (e, W, dt) { // the flying head: L-jumps that rain fire on 
   if (e.mv) { if (stepMv(e, dt, W)) { const [i, j] = sqOf(R, e.x, e.z); W.events.push({ k: 'slam', x: e.x, z: e.z, e, small: true }); } return; }
   bossTick(e, W, dt, () => {
     const [i, j] = sqOf(R, e.x, e.z), ps = psq(W);
+    if (e.echo && e.echo.length) { for (const q of e.echo) if (e.nb === q.at - 2) { addHaz(e, q.sqs, 2, 'fire', 1); if (!W.fut) W.events.push({ k: 'echoGhost', x: q.x, z: q.z }); } e.echo = e.echo.filter(q => e.nb < q.at); }
     if (e.nb % 3 !== 0 || !ps) return;
     let best = null, bs = 1e9; for (const [a, b] of KN) { const ti = i + a, tj = j + b; if (!onBoard(R, ti, tj)) continue; const s = Math.hypot(ti - ps[0], tj - ps[1]) + aiRand(e, ti + tj * 9 + e.nb) * 2; if (s < bs) { bs = s; best = [ti, tj]; } }
     if (!best) return; const [x, z] = sqC(R, best[0], best[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.45, jump: true, h: 3.2 };
-    addHaz(e, KN.map(([a, b]) => [best[0] + a, best[1] + b]).filter(q => onBoard(R, q[0], q[1])), 2, 'fire', 1);
+    const fire = KN.map(([a, b]) => [best[0] + a, best[1] + b]).filter(q => onBoard(R, q[0], q[1])); addHaz(e, fire, 2, 'fire', 1);
+    if (twistOn(G.boss)) { e.echo = e.echo || []; e.echo.push({ at: e.nb + 4, sqs: fire, x, z }); }
   });
 };
 
@@ -3070,6 +3130,17 @@ AIX.iBishop = function (e, W, dt) {
   if (e.hot > 0) e.hot -= dt / R.beat;
   bossTick(e, W, dt, () => {
     const [i, j] = sqOf(R, e.x, e.z), n = e.nb, ph = bossPhase(e);
+    if (n % 10 === 4) { // high noon: the whole board burns except the bishop's own diagonals — get onto one
+      const safe = new Set(rays(R, i, j, DIRS.bishop, 12).map(q => sqKey(q[0], q[1]))), sqs = []; safe.add(sqKey(i, j));
+      for (let y = 0; y < R.rows; y++) for (let x = 0; x < R.cols; x++) if (!safe.has(sqKey(x, y))) sqs.push([x, y]);
+      addHaz(e, sqs, 3, 'flood', 1); e.hz[e.hz.length - 1].tint = [1.2, 0.95, 0.35]; if (!W.fut) W.events.push({ k: 'noonWarn' }); return; }
+    if (e.hz && e.hz.some(h => h.n0 === 3 && h.tint)) return; // hold still while noon burns, so the diagonals stay where they were
+    if (twistOn(e)) { // two hands turning opposite ways; where they meet, the hour strikes
+      const D8 = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]; e.h1 = ((e.h1 === undefined ? 0 : e.h1) + 1) % 8; e.h2 = ((e.h2 === undefined ? 4 : e.h2) + 7) % 8;
+      const n1 = (e.h1 + 1) % 8, n2 = (e.h2 + 7) % 8; addHaz(e, rays(R, i, j, [D8[n1], D8[n2]]), 2, 'beam', 1, 'over');
+      if (n1 === n2 || (n1 + 1) % 8 === n2) { addHaz(e, rays(R, i, j, D8), 2, 'flood', 1); if (!W.fut) W.events.push({ k: 'swapColours' }); }
+      if (n % 12 === 7) { const occ = occSet(W, e); for (let t = 0; t < 20; t++) { const x = 1 + ((aiRand(e, n * 7 + t) * (R.cols - 2)) | 0), y = 1 + ((aiRand(e, n * 3 + t * 5) * (R.rows - 3)) | 0); if (R.sqBlock[y * R.cols + x] || occ.has(sqKey(x, y))) continue; const [wx, wz] = sqC(R, x, y); e.mv = { fx: e.x, fz: e.z, tx: wx, tz: wz, t: 0, dur: 0.3 }; break; } }
+      return; }
     if (n % 2 === 0) { const k = (n / 2) % 2, dirs = k ? DIRS.bishop : DIRS.rook; addHaz(e, rays(R, i, j, dirs), 2, 'beam', 1, 'over'); } // the clock hand turns 45° each time
     if (n % 8 === 5) { // whole rows and columns burn
       const ps = psq(W); if (ps) { const sqs = []; for (let k = 0; k < R.cols; k++) sqs.push([k, ps[1]]); for (let k = 0; k < R.rows; k++) sqs.push([ps[0], k]); if (ph >= 2) { for (let k = 0; k < R.cols; k++) sqs.push([k, (ps[1] + 2) % R.rows]); } addHaz(e, sqs, 2, 'flood', 1); } }
@@ -3095,7 +3166,7 @@ AIX.iRook = function (e, W, dt) {
       return; }
     if (e.st2 === 'aim') { if (--e.cnt <= 0) {
         const [x, z] = sqC(R, e.tgt[0], e.tgt[1]); e.x = x; e.z = z; e.up = false; e.st2 = 'stuck'; e.cnt = e.drops + 1 >= combo ? (ph >= 3 ? 2 : 3) : 1; e.tgtShow = null;
-        W.events.push({ k: 'slam', x, z, e }); W.events.push({ k: 'diagWall', e, at: e.tgt });
+        W.events.push({ k: 'slam', x, z, e }); W.events.push({ k: 'diagWall', e, at: e.tgt }); if (twistOn(e) && !W.fut) W.events.push({ k: 'collapse', at: e.tgt });
         addHaz(e, ringAt(e.tgt, 2), 1, 'red', 1); // the shockwave rolls out one beat later
         if (ph >= 3) addHaz(e, diag(e.tgt, 3, 7), 2, 'beam', 1); }
       return; }
@@ -3184,10 +3255,12 @@ function invEvent(evn) {
   if (evn.k === 'slideFire') { const h = evn.h, o = h.tag; if (!o) return; const move = (ent) => { const [i, j] = sqOf(R, ent.x, ent.z); if (o.row ? j !== o.line : i !== o.line) return; const ti = i + (o.row ? o.dir : 0), tj = j + (o.row ? 0 : o.dir);
       if (!onBoard(R, ti, tj) || R.sqBlock[tj * R.cols + ti]) { if (ent === P) hurtPlayer(1, 'slide'); else if (!ent.d.boss) hurtEnemy(ent, 3, 0, 'upg'); return; } const [x, z] = sqC(R, ti, tj); if (ent === P) { P.hopJ = { fx: P.x, fz: P.z, tx: x, tz: z, t: 0, dur: 0.25 }; } else ent.mv = { fx: ent.x, fz: ent.z, tx: x, tz: z, t: 0, dur: 0.25 }; };
     move(P); for (const e of G.E) if (!e.dead && !e.d.boss && e.d.chess && !e.mv) move(e); R.slideFx = { o, t: 0.4 }; G.shake = 0.6; Snd.S.slam(); }
+  else if (evn.k === 'noonWarn') { UI.toast('bishop', '只有斜線安全'); Snd.S.warn(); }
   else if (evn.k === 'swapColours') { R.swapped = !R.swapped; G.flash = 0.3; Snd.S.bell(); }
   else if (evn.k === 'diagWall') { const at = evn.at; if (!at) return; const ps = sqOf(R, P.x, P.z); R.rubble = R.rubble || [];
     for (const [a, c] of DIRS.bishop) { const q = [at[0] + a * 2, at[1] + c * 2]; if (!onBoard(R, q[0], q[1]) || (q[0] === ps[0] && q[1] === ps[1]) || R.sqBlock[q[1] * R.cols + q[0]] || G.E.some(o => !o.dead && sqOf(R, o.x, o.z).join() === q.join())) continue;
       R.sqBlock[q[1] * R.cols + q[0]] = 2; const [x, z] = sqC(R, q[0], q[1]); R.solidRect(x - 0.5, z - 0.5, x + 0.5, z + 0.5); R.rubble.push({ i: q[0], j: q[1], x, z, t: 12 }); burst(x, 1.5, z, 14, [0.6, 0.6, 0.66]); } uploadOcc(R); }
+  else if (evn.k === 'collapse') { const at = evn.at, cand = []; for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) if ((a || b) && Math.max(Math.abs(a), Math.abs(b)) <= 2) cand.push([at[0] + a, at[1] + b]); cand.sort(() => Math.random() - 0.5); let n = 0; for (const q of cand) { if (n >= 4 || (R.holes && R.holes.size > R.cols * R.rows * 0.3)) break; if (holeWarnAt(R, q[0], q[1], 2)) n++; } }
   else if (evn.k === 'phalanx') { // a rank of inverted pawns rises on your edge, with two gaps
     const ps = sqOf(R, P.x, P.z); if (G.E.filter(o => !o.dead && o.marcher).length >= 20) return;
     for (let r = 0; r < evn.rows; r++) { const row = R.rows - 1 - r, g1 = (Math.random() * R.cols) | 0, g2 = (evn.gaps || 2) >= 2 ? (g1 + 2 + ((Math.random() * (R.cols - 3)) | 0)) % R.cols : -1;
@@ -3634,6 +3707,212 @@ EVOS.push(
 );
 
 // ============================================================================
+// e3g_twist.js — hard mode, phase three: every boss bends one rule of the world
+//  黑駒 fold (edges wrap, faster) · 萬兵長 tilt (everything thrown to one side) · 斜光 afterglow (burning lattice)
+//  移動城塞 turn (the view rolls 90°) · 鏡后 mirror hall (beams bounce off the edges) · 孤王 chess clock (turns)
+//  斷頭駒 echo (its leaps repeat) · 逆行軍 rewind (three seconds back) · 正午 two hands (a clock)
+//  懸城 collapse (slams leave holes) · 暴君 shrinking board · 碎后 keeps the kaleidoscope (all modes)
+// ============================================================================
+const TWIST = {
+  bBishop: ['殘光網', '光束打過的斜線會持續燃燒'],
+  bQueen: ['無限鏡廊', '棋盤邊緣變成鏡子，光束會反彈'],
+  iKnight: ['回聲', '飛頭的每一次跳躍，四拍後會再重演一次'],
+  iPawn: ['倒帶', '每隔一陣子，整個棋盤倒回三秒前'],
+  iBishop: ['雙針', '兩根指針反向轉動，交會時爆炸'],
+  iRook: ['崩塌', '每次砸地，周圍的格子會塌成洞'],
+  iKing: ['縮圈', '棋盤從外圈開始崩落'],
+};
+// is this boss in its twist? (hard mode, last phase; the lone king counts lives instead of health)
+function twistOn(e) { if (!G.hard || !e || !TWIST[e.type]) return false; return e.type === 'iKing' ? bossPhase(e) >= 3 : true; } // hard mode: from the first beat (the shrinking board waits for the last phase)
+function twistAnnounce(B) { if (B.twisted || !twistOn(B)) return; B.twisted = true; const [nm, ds] = TWIST[B.type]; G.flash = Math.max(G.flash, 0.6); G.shake = 0.8; Snd.S.bell(); Snd.S.shatter(); MUI.tactic(nm, BOSS[B.type] ? BOSS[B.type].body : 'king', false, true); setTimeout(() => UI.hint(`<span class="red">${IC.skull}</span><b>${ds}</b>`), 900); }
+
+// ---------------------------------------------------------------- holes (shared: collapse, shrinking board)
+function holeWarnAt(R, i, j, beats) { R.holes = R.holes || new Set(); R.holeWarn = R.holeWarn || []; const k = sqKey(i, j); if (!onBoard(R, i, j) || R.holes.has(k) || R.holeWarn.some(h => h.k === k) || (R.sqBlock[j * R.cols + i] && R.sqBlock[j * R.cols + i] !== 3)) return false; R.holeWarn.push({ k, i, j, t: R.beat * beats, t0: R.beat * beats, life: R.bossKind === 'iKing' ? 9 : 8 }); return true; }
+function holesTick(dt) {
+  const R = G.room, P = G.P; if (!R.holeWarn && !R.holes) return;
+  if (R.cleared && (R.holes && R.holes.size || R.holeWarn && R.holeWarn.length)) { for (const k of R.holes || []) { const [i, j] = k.split(',').map(Number); if (R.sqBlock[j * R.cols + i] === 3) R.sqBlock[j * R.cols + i] = 0; const [x, z] = sqC(R, i, j); burst(x, 0.1, z, 6, [0.6, 0.55, 0.5]); } R.holes = new Set(); R.holeWarn = []; R.burn = []; return; }
+  if (R.holeWarn) { for (const h of R.holeWarn) { h.t -= dt; if (h.t <= 0) { R.holes.add(h.k); R.holeT = R.holeT || {}; R.holeT[h.k] = R.beat * (h.life || 8); R.sqBlock[h.j * R.cols + h.i] = 3; const [x, z] = sqC(R, h.i, h.j); burst(x, 0.1, z, 16, [0.35, 0.3, 0.28]); Snd.S.crack(); } } R.holeWarn = R.holeWarn.filter(h => h.t > 0); }
+  // holes close up again after a while: the stone rises back into place
+  if (R.holeT && R.holes) for (const k in R.holeT) { R.holeT[k] -= dt; if (R.holeT[k] > 0) continue; delete R.holeT[k]; if (!R.holes.delete(k)) continue; const [i, j] = k.split(',').map(Number); if (R.sqBlock[j * R.cols + i] === 3) R.sqBlock[j * R.cols + i] = 0; const [x, z] = sqC(R, i, j); burst(x, 0.3, z, 10, [0.55, 0.5, 0.45]); Snd.S.land(); }
+  if (R.holes && R.holes.size && R.bossKind !== 'bReflect' && G.state === 'play') { const pq = sqOf(R, P.x, P.z);
+    if (R.holes.has(sqKey(pq[0], pq[1])) && !P.hopJ && !P.jump && !P.inMirror && !P.dash) { hurtPlayer(1, 'fall');
+      let best = null, bd = 1e9; for (let j = 0; j < R.rows; j++) for (let i = 0; i < R.cols; i++) { if (R.holes.has(sqKey(i, j)) || R.sqBlock[j * R.cols + i]) continue; const d = Math.hypot(i - pq[0], j - pq[1]); if (d < bd) { bd = d; best = [i, j]; } }
+      if (best) { const [x, z] = sqC(R, best[0], best[1]); P.x = x; P.z = z; } burst(P.x, 0.5, P.z, 14, [0.05, 0.04, 0.06]); } }
+}
+
+// ---------------------------------------------------------------- 萬兵長: the tilt
+function tiltTick(dt) { // the player being thrown across the board
+  const P = G.P, R = G.room, S = P.slide; if (!S) return false;
+  const st = Math.min(S.left, 26 * dt); S.left -= st; const hit = move(R, P, S.dir * st, 0);
+  if (Math.random() < 0.5) burst(P.x, 0.2, P.z, 1, [0.3, 0.25, 0.2]);
+  if (hit || S.left <= 0) { P.slide = null; G.shake = Math.max(G.shake, 0.5); Snd.S.slam(); P.squash = -0.6; }
+  return true;
+}
+function tiltFire(dir) { const R = G.room, P = G.P; R.tiltWarn = null; P.slide = { dir, left: R.cols * SQ }; G.shake = 0.9; Snd.S.slam(); Snd.S.crunch();
+  // the pieces slide too, to the far end of their row
+  for (const o of G.E) { if (o.dead || (o.d.boss && !o.d.minor) || !o.d.chess || o.mv) continue; const [i, j] = sqOf(R, o.x, o.z); let x = i; for (;;) { const nx = x + dir; if (!onBoard(R, nx, j) || R.sqBlock[j * R.cols + nx] || G.E.some(q => !q.dead && q !== o && sqOf(R, q.mv ? q.mv.tx : q.x, q.mv ? q.mv.tz : q.z).join() === nx + ',' + j)) break; x = nx; }
+    if (x !== i) { const [tx, tz] = sqC(R, x, j); o.mv = { fx: o.x, fz: o.z, tx, tz, t: 0, dur: 0.35, lin: true }; o.plan = null; } } }
+
+// ---------------------------------------------------------------- 斜光: afterglow
+function burnTick() { const R = G.room, P = G.P; if (!R.burn || !R.burn.length) return; R.burn = R.burn.filter(b => b.until > G.time); if (G.state !== 'play' || P.hopJ || P.jump || P.inMirror) return; const [i, j] = sqOf(R, P.x, P.z); if (R.burn.some(b => sqsHas(b.sqs, i, j))) hurtPlayer(1, 'burn'); }
+
+// ---------------------------------------------------------------- 鏡后: beams that bounce off the edges of the board
+function bounceRays(R, i, j, dirs, bounces = 2, lim = 16) { const out = []; for (const [a0, b0] of dirs) { let a = a0, b = b0, x = i, y = j, nb = 0; for (let k = 0; k < lim; k++) { let nx = x + a, ny = y + b; if (!onBoard(R, nx, ny)) { if (nb >= bounces) break; nb++; if (nx < 0 || nx >= R.cols) a = -a; if (ny < 0 || ny >= R.rows) b = -b; nx = x + a; ny = y + b; if (!onBoard(R, nx, ny)) break; } if (R.sqBlock[ny * R.cols + nx] === 1) break; x = nx; y = ny; out.push([x, y]); } } return out; }
+
+// ---------------------------------------------------------------- 孤王: the chess clock
+function clockTick(dt) { const B = G.boss, R = G.room; if (!B || B.type !== 'bKing' || !twistOn(B) || B.down) { G.clock = null; return; }
+  if (!G.clock) G.clock = { turn: 'you', t: R.beat * 3 };
+  G.clock.t -= dt; if (G.clock.t <= 0) { const you = G.clock.turn === 'you'; G.clock = { turn: you ? 'him' : 'you', t: R.beat * (you ? 2 : 3) }; Snd.S.bell(); UI.toast('clock', you ? '對手的回合' : '你的回合'); } }
+const clockFrozen = who => false; // (the chess clock was replaced by real chess for 孤王)
+
+// ---------------------------------------------------------------- 逆行軍: rewind
+function rewindTick(dt) { const B = G.boss, R = G.room, P = G.P; if (!B || B.type !== 'iPawn' || B.dead) { G.rw = null; return; }
+  if (!twistOn(B)) return;
+  const W = G.rw = G.rw || { buf: [], next: R.beat * 10, warn: false };
+  if (!W.last || G.time - W.last > 0.1) { W.last = G.time; W.buf.push({ t: G.time, px: P.x, pz: P.z, E: G.E.map(o => [o, o.x, o.z, o.dead]) }); while (W.buf.length && W.buf[0].t < G.time - 4) W.buf.shift(); }
+  W.next -= dt;
+  if (!W.warn && W.next <= R.beat * 2) { W.warn = true; UI.toast('again', '倒帶'); Snd.S.warn(); }
+  if (W.next <= 0) { W.next = R.beat * 12; W.warn = false; const s = W.buf.find(q => q.t >= G.time - 3) || W.buf[0]; if (!s) return;
+    P.x = s.px; P.z = s.pz; P.slide = null; P.dash = null; P.jump = null; P.hopJ = null; P.lungeT = 0;
+    for (const [o, x, z, dead] of s.E) { if (o === B) { o.x = x; o.z = z; o.mv = null; continue; } if (o.marcher || !dead) { if (o.dead && !dead) { o.dead = false; o.hp = o.maxHp; o.execd = false; } o.x = x; o.z = z; o.mv = null; o.plan = null; } }
+    G.invert = 0.25; G.split = 0.5; G.flash = 0.4; G.shake = 0.6; Snd.S.mirrorIn(); Snd.S.bell(); W.buf = []; }
+}
+
+// ---------------------------------------------------------------- 移動城塞: the view rolls
+function rollTick(dt) { const B = G.boss;
+  if (!B || B.type !== 'bRook' || B.dead) { G.rollT = 0; G.spin = null; }
+  if (G.spin) { const S = G.spin; S.t += dt; const k = clamp01(S.t / S.dur); G.rollA = S.from + (S.to - S.from) * (k * k * (3 - 2 * k)); if (k >= 1) { G.rollT = S.to; G.spin = null; } return; }
+  G.rollA = expD(G.rollA || 0, G.rollT || 0, 4, dt); }
+function rollTo(evn) { const R = G.room, cur = G.rollT || 0; Snd.S.mirrorIn(); G.shake = Math.max(G.shake, 0.5);
+  if (evn.spin) { G.spin = { from: G.rollA || 0, to: cur + evn.d, t: 0, dur: R.beat * 5 }; UI.toast('again', '迴轉'); }
+  else { G.rollT = cur + evn.d; UI.toast('rook', Math.abs(evn.d) > 2 ? '翻轉' : '轉向'); } }
+
+// ---------------------------------------------------------------- 暴君: the board crumbles from the outside in
+function shrinkTick(dt) { const B = G.boss, R = G.room; if (!B || B.type !== 'iKing' || B.dead || !twistOn(B)) return;
+  R.shrink = R.shrink || { t: R.beat * 2, ring: 0 }; const S = R.shrink;
+  S.t -= dt; if (S.t > 0) return; S.t = R.beat * 10;
+  const r = (S.ring++) % 2, bq = sqOf(R, B.x, B.z); let n = 0;
+  for (let j = r; j < R.rows - r; j++) for (let i = r; i < R.cols - r; i++) { if (i !== r && i !== R.cols - 1 - r && j !== r && j !== R.rows - 1 - r) continue; if (i === bq[0] && j === bq[1]) continue; if (holeWarnAt(R, i, j, 3)) n++; }
+  if (n) { UI.toast('skull', '外圈崩落'); Snd.S.warn(); G.shake = Math.max(G.shake, 0.4); } }
+
+// ---------------------------------------------------------------- per-frame driver (present only)
+function twistsFrame(dt) {
+  const B = G.boss; if (B && !B.dead) twistAnnounce(B); else if (G.room.tiltWarn) G.room.tiltWarn = null;
+  shrinkTick(dt); holesTick(dt); rewindTick(dt); rollTick(dt);
+}
+function twistsBeat() { burnTick(); }
+
+function P0slide() { if (G.P) G.P.slide = null; }
+
+// ============================================================================
+// e3h_chess.js — 孤王: a real game of chess. No WASD: click a square your piece can reach.
+//  You are one piece (the slime moves like a king until it becomes something). Take a piece and you become it.
+//  His side moves one piece per turn. Checkmate him three times; if he takes you, you lose a heart and go back to your first rank.
+// ============================================================================
+const CVAL = { pawn: 1, pawnR: 1, knight: 3, alfil: 2, bishop: 3, rook: 5, queen: 9, king: 50, king1: 50, bKing: 100 };
+function chessKind(type, inv) { if (type === 'bKing') return 'king'; const k = effKind(type, inv); return DIRS[k] || ['pawn', 'pawnR', 'knight', 'alfil', 'king1'].includes(k) ? k : 'king'; }
+const playerKind = () => G.P.form ? chessKind(G.P.form, G.P.finv) : 'king';
+// moves for a piece of kind k at (i,j); fwd = the direction its pawns walk; at(a,b) -> 'own' | 'foe' | null
+function cMoves(R, k, i, j, fwd, at) {
+  const out = [], open = (a, b) => onBoard(R, a, b) && !R.sqBlock[b * R.cols + a];
+  const step = (a, b) => { if (!open(a, b)) return; const o = at(a, b); if (o !== 'own') out.push({ i: a, j: b, cap: o === 'foe' }); };
+  if (k === 'pawn') { if (open(i, j + fwd) && !at(i, j + fwd)) out.push({ i, j: j + fwd, cap: false }); for (const d of [-1, 1]) if (open(i + d, j + fwd) && at(i + d, j + fwd) === 'foe') out.push({ i: i + d, j: j + fwd, cap: true }); return out; }
+  if (k === 'pawnR') { if (open(i, j - fwd) && !at(i, j - fwd)) out.push({ i, j: j - fwd, cap: false }); if (open(i, j + fwd) && at(i, j + fwd) === 'foe') out.push({ i, j: j + fwd, cap: true }); return out; }
+  if (k === 'knight') { for (const [a, b] of KN) step(i + a, j + b); return out; }
+  if (k === 'alfil') { for (const [a, b] of ALF) step(i + a, j + b); return out; }
+  if (k === 'king' || k === 'king1' || !DIRS[k]) { for (const [a, b] of DIRS.king) step(i + a, j + b); return out; }
+  for (const [a, b] of DIRS[k]) for (let n = 1; n < 12; n++) { const x = i + a * n, y = j + b * n; if (!open(x, y)) break; const o = at(x, y); if (o === 'own') break; out.push({ i: x, j: y, cap: o === 'foe' }); if (o) break; }
+  return out;
+}
+// the board as a map: square -> enemy piece; plus where you stand
+function cBoard(R, skip) { const m = new Map(); for (const o of G.E) if (!o.dead && o !== skip && (o.d.chess || o.type === 'bKing') && !(o.type === 'bKing' && o.down)) { const q = sqOf(R, o.cm ? o.cm.tx : o.x, o.cm ? o.cm.tz : o.z); m.set(sqKey(q[0], q[1]), o); } return m; }
+// does the player (kind pk on ps) attack square t, given the enemy pieces in `bd`?
+function youAttack(R, pk, ps, bd, t) { if (!ps) return false; return cMoves(R, pk, ps[0], ps[1], -1, (a, b) => bd.has(sqKey(a, b)) ? 'foe' : null).some(m => m.i === t[0] && m.j === t[1]); }
+// every legal move for his side (a move may not leave his king attacked)
+function hisMoves(R, ps, pk) {
+  const bd = cBoard(R), K = G.boss, out = [];
+  for (const [key, o] of bd) { const [i, j] = key.split(',').map(Number), k = chessKind(o.type, o.inv);
+    for (const m of cMoves(R, k, i, j, 1, (a, b) => ps && a === ps[0] && b === ps[1] ? 'foe' : bd.has(sqKey(a, b)) ? 'own' : null)) {
+      const capP = ps && m.i === ps[0] && m.j === ps[1];
+      if (!capP) { const nb = new Map(bd); nb.delete(key); nb.set(sqKey(m.i, m.j), o); const kq = o === K ? [m.i, m.j] : sqOf(R, K.x, K.z); if (youAttack(R, pk, ps, nb, kq)) continue; }
+      out.push({ o, fi: i, fj: j, i: m.i, j: m.j, capP }); } }
+  return out;
+}
+function chessStart(R) { const B = G.boss; if (B) { B.maxHp = G.hard ? 160 : 100; B.hp = B.maxHp; B.lives = 99; } R.chess = { turn: 'you', wait: 0, anim: null, legal: [], last: null }; UI.toast('king', '你的回合'); }
+function chessAnim(who, i, j, onEnd, jump) { const R = G.room, [tx, tz] = sqC(R, i, j); R.chess.anim = { who, fx: who.x, fz: who.z, tx, tz, t: 0, dur: jump ? 0.34 : Math.min(0.42, 0.16 + Math.hypot(tx - who.x, tz - who.z) * 0.04), jump, onEnd }; }
+function chessFrame(dt, ev) {
+  const R = G.room, C = R.chess, P = G.P, B = G.boss; if (!C || !B || B.dead) return;
+  P.vx = P.vz = 0; for (const o of G.E) if (o.spawnT > 0) o.spawnT -= dt;
+  if (C.anim) { const A = C.anim; A.t += dt; const k = clamp01(A.t / A.dur), s = k * k * (3 - 2 * k); A.who.x = lerp(A.fx, A.tx, s); A.who.z = lerp(A.fz, A.tz, s); if (A.who === P) P.hop = A.jump ? Math.sin(k * Math.PI) * 0.8 : 0; else A.who.hop = A.jump ? Math.sin(k * Math.PI) * 0.6 : 0;
+    if (k >= 1) { C.anim = null; if (A.who === P) P.hop = 0; else A.who.hop = 0; Snd.S.land(); G.shake = Math.max(G.shake, 0.15); A.onEnd && A.onEnd(); } return; }
+  if (B.down) return; // he is getting back up for the next game
+  const ps = sqOf(R, P.x, P.z), pk = playerKind();
+  if (C.turn === 'you') {
+    const bd = cBoard(R), kq = sqOf(R, B.x, B.z);
+    C.legal = cMoves(R, pk, ps[0], ps[1], -1, (a, b) => bd.has(sqKey(a, b)) ? 'foe' : null).filter(m => !(m.i === kq[0] && m.j === kq[1])); // the king is never taken: he is mated
+    if (G.PV) { const w = Gfx.unproject(G.PV, Inp.st.mouseX, Inp.st.mouseY); C.hover = w ? sqOf(R, w.x, w.z) : null; } if (window.__chessPick) C.hover = window.__chessPick;
+    if (ev.atk && C.hover) { const m = C.legal.find(q => q.i === C.hover[0] && q.j === C.hover[1]); if (!m) { Snd.S.crack(); return; }
+      const jump = pk === 'knight' || pk === 'alfil'; C.legal = []; C.last = [ps, [m.i, m.j]];
+      chessAnim(P, m.i, m.j, () => {
+        if (m.cap) { const o = bd.get(sqKey(m.i, m.j)); if (o) { G.hitstop = 0.06; burst(o.x, 1, o.z, 22, o.d.col || [0.6, 0.2, 0.15]); Snd.S.crunch(); o.hp = 0; killEnemy(o); chessHurt(CVAL[o.type] * 6 || 12); if (B.dead || B.hp <= 0) return; } }
+        else if (pk === 'pawn' && m.j === 0) { becomePiece('queen'); UI.toast('queen', '升變'); }
+        chessAfterYou();
+      }, jump); }
+    return; }
+  // his turn: think a moment, then move one piece
+  C.wait -= dt; if (C.wait > 0) return;
+  const mv = hisMoves(R, ps, pk), army = G.E.filter(o => !o.dead && o !== B && o.d.chess).length;
+  // instead of moving, he may call a new piece onto the board (more likely as his army thins; never while in check)
+  const inCheck = youAttack(R, pk, ps, cBoard(R), sqOf(R, B.x, B.z));
+  if (!inCheck && !mv.some(m => m.capP) && army < 7 && (!mv.length || Math.random() < (army <= 1 ? 0.6 : army <= 3 ? 0.3 : 0.12)) && chessSummon(ps, pk)) { C.turn = 'you'; return; }
+  if (!mv.length) { C.turn = 'you'; return; } // nothing to play: pass
+  let pick = mv.filter(m => m.capP).sort((a, b) => (CVAL[a.o.type] || 3) - (CVAL[b.o.type] || 3))[0];
+  if (!pick) { let bs = -1e9; const bd = cBoard(R);
+    for (const m of mv) { const nb = new Map(bd); nb.delete(sqKey(m.fi, m.fj)); nb.set(sqKey(m.i, m.j), m.o); const k = chessKind(m.o.type, m.o.inv);
+      let s = Math.random() * 0.6;
+      if (youAttack(R, pk, ps, nb, [m.i, m.j])) s -= (CVAL[m.o.type] || 3) * (m.o === B ? 10 : 1); // don't hang pieces
+      if (cMoves(R, k, m.i, m.j, 1, (a, b) => a === ps[0] && b === ps[1] ? 'foe' : nb.has(sqKey(a, b)) ? 'own' : null).some(q => q.cap)) s += 2.2; // threaten you
+      if (m.o === B) s -= 0.8; else if (k === 'pawn') s += 0.3;
+      s -= Math.hypot(m.i - ps[0], m.j - ps[1]) * 0.08 * (m.o === B ? -1 : 1);
+      if (s > bs) { bs = s; pick = m; } } }
+  const o = pick.o, k = chessKind(o.type, o.inv); C.last = [[pick.fi, pick.fj], [pick.i, pick.j]]; o.face = angTo(o.x, o.z, ...sqC(R, pick.i, pick.j));
+  chessAnim(o, pick.i, pick.j, () => {
+    if (pick.capP) chessTaken();
+    if (k === 'pawn' && pick.j >= R.rows - 1 && o !== B) { o.type = 'queen'; o.d = ENEMY.queen; UI.toast('queen', '升變'); Snd.S.bell(); }
+    C.turn = 'you'; Snd.S.ui();
+  }, k === 'knight' || k === 'alfil' || k === 'pawn' || k === 'king');
+}
+// after your move: check? mate?
+function chessAfterYou() {
+  const R = G.room, C = R.chess, P = G.P, B = G.boss; if (!B || B.dead) return;
+  const ps = sqOf(R, P.x, P.z), pk = playerKind(), kq = sqOf(R, B.x, B.z);
+  if (youAttack(R, pk, ps, cBoard(R), kq)) {
+    if (!hisMoves(R, ps, pk).length) { UI.toast('king', '將死'); G.slowT = 0.4; if (chessHurt(B.maxHp * 0.5)) return; B.mated = true; hurtEnemy(B, 1, angTo(P.x, P.z, B.x, B.z), 'chess'); C.turn = 'you'; C.wait = 0; return; }
+    chessHurt(4);
+    UI.toast('king', '將軍'); Snd.S.warn(); G.flash = Math.max(G.flash, 0.2); }
+  C.turn = 'him'; C.wait = R.beat * 0.8;
+}
+// he took you: a heart, and back to your first rank as a slime
+function chessTaken() {
+  const R = G.room, P = G.P; P.inv = 0; hurtPlayer(1, 'capture'); G.shake = 0.8; G.flash = 0.4; UI.toast('skull', '被吃了');
+  const bd = cBoard(R), ci = Math.floor(R.cols / 2); let best = null, bd2 = 1e9; for (let i = 0; i < R.cols; i++) { if (bd.has(sqKey(i, R.rows - 1)) || R.sqBlock[(R.rows - 1) * R.cols + i]) continue; const d = Math.abs(i - ci); if (d < bd2) { bd2 = d; best = i; } }
+  if (best !== null) { const [x, z] = sqC(R, best, R.rows - 1); P.x = x; P.z = z; burst(x, 0.6, z, 20, [0.05, 0.04, 0.06]); }
+  if (P.form) { P.form = null; P.finv = false; P.charges = 0; UI.form && UI.form(); }
+}
+window.__CH = { hisMoves, youAttack, cBoard, playerKind, cMoves };
+
+// your blows land on the king himself: every piece you take, every check
+function chessHurt(n) { const B = G.boss; if (!B || B.dead) return true; B.hp -= n; B.flash = 0.3; G.shake = Math.max(G.shake, 0.3); ring(B.x, B.z, 1.4, [1.2, 0.9, 0.3]);
+  if (B.hp > 0) return false; B.hp = 0.01; B.lives = 1; B.mated = true; UI.toast('crown', '投降'); hurtEnemy(B, 1, 0, 'chess'); return true; }
+// he summons: a new piece rises on a free square of his half, not one you could take at once
+function chessSummon(ps, pk) { const R = G.room, B = G.boss, bd = cBoard(R), pool = ['pawn', 'pawn', 'knight', 'bishop', 'rook'].concat(B.hp < B.maxHp * 0.5 ? ['queen'] : []);
+  for (let k = 0; k < 40; k++) { const i = (Math.random() * R.cols) | 0, j = (Math.random() * Math.ceil(R.rows * 0.5)) | 0;
+    if (R.sqBlock[j * R.cols + i] || bd.has(sqKey(i, j)) || (i === ps[0] && j === ps[1]) || youAttack(R, pk, ps, bd, [i, j])) continue;
+    const [x, z] = sqC(R, i, j), t = pool[(Math.random() * pool.length) | 0], ne = makeEnemy(t, x, z, (Math.random() * 1000) | 0, G.E.length); ne.spawnT = 0.5; G.E.push(ne);
+    burst(x, 1.2, z, 20, [0.9, 0.75, 0.35]); ring(x, z, 1.2, [1.1, 0.85, 0.3]); G.fx.push({ k: 'zapline', x: B.x, z: B.z, tx: x, tz: z, life: 0.4, max: 0.4, col: [1.2, 0.9, 0.3] }); Snd.S.mirrorOut(); UI.toast('king', '召喚'); R.chess.last = [sqOf(R, B.x, B.z), [i, j]]; return true; }
+  return false; }
+
+// ============================================================================
 // e4_view.js — turn game state into draw lists for the renderer
 // ============================================================================
 const View = (() => {
@@ -3665,7 +3944,7 @@ const View = (() => {
       if (type === 'king') { out.push({ geo: 'box', m: T(M4.trs(x, y + (top + 0.18) * s, z, ry, 0.08 * s, 0.38 * s, 0.08 * s)), col: GOLD, kind: 2 }); out.push({ geo: 'box', m: T(M4.trs(x, y + (top + 0.22) * s, z, ry, 0.26 * s, 0.08 * s, 0.08 * s)), col: GOLD, kind: 2 }); }
       if (type === 'queen' || type === 'boss') for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; out.push({ geo: 'sphere', m: T(M4.trs(x + Math.cos(a) * 0.3 * s, y + 1.76 * s, z + Math.sin(a) * 0.3 * s, 0, 0.06 * s, 0.06 * s, 0.06 * s)), col: GOLD, kind: 2 }); }
       if (type === 'rook') for (let k = 0; k < 4; k++) { const a = k / 4 * TAU + 0.4; out.push({ geo: 'box', m: T(M4.trs(x + Math.cos(a) * 0.32 * s, y + 1.56 * s, z + Math.sin(a) * 0.32 * s, -a, 0.14 * s, 0.14 * s, 0.14 * s)), col, kind }); }
-      out.push({ geo: 'box', m: T(M4.trs(x, y + 0.2 * s, z, ry, 0.9 * s, 0.03 * s, 0.9 * s)), col: GOLD, kind: 2 });
+      out.push({ geo: 'ringT', m: T(M4.trs(x, y + 0.2 * s, z, ry, 0.43 * s, 1.5 * s, 0.43 * s)), col: GOLD, kind: 2 }); // a gilt band round the foot (it used to be a square plate)
     }
   }
   // a boss body: a giant piece, or for the reflection a white slime that copies your shape
@@ -3689,7 +3968,7 @@ const View = (() => {
     if (e.type === 'iRook' && hang) { out.push({ geo: 'box', m: M4.trs(e.x, hang + 4.2, e.z, 0, 0.06, 3, 0.06), col: [0.3, 0.3, 0.34], kind: 2 }); out.push({ geo: 'disc', m: M4.trs(e.x, 0.012, e.z, 0, 0.95, 1, 0.95), col: [0.02, 0.02, 0.03], kind: 1 }); }
     if ((e.type === 'iRook' && e.st2 === 'stuck') || (e.type === 'bPawn' && e.stuckB > 0)) { const k = 0.6 + 0.4 * Math.sin(G.t * 14); out.push({ geo: 'ringT', m: M4.trs(e.x, 0.05, e.z, 0, 1.3, 1, 1.3), col: [1.6 * k, 1.2 * k, 0.4 * k], kind: 5 }); for (let n = 0; n < 4; n++) { const an = G.t * 3 + n * 1.57; out.push({ geo: 'sphere', m: M4.trs(e.x + Math.cos(an) * 0.6, 3.6, e.z + Math.sin(an) * 0.6, 0, 0.08, 0.08, 0.08), col: [1.6, 1.3, 0.5], kind: 5 }); } }
     if (e.type === 'iBishop') { const k = 0.8 + 0.2 * Math.sin(t * 4); out.push({ geo: 'sphere', m: M4.trs(e.x, 4.0 * sc * 0.5 + 0.6, e.z, t, 0.55 * k, 0.55 * k, 0.55 * k), col: [2.4, 2.0, 1.1], kind: 5 }); for (let n = 0; n < 8; n++) { const an = n / 8 * TAU + t * 0.6; out.push({ geo: 'box', m: M4.trs(e.x + Math.cos(an) * 0.9, 2.5, e.z + Math.sin(an) * 0.9, -an, 0.7, 0.04, 0.04), col: [2, 1.6, 0.8], kind: 5 }); } }
-    if (e.type === 'iQueen' && e.decoys && bossPhase(e) >= 3) for (const dq of e.decoys) { const [dx, dz] = sqC(G.room, dq[0], dq[1]); pieceItems('queen', dx, 0, dz, e.face, sc, [1, 1, 1], SIL, ghostsRef, null, true); }
+    if (e.type === 'iQueen' && e.decoys && bossPhase(e) >= 3) for (const dq of e.decoys) { const [dx, dz] = sqC(G.room, dq[0], dq[1]); pieceItems('queen', dx, 0, dz, e.face, sc, [0.75, 0.78, 0.86], kind, out, null, true); }
     if (!ghostKind) {
       const fx = Math.cos(e.face), fz = Math.sin(e.face), hy = ({ pawn: 1.1, knight: 1.33, rook: 1.3, bishop: 1.32, queen: 1.45, king: 1.55 }[body] || 1.3) * sc + y, fr = body === 'knight' ? 0.5 : 0.28;
       const hot = e.st2 === 'warn' || (e.hz && e.hz.length) || e.mated; for (const sd of [-1, 1]) out.push({ geo: 'sphere', m: M4.trs(e.x + fx * fr * sc - fz * sd * 0.1 * sc, hy, e.z + fz * fr * sc + fx * sd * 0.1 * sc, 0, 0.05 * sc, 0.05 * sc, 0.05 * sc), col: hot ? [1.6, 0.3, 0.2] : [1, 0.8, 0.5], kind: 5 });
@@ -3931,11 +4210,29 @@ const View = (() => {
     // The last beat adds a bright inner core. The moment it lands it flashes white (the 'zap' fx).
     for (const e of G.E) { if (e.dead || !e.hz) continue; const beat = R.beat || 0.5;
       for (const h of e.hz) { if (h.show && h.dmg === 0 && h.n > 50) { } const tot = Math.max(1, h.n0 || h.n), rem = Math.max(0, (h.n - 1) * beat + Math.max(0, e.bt || 0)), p = h.n > 50 ? 0.5 : clamp01(1 - rem / (tot * beat)), last = h.n <= 1;
-        const base = h.kind === 'flood' ? [0.62, 0.12, 0.09] : h.kind === 'beam' ? [1.1, 0.72, 0.3] : h.kind === 'fire' ? [1.2, 0.5, 0.15] : [1.05, 0.16, 0.1];
+        const base = h.tint ? h.tint.map(v => v * 0.6) : h.kind === 'flood' ? [0.62, 0.12, 0.09] : h.kind === 'beam' ? [1.1, 0.72, 0.3] : h.kind === 'fire' ? [1.2, 0.5, 0.15] : [1.05, 0.16, 0.1];
         for (const q of h.sqs) { const [x, z] = sqC(R, q[0], q[1]); teleSq(decals, x, z, p, last, base, h.kind === 'beam'); } } }
-    for (const f of G.fx) if (f.k === 'zap') { const k = f.life / f.max; for (const q of f.sqs) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'plane', m: M4.trs(x, 0.04, z, 0, SQ, 1, SQ), col: f.flood ? [1.2 * k, 0.4 * k, 0.3 * k] : [1.6 * k, 1.3 * k, 0.9 * k], kind: DECAL, alpha: 1 }); if (!f.flood) present.push({ geo: 'box', m: M4.trs(x, 0.7, z, 0, 0.12 * k + 0.02, 1.4, 0.12 * k + 0.02), col: [2.2 * k, 1.9 * k, 1.4 * k], kind: 5 }); } }
+    for (const f of G.fx) if (f.k === 'zap') { const k = f.life / f.max; for (const q of f.sqs) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'plane', m: M4.trs(x, 0.04, z, 0, SQ, 1, SQ), col: f.tint ? f.tint.map(v => v * 1.1 * k) : f.flood ? [1.2 * k, 0.4 * k, 0.3 * k] : [1.6 * k, 1.3 * k, 0.9 * k], kind: DECAL, alpha: 1 }); if (!f.flood) present.push({ geo: 'box', m: M4.trs(x, 0.7, z, 0, 0.12 * k + 0.02, 1.4, 0.12 * k + 0.02), col: [2.2 * k, 1.9 * k, 1.4 * k], kind: 5 }); } }
     if (R.holes) for (const kk of R.holes) { const [i, j] = kk.split(',').map(Number), [x, z] = sqC(R, i, j); world.push({ geo: 'plane', m: M4.trs(x, 0.012, z, 0, SQ, 1, SQ), col: [0.004, 0.004, 0.008], kind: 1 }); decals.push({ geo: 'ringT', m: M4.trs(x, 0.03, z, 0, 0.72, 1, 0.72), col: [0.3, 0.34, 0.45], kind: DECAL, alpha: 1 }); }
-    if (R.holeWarn) for (const h of R.holeWarn) { const [x, z] = sqC(R, h.i, h.j); decals.push({ geo: 'plane', m: M4.trs(x, 0.03, z, 0, SQ * 0.9, 1, SQ * 0.9), col: [0.35 * pulse, 0.38 * pulse, 0.5 * pulse], kind: DECAL, alpha: 1 }); }
+    if (R.holeWarn) for (const h of R.holeWarn) { const [x, z] = sqC(R, h.i, h.j), p = h.t0 ? clamp01(1 - h.t / h.t0) : 0.5; teleSq(decals, x, z, p, h.t < R.beat, [0.45, 0.5, 0.75]); }
+    // hard-mode twists
+    if (R.burn) for (const b of R.burn) { const fl = 0.7 + 0.3 * Math.sin(t * 9), fade = clamp01((b.until - G.time) / R.beat); for (const q of b.sqs) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'plane', m: M4.trs(x, 0.029, z, 0, SQ * 0.5, 1, SQ * 0.5), col: [1.2 * fl * fade, 0.45 * fl * fade, 0.08 * fade], kind: DECAL, alpha: 1 }); } }
+    if (R.tiltWarn) { const d = R.tiltWarn.dir, ph = ((G.time - R.tiltWarn.t0) * 2) % 1; for (let j = 0; j < R.rows; j += 2) for (let k = 0; k < 3; k++) { const x = R.bx0 + ((((k / 3 + ph * d * 0.33) % 1) + 1) % 1) * (R.bx1 - R.bx0), z = R.bz0 + (j + 0.5) * SQ; for (const sd of [-1, 1]) decals.push({ geo: 'plane', m: M4.trs(x - d * 0.2, 0.036, z + sd * 0.18, sd * d * 0.75, 0.5, 1, 0.07), col: [1.0, 0.75, 0.25], kind: DECAL, alpha: 1 }); } }
+    if (R.echoes) { R.echoes = R.echoes.filter(q => q.until > G.time); for (const q of R.echoes) pieceItems('knight', q.x, 1.3, q.z, 0, 1, [1, 1, 1], SIL, ghosts); }
+    if (G.boss && G.boss.type === 'bQueen' && G.boss.twisted && !G.boss.dead) { const k = 0.6 + 0.4 * Math.sin(t * 3), c = [0.3 * k, 1.1 * k, 1.3 * k], W2 = R.bx1 - R.bx0, H2 = R.bz1 - R.bz0, cxm = (R.bx0 + R.bx1) / 2, czm = (R.bz0 + R.bz1) / 2; for (const [x, z, sx, sz] of [[cxm, R.bz0, W2, 0.12], [cxm, R.bz1, W2, 0.12], [R.bx0, czm, 0.12, H2], [R.bx1, czm, 0.12, H2]]) decals.push({ geo: 'plane', m: M4.trs(x, 0.04, z, 0, sx, 1, sz), col: c, kind: DECAL, alpha: 1 }); }
+    if (R.bossKind === 'bKnight' && G.boss && !G.boss.dead) { const BW = R.bx1 - R.bx0, BH = R.bz1 - R.bz0, cxm = (R.bx0 + R.bx1) / 2, czm = (R.bz0 + R.bz1) / 2, k = 0.55 + 0.25 * Math.sin(t * 2.2);
+      for (const [x, z, sx, sz] of [[cxm, R.bz0, BW, 0.06], [cxm, R.bz1, BW, 0.06], [R.bx0, czm, 0.06, BH], [R.bx1, czm, 0.06, BH]]) decals.push({ geo: 'plane', m: M4.trs(x, 0.04, z, 0, sx, 1, sz), col: [0.35 * k, 0.55 * k, 0.9 * k], kind: DECAL, alpha: 1 });
+      for (let n = 0; n < 3; n++) { const f = (n + 1) / 4, c = [0.1 * (1 - f), 0.16 * (1 - f), 0.3 * (1 - f)]; for (let i = 0; i < R.cols; i += 1) for (const zz of [R.bz0 - (n + 0.5) * SQ * 0.33, R.bz1 + (n + 0.5) * SQ * 0.33]) if ((i + n) % 2 === 0) decals.push({ geo: 'plane', m: M4.trs(R.bx0 + (i + 0.5) * SQ, 0.03, zz, 0, SQ * 0.9, 1, SQ * 0.3), col: c, kind: DECAL, alpha: 1 });
+        for (let j = 0; j < R.rows; j++) for (const xx of [R.bx0 - (n + 0.5) * SQ * 0.33, R.bx1 + (n + 0.5) * SQ * 0.33]) if ((j + n) % 2 === 0) decals.push({ geo: 'plane', m: M4.trs(xx, 0.03, R.bz0 + (j + 0.5) * SQ, 0, SQ * 0.3, 1, SQ * 0.9), col: c, kind: DECAL, alpha: 1 }); }
+      const echo = (x, z, fn) => { const m = SQ * 1.6; if (x - R.bx0 < m) fn(x + BW, z); if (R.bx1 - x < m) fn(x - BW, z); if (z - R.bz0 < m) fn(x, z + BH); if (R.bz1 - z < m) fn(x, z - BH); };
+      echo(P.x, P.z, (x, z) => ghosts.push(slimeItem(x, z, null, SIL, t)));
+      for (const e of G.E) if (!e.dead && (e.type === 'bKnight' || e.type === 'bKnightC') && !(e.mv && e.mv.wrap)) echo(e.x, e.z, (x, z) => enemyItems(Object.assign(Object.create(Object.getPrototypeOf(e)), e, { x, z }), ghosts, SIL, t)); }
+    if (R.chess && G.boss && !G.boss.dead) { const C = R.chess, k = 0.75 + 0.25 * Math.sin(t * 4);
+      if (C.last) for (const q of C.last) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'plane', m: M4.trs(x, 0.028, z, 0, SQ * 0.94, 1, SQ * 0.94), col: [0.22, 0.18, 0.06], kind: DECAL, alpha: 1 }); }
+      if (C.turn === 'you' && !C.anim) for (const m of C.legal) { const [x, z] = sqC(R, m.i, m.j), hv = C.hover && C.hover[0] === m.i && C.hover[1] === m.j;
+        if (m.cap) teleSq(decals, x, z, hv ? 1 : 0.55, false, [1.1 * k, 0.3, 0.2]); else decals.push({ geo: hv ? 'plane' : 'disc', m: hv ? M4.trs(x, 0.035, z, 0, SQ * 0.9, 1, SQ * 0.9) : M4.trs(x, 0.035, z, 0, 0.2, 1, 0.2), col: hv ? [0.9, 0.75, 0.3] : [0.9 * k, 0.75 * k, 0.3 * k], kind: DECAL, alpha: 1 }); }
+      decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 0.85, 1, 0.85), col: C.turn === 'you' ? [1.3 * k, 1.05 * k, 0.4 * k] : [0.25, 0.22, 0.2], kind: DECAL, alpha: 1 }); }
+    if (G.clock) { const you = G.clock.turn === 'you', k = 0.7 + 0.3 * Math.sin(t * 6); if (!you) decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 0.9, 1, 0.9), col: [1.4 * k, 0.2, 0.15], kind: DECAL, alpha: 1 }); else if (G.boss) decals.push({ geo: 'ringT', m: M4.trs(G.boss.x, 0.05, G.boss.z, 0, 1.2, 1, 1.2), col: [1.3 * k, 1.0 * k, 0.3], kind: DECAL, alpha: 1 }); }
     if (R.rubble) for (const r of R.rubble) { world.push({ geo: 'box', m: M4.trs(r.x, 0.35, r.z, r.i * 0.7, 1.05, 0.7, 0.95), col: [0.36, 0.32, 0.3], kind: 1 }); world.push({ geo: 'box', m: M4.trs(r.x + 0.2, 0.8, r.z - 0.1, r.j, 0.5, 0.35, 0.45), col: [0.42, 0.38, 0.34], kind: 1 }); }
     if (G.boss && G.boss.type === 'iKing' && !G.boss.dead && P.esc) { for (const q of P.esc) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'disc', m: M4.trs(x, 0.035, z, 0, 0.2, 1, 0.2), col: [0.95, 0.75, 0.3], kind: DECAL, alpha: 1 }); }
       if (P.inCheck || !P.esc.length) decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.04, P.z, 0, 0.9, 1, 0.9), col: !P.esc.length ? [1.3 * pulse, 0.15, 0.1] : [1.0 * pulse, 0.5 * pulse, 0.1], kind: DECAL, alpha: 1 }); }
@@ -4022,6 +4319,11 @@ const View = (() => {
         if (e.d.chess && !X) attackDecal(e, decals, fl > 0.1 || (e.plan && fieldAt(e.plan.x, e.plan.z) > 0.1) ? 1 : 0.4);
         continue;
       }
+      if (R.bossKind === 'bKnight' && (e.type === 'bKnight' || e.type === 'bKnightC')) { // the endless board: the half that left, and the half arriving
+        const out = Math.max(R.bx0 - e.x, e.x - R.bx1, R.bz0 - e.z, e.z - R.bz1);
+        if (out < SQ * 0.9) enemyItems(e, present, 0, t);
+        if (e.mv && e.mv.wrap) { const c = Object.assign(Object.create(Object.getPrototypeOf(e)), e, { x: e.x - e.mv.wrap[0], z: e.z - e.mv.wrap[1] }); const o2 = Math.max(R.bx0 - c.x, c.x - R.bx1, R.bz0 - c.z, c.z - R.bz1); if (o2 < SQ * 0.9) enemyItems(c, present, 0, t); }
+        if (!X) attackDecal(e, decals, 1); continue; }
       enemyItems(e, present, 0, t); if (e.d.chess && !X) attackDecal(e, decals, 1);
       if (G.check === e) { const k = 0.7 + 0.3 * Math.sin(G.time * 14); decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.04, e.z, 0, 0.85, 1, 0.85), col: [1.0 * k, 0.75 * k, 0.25 * k], kind: DECAL, alpha: 1 }); } }
     // guard lines: who protects the pieces near you (eat one and its guards strike back)
@@ -4031,7 +4333,7 @@ const View = (() => {
         if (gs.length) decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.035, e.z, 0, 0.62, 1, 0.62), col: [0.55, 0.1, 0.08], kind: DECAL, alpha: 1 });
         for (const g of gs) { const L = dist(g.x, g.z, e.x, e.z), a = Math.atan2(e.z - g.z, e.x - g.x); for (let k = 0.35; k < L - 0.35; k += 0.42) decals.push({ geo: 'plane', m: M4.trs(g.x + Math.cos(a) * k, 0.032, g.z + Math.sin(a) * k, -a, 0.22, 1, 0.06), col: [0.5, 0.1, 0.07], kind: DECAL, alpha: 1 }); } }
     }
-    for (const b of G.B) present.push({ geo: 'box', m: M4.trs(b.x, 1.1, b.z, -Math.atan2(b.vz, b.vx), 0.55, 0.04, 0.04), col: [1.2, 1.0, 0.8], kind: 5 });
+    for (const b of G.B) { if (b.glass) { present.push({ geo: 'box', m: M4.trs(b.x, 1.0, b.z, -Math.atan2(b.vz, b.vx) + G.t * 9, 0.22, 0.22, 0.04), col: [1.3, 1.45, 1.9], kind: 5 }); decals.push({ geo: 'ringT', m: M4.trs(b.x, 0.03, b.z, 0, 0.3, 1, 0.3), col: [0.4, 0.5, 0.8], kind: DECAL, alpha: 1 }); } else present.push({ geo: 'box', m: M4.trs(b.x, 1.1, b.z, -Math.atan2(b.vz, b.vx), 0.55, 0.04, 0.04), col: [1.2, 1.0, 0.8], kind: 5 }); }
     for (const s of G.S) { if (s.type === 'orb') { present.push({ geo: 'sphere', m: M4.trs(s.x, 0.7, s.z, 0, 0.16, 0.16, 0.16), col: s.slimeShot ? COL.slime : s.col, kind: s.slimeShot ? 3 : 5 }); continue; }
   present.push({ geo: s.type === 'candle' ? 'candle' : s.type === 'chair' ? 'box' : s.type, m: s.type === 'chair' ? M4.trs(s.x, 0.7, s.z, s.rot, 0.5, 0.5, 0.5) : M4.trs(s.x, 0.45, s.z, s.rot, 0.8, 0.8, 0.8), col: s.fire ? [1.2, 0.6, 0.3] : [0.5, 0.45, 0.5], kind: s.fire ? 5 : 2 }); }
     // fx
@@ -4066,10 +4368,13 @@ const View = (() => {
       if (G.fate && G.fate.live) { ghosts.push(slimeItem(G.fate.x, G.fate.z, null, RED, t, 1.05)); decals.push({ geo: 'ringT', m: M4.trs(G.fate.x, 0.03, G.fate.z, 0, 0.7 + Math.sin(G.time * 10) * 0.05, 1, 0.7 + Math.sin(G.time * 10) * 0.05), col: [0.9, 0.15, 0.1], kind: DECAL, alpha: 1 }); }
     }
     // mirrors
-    const mirrors = R.mirrors.map(m => ({ p: m.p, n: m.n, on: G.gazing ? m.on : 0, visible: !m.broken && m.on > 0.02 }));
-    const mirrorItems = R.mirrors.map((m, i) => m.broken
+    // only four reflection targets: the intact mirrors nearest you get them, the rest show plain silver
+    const live = R.mirrors.filter(m => !m.broken && m.on > 0.02).sort((a, b) => dist(a.p[0], a.p[2], P.x, P.z) - dist(b.p[0], b.p[2], P.x, P.z)).slice(0, 4), slot = new Map(live.map((m, k) => [m, k]));
+    const mirrors = live.map(m => ({ p: m.p, n: m.n, on: G.gazing ? m.on : 0, visible: true }));
+    const mirrorItems = R.mirrors.filter(m => !m.gone).map(m => m.broken
       ? { geo: 'quad', m: m.glassM, col: [0.05, 0.05, 0.06], kind: 1 }
-      : { geo: 'quad', m: m.glassM, col: [1, 1, 1], kind: 4, reflTex: i, alpha: 0.25 + 0.75 * m.on, crack: 1 - m.hp / m.maxHp });
+      : slot.has(m) ? { geo: 'quad', m: m.glassM, col: [1, 1, 1], kind: 4, reflTex: slot.get(m), alpha: 0.25 + 0.75 * m.on, crack: 1 - m.hp / m.maxHp }
+      : { geo: 'quad', m: m.glassM, col: [0.62, 0.66, 0.74], kind: 2 });
     // camera
     const portrait = Gfx.W < Gfx.H;
     const bcz = R.bz0 !== undefined ? (R.bz0 + R.bz1) / 2 : 0, tx = (P.inMirror ? lerp(P.x, P.inMirror.ex, 0.5) : P.x) * 0.6, tz = lerp(P.inMirror ? lerp(P.z, P.inMirror.ez, 0.5) : P.z, bcz - 0.6, 0.65);
@@ -4084,10 +4389,11 @@ const View = (() => {
     const tr = clamp01(G.shake || 0), sh = tr * tr * 0.32 * OPT.shake, st = G.time;
     const ox = (Math.sin(st * 31) + Math.sin(st * 17.3) * 0.6) * sh, oz = (Math.sin(st * 27.7 + 1.3) + Math.sin(st * 13.1) * 0.6) * sh, oy = Math.sin(st * 23.9 + 2.1) * sh * 0.5;
     const pk = G.punch ? G.punch.t / 0.14 : 0, pm = OPT.shake ? 1 : 0.3, cx = G.cam.x + ox + (G.punch ? G.punch.x * pk * pm : 0), cz = G.cam.z + oz + (G.punch ? G.punch.z * pk * pm : 0);
-    const eye = [cx, CH + oy, cz + CO], tgt = [cx - ox * 0.4, 0, cz - 0.4 - oz * 0.4];
+    const ra = G.rollA || 0, rs = Math.sin(ra), rc = Math.cos(ra), rz = 1 + 0.35 * Math.abs(rs) + 0.25 * Math.max(0, -rc), ok = rc >= 0 ? 1 : 1 + 0.8 * rc; // upside down: look nearly straight down
+    const eye = [cx - CO * rs * ok, CH * rz + oy, cz + CO * rc * ok], tgt = [cx - ox * 0.4 + 0.4 * rs, 0, cz - 0.4 * rc - oz * 0.4], up = Math.abs(rs) > 0.001 ? [rs, 0.0001, -rc] : null;
     const silver = clamp01(Math.max(X && X.hold > 0 ? 0.6 : 0, R.inv ? 0.32 : 0, P.inMirror ? Math.min(1, (P.inMirror.total - P.inMirror.t) * 4, P.inMirror.t * 4) : 0, (1 - P.hp / P.maxHp) * 0.55, G.state === 'dead' ? 1 : 0, G.gazing ? 0.35 : 0));
     return {
-      t, eye, tgt, fov: FOV, lights: LIGHTS, mirrors, world, reflOnly: R.reflOnly, present, future, ghosts, decals, mirrorItems,
+      t, eye, tgt, up, fov: FOV, lights: LIGHTS, mirrors, world, reflOnly: R.reflOnly, present, future, ghosts, decals, mirrorItems,
       post: { silver, crack: G.crack * (OPT.flash ? 1 : 0.4), flash: G.flash * (OPT.flash ? 1 : 0.25), red: G.red * 0.8 * (OPT.flash ? 1 : 0.6), split: G.split || 0, inv: G.invert > 0 && OPT.flash ? 1 : 0, kal: G.kaleido > 0 && OPT.flash ? 1 : 0 },
     };
   }
@@ -4167,7 +4473,7 @@ const UI = (() => {
     $('#gaze i').style.transform = `scaleX(${G.gaze / 3})`;
     const fk = P.fateN + ''; const fn = $('#fateN'); if (fn.dataset.k !== fk) { fn.dataset.k = fk; fn.innerHTML = P.fateN ? IC.fate + '<b>' + P.fateN + '</b>' : ''; }
     $('#buff').hidden = !(P.buffT > 0);
-    if (G.boss) { $('#bossbar i').style.transform = `scaleX(${G.boss.type === 'bKing' ? clamp01((G.boss.lives || 0) / 3) : clamp01(G.boss.hp / G.boss.maxHp)})`; }
+    if (G.boss) { $('#bossbar i').style.transform = `scaleX(${G.boss.type === 'bKing' && !G.room.chess ? clamp01((G.boss.lives || 0) / 3) : clamp01(G.boss.hp / G.boss.maxHp)})`; }
     // prompt
     const pr = $('#prompt');
     let txt = '', at = null, ic = '';
@@ -4274,7 +4580,7 @@ const UI = (() => {
     const K = Inp.st.mode === 'touch' ? '' : IC.key(Inp.st.mode === 'pad' ? 'X' : 'E');
     const ar = '<i class="ar">→</i>';
     if (i === 0 && !G.hintShown.a) { G.hintShown.a = 1; setTimeout(() => hint(`<span class="red">${IC.king}</span>${ar}<span class="gold">${IC.door}</span>`), 1200); }
-    const BH = { bKnight: '貼著牠打：騎士碰不到身邊的格子。分身也是牠，打哪一隻都會痛', bPawn: '擋在牠正前方牠就走不動；升變成皇后後，等她跳下來卡在地上（金圈）時猛打', bBishop: '主教永遠只走同一種顏色', bRook: '別站在它的直線上。引它撞石柱會暈很久；它築的牆它自己撞得碎', bQueen: '鏡中有她的影子：撲擊打碎那面鏡子，她會摔出來。紅光的鏡子是她要出來的地方', bKing: '打不痛他。把他推進角落，將死他', bReflect: '牠會重演你三秒前做的事', iKnight: '打掉飛在空中的頭，身體就會暈住', iBishop: '十字光每次轉 45 度，整排整列也會燒', iRook: '倒吊時打不到，還會落石。躲開紅圈和砸地後的震波，趁它卡在地上（金圈）猛打', iPawn: '倒兵從你這邊升起往上行軍，走到它身邊會替它回血：先清兵。它直刺完會卡住，接著倒退回去，這時猛打', iQueen: '她像騎士一樣跳；被打會碎出小騎士', iKing: '這次是你會被將死：金點是你的退路，別讓它們全消失' }[G.room.bossKind];
+    const BH = { bKnight: '貼著牠打：騎士碰不到身邊的格子。分身也是牠，打哪一隻都會痛', bPawn: '擋在牠正前方牠就走不動；升變成皇后後，等她跳下來卡在地上（金圈）時猛打', bBishop: '主教永遠只走同一種顏色', bRook: '別站在它的直線上，它會轉動整個棋盤。引它撞石柱會暈很久', bQueen: '打碎她所在的鏡子，她會摔出來。她會從鏡子射子彈；子彈穿過鏡子會從另一面鏡子飛出來', bKing: '真的在下棋：不能用 WASD，點亮起的格子走棋。吃掉棋子就變成那顆棋子；被吃會扣一顆心、回到第一排。每吃掉他一顆子他就會受傷，將軍也會。將死他傷害最重，還會重開一盤。他也可以不走棋，改成召喚新的棋子', bReflect: '牠會重演你三秒前做的事', iKnight: '打掉飛在空中的頭，身體就會暈住', iBishop: '十字光每次轉 45 度。正午時整個棋盤都會燒，只有它的斜線安全', iRook: '倒吊時打不到，還會落石。躲開紅圈和砸地後的震波，趁它卡在地上（金圈）猛打', iPawn: '打倒的沙兵會順著你的攻擊方向飛出去：對準它，砸它！兵走到它身邊會替它回血。它直刺完會卡住，這時猛打', iQueen: '她像騎士一樣跳；被打會碎出小騎士', iKing: '這次是你會被將死：金點是你的退路，別讓它們全消失' }[G.room.bossKind];
     if (BH) { const bk0 = G.room.bossKind; setTimeout(() => { if (G.room.bossKind === bk0) hint(`<span class="red">${IC[BOSS[bk0].body]}</span><b>${BH}</b>`); }, 1700); }
     if (i === 1 && !G.hintShown.g) { G.hintShown.g = 1; setTimeout(() => hint(`<span class="red">${IC.pawn}</span><i class="ar" style="color:var(--blood)">┅</i><span class="red">${IC.rook}</span><b>被護著的棋子，吃了會被反擊</b>`), 1400); }
     if (G.E.some(e => e.phantom) && !G.hintShown.ph) { G.hintShown.ph = 1; setTimeout(() => hint(`${IC.mirror}${ar}<span class="silver">${IC.pawn}</span><b>有棋子只在鏡光裡現形</b>`), 1800); }
@@ -4305,8 +4611,9 @@ const UI = (() => {
   const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
   function startSelected() { const md = META.get().modeSel || 'normal'; if (md === 'challenge') { bossPick(); return; } $('#title').hidden = true; if (!localStorage_get('mirror.intro') && !window.__fast) UI.intro(() => startRun(md)); else startRun(md); }
   function bossPick() { const o = META.get(), best = o.best || {}, el = $('#bosspick') || (() => { const d = document.createElement('div'); d.id = 'bosspick'; d.className = 'ov'; document.body.appendChild(d); return d; })();
-    el.innerHTML = `<div class="bpwrap"><h2>Boss 挑戰</h2><small>帶著 5 個隨機稀有增益，單挑一隻 Boss，越快越好</small><div class="bpg">${ALL_BOSSES.map(k => `<button class="bp ${k[0] === 'i' ? 'inv' : ''}" data-b="${k}"><span class="pa">${IC[BOSS[k].body]}</span><b>${BOSS[k].name}</b><small>${best['c_' + k] ? IC.clock + fmtT(best['c_' + k]) : '—'}</small></button>`).join('')}</div><button class="btn ib" data-x="1">${IC.door}</button></div>`;
-    el.hidden = false; el.onclick = ev => { const b = ev.target.closest('[data-b]'); if (b) { el.hidden = true; $('#title').hidden = true; startRun('challenge', b.dataset.b); return; } if (ev.target.closest('[data-x]')) el.hidden = true; }; }
+    el.innerHTML = `<div class="bpwrap"><h2>Boss 挑戰</h2><small>帶著 5 個隨機增益，單挑一隻 Boss，越快越好</small><div class="hsel">${Array.from({ length: 10 }, (_, k) => `<i data-h="${k + 1}" class="${k < (o.cHearts || 4) ? 'on' : ''}"></i>`).join('')}<b>${o.cHearts || 4}</b></div><div class="bpg">${ALL_BOSSES.map(k => `<button class="bp ${k[0] === 'i' ? 'inv' : ''}" data-b="${k}"><span class="pa">${IC[BOSS[k].body]}</span><b>${BOSS[k].name}</b><small>${best['c_' + k] ? IC.clock + fmtT(best['c_' + k]) : '—'}</small></button>`).join('')}</div><button class="btn ib" data-x="1">${IC.door}</button></div>`;
+    el.hidden = false; el.onclick = ev => { const b = ev.target.closest('[data-b]'); const hb = ev.target.closest('[data-h]'); if (hb) { const o2 = META.get(); o2.cHearts = +hb.dataset.h; META.set(o2); Snd.S.ui(); bossPick(); return; }
+      if (b) { el.hidden = true; $('#title').hidden = true; startRun('challenge', b.dataset.b); const P = G.P, h = META.get().cHearts || 4; P.maxHp = h + (P.tr.skin || 0); P.hp = P.maxHp; return; } if (ev.target.closest('[data-x]')) el.hidden = true; }; }
   function modeRow() { const o = META.get(), md = o.modeSel || 'normal', best = o.best || {};
     let r = $('#modeRow'); if (!r) { r = document.createElement('div'); r.id = 'modeRow'; $('#tmenu').insertBefore(r, $('#start')); r.addEventListener('click', ev => { const b = ev.target.closest('[data-m]'); if (!b) return; const o2 = META.get(); o2.modeSel = b.dataset.m; META.set(o2); Snd.S.ui(); modeRow(); }); }
     r.innerHTML = Object.entries(MODES).map(([k, [ic, nm]]) => `<button class="md ${md === k ? 'on' : ''}" data-m="${k}">${IC[ic]}<span>${nm}</span>${k === 'rush' && best.rush ? `<small>${fmtT(best.rush)}</small>` : ''}</button>`).join('');
@@ -4331,7 +4638,7 @@ const UI = (() => {
     m.hidden = false; }
   function hint(s) { const h = $('#hint'); h.innerHTML = s; h.classList.remove('show'); void h.offsetWidth; h.classList.add('show'); }
   function fate() { const f = $('#fatecard'); f.classList.remove('show'); void f.offsetWidth; f.classList.add('show'); }
-  function boss(on) { $('#bossbar').hidden = !on; if (on && G.room.bossKind) { const B = G.boss; $('#bossbar b').innerHTML = BOSS[G.room.bossKind].name + (B && B.type === 'bKing' ? ' ' + IC.crown.repeat(Math.max(0, B.lives || 0)) : ''); } }
+  function boss(on) { $('#bossbar').hidden = !on; if (on && G.room.bossKind) { const B = G.boss; $('#bossbar b').innerHTML = BOSS[G.room.bossKind].name + (B && B.type === 'bKing' && !G.room.chess ? ' ' + IC.crown.repeat(Math.max(0, B.lives || 0)) : ''); } }
   function fade(cb) { const f = $('#fade'); f.classList.add('on'); setTimeout(() => { cb(); f.classList.remove('on'); }, 450); }
   function choose(list) {
     const c = $('#choose');
