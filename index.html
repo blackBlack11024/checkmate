@@ -3849,10 +3849,23 @@ function chessFrame(dt, ev) {
   const ps = sqOf(R, P.x, P.z), pk = playerKind();
   if (C.turn === 'you') {
     const bd = cBoard(R), kq = sqOf(R, B.x, B.z);
-    C.legal = cMoves(R, pk, ps[0], ps[1], -1, (a, b) => bd.has(sqKey(a, b)) ? 'foe' : null).filter(m => !(m.i === kq[0] && m.j === kq[1])); // the king is never taken: he is mated
+    if (!C.legalFor || C.legalFor !== ps.join() + pk + bd.size) { C.legalFor = ps.join() + pk + bd.size;
+      C.legal = cMoves(R, pk, ps[0], ps[1], -1, (a, b) => bd.has(sqKey(a, b)) ? 'foe' : null).filter(m => !(m.i === kq[0] && m.j === kq[1])); // the king is never taken: he is mated
+      for (const m of C.legal) { const nb = new Map(bd); nb.delete(sqKey(m.i, m.j)); m.danger = false; // could he take you there?
+        for (const [key, o] of nb) { const [i, j] = key.split(',').map(Number); if (cMoves(R, chessKind(o.type, o.inv), i, j, 1, (a, b) => a === m.i && b === m.j ? 'foe' : nb.has(sqKey(a, b)) ? 'own' : null).some(q => q.cap && q.i === m.i && q.j === m.j)) { m.danger = true; break; } } }
+      // spitting: with a piece inside you, you can spit it down any of the eight lines at the first piece in the way (the king too)
+      C.spit = []; if (P.form) for (const [a, b] of DIRS.queen) for (let n = 1; n < 12; n++) { const x = ps[0] + a * n, y = ps[1] + b * n; if (!onBoard(R, x, y) || R.sqBlock[y * R.cols + x] === 1 || R.sqBlock[y * R.cols + x] === 2) break;
+        const o = bd.get(sqKey(x, y)); if (o) { C.spit.push({ i: x, j: y, o }); break; } } }
     if (G.PV) { const w = Gfx.unproject(G.PV, Inp.st.mouseX, Inp.st.mouseY); C.hover = w ? sqOf(R, w.x, w.z) : null; } if (window.__chessPick) C.hover = window.__chessPick;
+    if (ev.eat && C.hover && C.spit) { const sp = C.spit.find(q => q.i === C.hover[0] && q.j === C.hover[1]); if (!sp) { Snd.S.crack(); return; }
+      const type = P.form, inv = P.finv; P.form = null; P.finv = false; P.charges = 0; UI.form && UI.form(); Snd.S.swallow(); C.legal = []; C.spit = []; C.legalFor = null;
+      const shot = { x: P.x, z: P.z }, [tx, tz] = sqC(R, sp.i, sp.j); C.shot = { o: shot, type, inv }; C.anim = { who: shot, fx: P.x, fz: P.z, tx, tz, t: 0, dur: 0.12 + Math.hypot(tx - P.x, tz - P.z) * 0.03, onEnd: () => {
+        C.shot = null; const o = sp.o; G.hitstop = 0.08; G.shake = 0.6; burst(tx, 1, tz, 26, [0.9, 0.8, 0.5]); Snd.S.slam(); Snd.S.crunch();
+        if (o === B) { if (chessHurt(12)) return; UI.toast('king', '-12'); }
+        else if (!o.dead) { o.hp = 0; G.room.bossKind === 'bKing' && (o.ally = true); killEnemy(o); if (chessHurt(CVAL[o.type] * 6 || 12)) return; }
+        chessAfterYou(); } }; return; }
     if (ev.atk && C.hover) { const m = C.legal.find(q => q.i === C.hover[0] && q.j === C.hover[1]); if (!m) { Snd.S.crack(); return; }
-      const jump = pk === 'knight' || pk === 'alfil'; C.legal = []; C.last = [ps, [m.i, m.j]];
+      const jump = pk === 'knight' || pk === 'alfil'; C.legal = []; C.legalFor = null; C.last = [ps, [m.i, m.j]];
       chessAnim(P, m.i, m.j, () => {
         if (m.cap) { const o = bd.get(sqKey(m.i, m.j)); if (o) { G.hitstop = 0.06; burst(o.x, 1, o.z, 22, o.d.col || [0.6, 0.2, 0.15]); Snd.S.crunch(); o.hp = 0; killEnemy(o); chessHurt(CVAL[o.type] * 6 || 12); if (B.dead || B.hp <= 0) return; } }
         else if (pk === 'pawn' && m.j === 0) { becomePiece('queen'); UI.toast('queen', '升變'); }
@@ -4231,6 +4244,8 @@ const View = (() => {
       if (C.last) for (const q of C.last) { const [x, z] = sqC(R, q[0], q[1]); decals.push({ geo: 'plane', m: M4.trs(x, 0.028, z, 0, SQ * 0.94, 1, SQ * 0.94), col: [0.22, 0.18, 0.06], kind: DECAL, alpha: 1 }); }
       if (C.turn === 'you' && !C.anim) for (const m of C.legal) { const [x, z] = sqC(R, m.i, m.j), hv = C.hover && C.hover[0] === m.i && C.hover[1] === m.j;
         if (m.cap) teleSq(decals, x, z, hv ? 1 : 0.55, false, [1.1 * k, 0.3, 0.2]); else decals.push({ geo: hv ? 'plane' : 'disc', m: hv ? M4.trs(x, 0.035, z, 0, SQ * 0.9, 1, SQ * 0.9) : M4.trs(x, 0.035, z, 0, 0.2, 1, 0.2), col: hv ? [0.9, 0.75, 0.3] : [0.9 * k, 0.75 * k, 0.3 * k], kind: DECAL, alpha: 1 }); }
+      if (C.turn === 'you' && !C.anim && C.spit) for (const q of C.spit) { const [x, z] = sqC(R, q.i, q.j), hv = C.hover && C.hover[0] === q.i && C.hover[1] === q.j, s = hv ? 1.15 : 0.95; decals.push({ geo: 'ringT', m: M4.trs(x, 0.045, z, 0, s, 1, s), col: [0.7 * k, 0.35 * k, 1.3 * k], kind: DECAL, alpha: 1 }); }
+      if (C.shot) pieceItems(C.shot.type, C.shot.o.x, 0.9, C.shot.o.z, t * 12, 0.6, [1.2, 1.0, 0.7], 5, present, null, C.shot.inv);
       decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 0.85, 1, 0.85), col: C.turn === 'you' ? [1.3 * k, 1.05 * k, 0.4 * k] : [0.25, 0.22, 0.2], kind: DECAL, alpha: 1 }); }
     if (G.clock) { const you = G.clock.turn === 'you', k = 0.7 + 0.3 * Math.sin(t * 6); if (!you) decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 0.9, 1, 0.9), col: [1.4 * k, 0.2, 0.15], kind: DECAL, alpha: 1 }); else if (G.boss) decals.push({ geo: 'ringT', m: M4.trs(G.boss.x, 0.05, G.boss.z, 0, 1.2, 1, 1.2), col: [1.3 * k, 1.0 * k, 0.3], kind: DECAL, alpha: 1 }); }
     if (R.rubble) for (const r of R.rubble) { world.push({ geo: 'box', m: M4.trs(r.x, 0.35, r.z, r.i * 0.7, 1.05, 0.7, 0.95), col: [0.36, 0.32, 0.3], kind: 1 }); world.push({ geo: 'box', m: M4.trs(r.x + 0.2, 0.8, r.z - 0.1, r.j, 0.5, 0.35, 0.45), col: [0.42, 0.38, 0.34], kind: 1 }); }
@@ -4580,7 +4595,7 @@ const UI = (() => {
     const K = Inp.st.mode === 'touch' ? '' : IC.key(Inp.st.mode === 'pad' ? 'X' : 'E');
     const ar = '<i class="ar">→</i>';
     if (i === 0 && !G.hintShown.a) { G.hintShown.a = 1; setTimeout(() => hint(`<span class="red">${IC.king}</span>${ar}<span class="gold">${IC.door}</span>`), 1200); }
-    const BH = { bKnight: '貼著牠打：騎士碰不到身邊的格子。分身也是牠，打哪一隻都會痛', bPawn: '擋在牠正前方牠就走不動；升變成皇后後，等她跳下來卡在地上（金圈）時猛打', bBishop: '主教永遠只走同一種顏色', bRook: '別站在它的直線上，它會轉動整個棋盤。引它撞石柱會暈很久', bQueen: '打碎她所在的鏡子，她會摔出來。她會從鏡子射子彈；子彈穿過鏡子會從另一面鏡子飛出來', bKing: '真的在下棋：不能用 WASD，點亮起的格子走棋。吃掉棋子就變成那顆棋子；被吃會扣一顆心、回到第一排。每吃掉他一顆子他就會受傷，將軍也會。將死他傷害最重，還會重開一盤。他也可以不走棋，改成召喚新的棋子', bReflect: '牠會重演你三秒前做的事', iKnight: '打掉飛在空中的頭，身體就會暈住', iBishop: '十字光每次轉 45 度。正午時整個棋盤都會燒，只有它的斜線安全', iRook: '倒吊時打不到，還會落石。躲開紅圈和砸地後的震波，趁它卡在地上（金圈）猛打', iPawn: '打倒的沙兵會順著你的攻擊方向飛出去：對準它，砸它！兵走到它身邊會替它回血。它直刺完會卡住，這時猛打', iQueen: '她像騎士一樣跳；被打會碎出小騎士', iKing: '這次是你會被將死：金點是你的退路，別讓它們全消失' }[G.room.bossKind];
+    const BH = { bKnight: '貼著牠打：騎士碰不到身邊的格子。分身也是牠，打哪一隻都會痛', bPawn: '擋在牠正前方牠就走不動；升變成皇后後，等她跳下來卡在地上（金圈）時猛打', bBishop: '主教永遠只走同一種顏色', bRook: '別站在它的直線上，它會轉動整個棋盤。引它撞石柱會暈很久', bQueen: '打碎她所在的鏡子，她會摔出來。她會從鏡子射子彈；子彈穿過鏡子會從另一面鏡子飛出來', bKing: '真的在下棋：不能用 WASD，點亮起的格子走棋。肚子裡有棋子時，右鍵點紫圈可以把它吐出去砸人（用掉這一手，變回史萊姆）。吃掉棋子就變成那顆棋子；被吃會扣一顆心、回到第一排。每吃掉他一顆子他就會受傷，將軍也會。將死他傷害最重，還會重開一盤。他也可以不走棋，改成召喚新的棋子', bReflect: '牠會重演你三秒前做的事', iKnight: '打掉飛在空中的頭，身體就會暈住', iBishop: '十字光每次轉 45 度。正午時整個棋盤都會燒，只有它的斜線安全', iRook: '倒吊時打不到，還會落石。躲開紅圈和砸地後的震波，趁它卡在地上（金圈）猛打', iPawn: '打倒的沙兵會順著你的攻擊方向飛出去：對準它，砸它！兵走到它身邊會替它回血。它直刺完會卡住，這時猛打', iQueen: '她像騎士一樣跳；被打會碎出小騎士', iKing: '這次是你會被將死：金點是你的退路，別讓它們全消失' }[G.room.bossKind];
     if (BH) { const bk0 = G.room.bossKind; setTimeout(() => { if (G.room.bossKind === bk0) hint(`<span class="red">${IC[BOSS[bk0].body]}</span><b>${BH}</b>`); }, 1700); }
     if (i === 1 && !G.hintShown.g) { G.hintShown.g = 1; setTimeout(() => hint(`<span class="red">${IC.pawn}</span><i class="ar" style="color:var(--blood)">┅</i><span class="red">${IC.rook}</span><b>被護著的棋子，吃了會被反擊</b>`), 1400); }
     if (G.E.some(e => e.phantom) && !G.hintShown.ph) { G.hintShown.ph = 1; setTimeout(() => hint(`${IC.mirror}${ar}<span class="silver">${IC.pawn}</span><b>有棋子只在鏡光裡現形</b>`), 1800); }
