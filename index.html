@@ -1951,7 +1951,7 @@ function enterRoom(i) {
   const FORCE = { bKing: 'chess', bLance: 'agile', bStar: 'giant' }, fm = FORCE[R.bossKind];
   if (G.P && G.P.forcedMode && !fm) { G.P.forcedMode = false; setMode(G.P.prevMode || 'normal', true); }
   if (G.P && fm === 'chess') { if (!G.P.forcedMode) G.P.prevMode = G.P.mode; G.P.forcedMode = true; setMode(fm, true); }
-  else if (G.P && fm && modeOf() !== fm && (G.mode === 'rush' || G.mode === 'challenge' || !(G.run && G.run.floors[i - 1]) || (G.run.floors[i - 1].t === 'boss'))) setMode(fm); // no room before it to pick the core up in: you start the fight in that shape (and keep it)
+  else if (G.P && fm && modeOf() !== fm) setMode(fm); // 天樞 / 貫星: the fight always starts in its shape (and you keep it afterwards)
   if (R.bossKind === 'bKing') { chessStart(R); G.allies = []; }
   if (G.state === 'play') coresForRoom(R); document.body.classList.toggle('chessmode', !!R.chess);
   G.cam.x = P.x; G.cam.z = P.z;
@@ -4265,7 +4265,7 @@ function placeCore(R, m) { const P = G.P;
   dropCore(R, m, P.x + 1.5, P.z - 1.5); }
 function coresForRoom(R) { // every three or four rooms a core lies on the board: a new shape if you are plain, the way back (white) if you are not
   { const nf = G.run && G.run.floors[R.idx + 1], want = nf && nf.t === 'boss' ? BOSS_CORE[nf.kind] : null; // the room before 天樞 / 貫星 always offers the shape that fight is built for
-    if (want && !R.boss && modeOf() !== want) { placeCore(R, want); return; } }
+    if (want && !R.boss && modeOf() !== want) { } } // (no longer needed: those fights put you in the shape themselves)
   if (R.boss || R.special || R.bx0 === undefined || R.idx < 2) return; const free = (i, j) => onBoard(R, i, j) && !R.sqBlock[j * R.cols + i] && !R.props.some(p => p.alive && sqOf(R, p.x, p.z).join() === i + ',' + j);
   if (G.coreNext === undefined) G.coreNext = 2; if (R.idx < G.coreNext) return; G.coreNext = R.idx + (G.P.tr.coreMagnet ? 1 : 2 + (Math.random() < 0.5 ? 1 : 0)); // a core every two or three rooms
   const cur = modeOf(), spec = ['berserk', 'liquid', 'giant', 'agile'].filter(m => m !== cur), list = cur === 'normal' ? [spec[(Math.random() * spec.length) | 0]] : ['normal'].concat(Math.random() < 0.5 ? [spec[(Math.random() * spec.length) | 0]] : []);
@@ -4516,10 +4516,10 @@ function lancePresent(dt) {
   if (bossPhase(B) >= 3 && !B.dismounted && !B.duel && !B.grab && !B.mv) { B.dismounted = true; B.hz = []; B.thr = 0; B.rest = 2; // thrown from the saddle
     const ne = makeEnemy('bLanceH', B.x, B.z, 91, 1); ne.spawnT = 0.6; ne.hz = []; ne.nb = 0; ne.rest = 2; G.E.push(ne);
     const [i, j] = sqOf(R, B.x, B.z); for (const [a, b] of DIRS.king) if (U.sqFree(i + a, j + b)) { const [x, z] = sqC(R, i + a, j + b); B.mv = { fx: B.x, fz: B.z, tx: x, tz: z, t: 0, dur: 0.4, jump: true, h: 1.4 }; break; }
-    G.flash = 0.5; G.shake = 0.9; Snd.S.neigh(); Snd.S.slam(); UI.toast('knight', '落馬'); }
+    G.flash = 0.5; G.shake = 0.9; Snd.S.neigh(); Snd.S.slam();  }
   // the grab: twice a fight
   if (!B.grab && !B.duel && B.grabs && B.grabs.length && B.hp / B.maxHp < B.grabs[0] && !B.mv && bossPhase(B) >= 2) { B.grabs.shift(); B.hz = []; B.thr = 0; if (B.seq && B.seq.kind !== 'jav') { B.seq = null; B.busy = false; }
-    B.grab = { t: R.beat * 4, lock: 0.2, a: angTo(B.x, B.z, P.x, P.z) }; Snd.S.warn(); Snd.S.bell(); UI.toast('knight', '貫星'); G.shake = 0.4; }
+    B.grab = { t: R.beat * 4, lock: 0.2, a: angTo(B.x, B.z, P.x, P.z) }; Snd.S.warn(); Snd.S.bell();  G.shake = 0.4; }
   if (B.grab) { const g = B.grab; g.t -= dt; if (g.t > g.lock) g.a = angTo(B.x, B.z, P.x, P.z); B.face = g.a;
     if (g.t <= 0) { B.grab = null; B.rest = 2; G.fx.push({ k: 'zapline', x: B.x, z: B.z, tx: B.x + Math.cos(g.a) * 16, tz: B.z + Math.sin(g.a) * 16, life: 0.3, max: 0.3, col: [1.6, 1.3, 0.6] }); Snd.S.slash(); G.shake = Math.max(G.shake, 0.6);
       const dx = P.x - B.x, dz = P.z - B.z, along = dx * Math.cos(g.a) + dz * Math.sin(g.a), side = Math.abs(-dx * Math.sin(g.a) + dz * Math.cos(g.a));
@@ -4534,13 +4534,13 @@ function lancePresent(dt) {
 }
 function impale(B, a) {
   const P = G.P; P.inv = 0; G.impale = { t: 1.3, a, bx: B.x, bz: B.z }; G.slowT = 0.9; G.hitstop = 0.28; G.red = 1; G.crack = 0.8; G.flash = 0.6; G.shake = 1; G.invert = 0.15;
-  Snd.S.shatter(); Snd.S.slam(); UI.toast('skull', '貫穿'); hurtPlayer(3, 'impale'); P.inv = Math.max(P.inv, 1.4);
+  Snd.S.shatter(); Snd.S.slam();  hurtPlayer(3, 'impale'); P.inv = Math.max(P.inv, 1.4);
   move(G.room, P, Math.cos(a) * 1.4, Math.sin(a) * 1.4);
   for (let k = 0; k < 40; k++) { const an = a + rnd(-0.5, 0.5), sp = rnd(2, 7); G.fx.push({ k: 'chip', x: P.x, y: rnd(0.4, 1.2), z: P.z, vx: Math.cos(an) * sp, vy: rnd(1, 4), vz: Math.sin(an) * sp, life: rnd(0.5, 1), s: rnd(0.04, 0.1), col: [0.6, 0.05, 0.05], r0: 0 }); }
 }
 function lanceDuel(e) { const R = G.room, P = G.P; if (e.duel) return; e.duel = { st: 'retreat', t: 0 }; e.hz = []; e.thr = 0; e.grab = null; e.mv = null; e.seq = null; e.busy = false; e.noLance = false;
   const pts = [[R.bx0 + 0.8, P.z], [R.bx1 - 0.8, P.z], [P.x, R.bz0 + 0.8], [P.x, R.bz1 - 0.8]].sort((a, b) => dist(b[0], b[1], P.x, P.z) - dist(a[0], a[1], P.x, P.z)); e.duel.tx = pts[0][0]; e.duel.tz = pts[0][1];
-  G.slowT = 0.6; G.flash = 0.5; Snd.S.bell(); Snd.S.neigh(); UI.toast('knight', '決鬥'); setTimeout(() => UI.hint(`<span class="gold">${IC.mouseL}</span><b>撞到前揮擊＝格擋</b>`), 600); }
+  G.slowT = 0.6; G.flash = 0.5; Snd.S.bell(); Snd.S.neigh();   }
 function duelStep(e, dt) {
   const R = G.room, P = G.P, D = e.duel, edge = (x, z) => x < R.bx0 + 0.6 || x > R.bx1 - 0.6 || z < R.bz0 + 0.6 || z > R.bz1 - 0.6;
   D.t += dt;
@@ -4594,7 +4594,7 @@ function starHurt(e, dmg) {
   if (e.type === 'bStarNode') return dmg;
   if (e.won) return dmg;
   if (e.fin) { Snd.S.crack(); return 0; }
-  const floor = e.maxHp * 0.06; if (e.hp - dmg <= floor) { e.fin = { st: 'wind', t: 1.6, a: 0, n: 0 }; e.orbs = []; G.slowT = 0.5; G.flash = 0.4; Snd.S.bell(); UI.toast('bishop', '天樞之光'); setTimeout(() => UI.hint(`<span class="gold">${IC.shield}</span><b>用盾正面彈回去</b>`), 500); return Math.max(0, e.hp - floor); }
+  const floor = e.maxHp * 0.06; if (e.hp - dmg <= floor) { e.fin = { st: 'wind', t: 1.6, a: 0, n: 0 }; e.orbs = []; G.slowT = 0.5; G.flash = 0.4; Snd.S.bell();   return Math.max(0, e.hp - floor); }
   return dmg;
 }
 // ---------------------------------------------------------------- lasers: a bright head with a trail, bouncing off the board's edges
@@ -4705,7 +4705,7 @@ function starConstellation(B) { // seven stars, a random figure: a wandering cha
   for (let k = 0, tries = 0; k < STAR_NODE_N && tries < 400; tries++) { const a = Math.random() * TAU, d = 2 + Math.random() * 1.5, base = k === 5 && pts[2] ? pts[2] : pts.length ? pts[pts.length - 1] : cur, i = Math.round(base[0] + Math.cos(a) * d), j = Math.round(base[1] + Math.sin(a) * d);
     if (!onBoard(R, i, j) || R.sqBlock[j * R.cols + i] || pts.some(q => Math.hypot(q[0] - i, q[1] - j) < 1.8)) continue; const [x, z] = sqC(R, i, j); if (dist(x, z, P.x, P.z) < 2.5 || dist(x, z, B.x, B.z) < 1.5) continue; pts.push([i, j]); k++; }
   B.links = []; pts.forEach((q, k) => { const [x, z] = sqC(R, q[0], q[1]), ne = makeEnemy('bStarNode', x, z, 60 + k, k); ne.k = k; ne.spawnT = 0.6 + k * 0.15; ne.hz = []; G.E.push(ne); if (k > 0) B.links.push([k === 5 ? 2 : k - 1, k]); });
-  B.nodes = G.E.filter(o => o.type === 'bStarNode'); G.flash = 0.3; Snd.S.bell(); UI.toast('bishop', '七星陣');
+  B.nodes = G.E.filter(o => o.type === 'bStarNode'); G.flash = 0.3; Snd.S.bell(); 
 }
 // the last hit: one great laser from him; turn your shield so it comes back into him
 function finalStep(B, dt) {
@@ -4713,7 +4713,7 @@ function finalStep(B, dt) {
   if (F.st === 'wind') { F.t -= dt; F.a = F.t > 0.3 ? angTo(B.x, B.z, P.x, P.z) : F.a; if (F.t <= 0) { F.st = 'fly'; F.t = 6; F.missed = false; spawnLaser(B.x + Math.cos(F.a) * 1, B.z + Math.sin(F.a) * 1, F.a, { bounce: true, life: 6, len: 9, w: 0.55, sp: 18, final: true, inside: true, dmg: 2 }); G.shake = 0.8; Snd.S.slam(); } return; }
   if (F.st === 'fly') { F.t -= dt; if (!G.lasers.some(L => L.final)) { F.st = 'wind'; F.t = 1.5; Snd.S.warn(); } }
 }
-function starWin(B) { B.won = true; B.fin = null; G.slowT = 1.2; G.flash = 0.9; G.shake = 1; G.invert = 0.2; Snd.S.bell(); Snd.S.shatter(); UI.toast('bishop', '星落');
+function starWin(B) { B.won = true; B.fin = null; G.slowT = 1.2; G.flash = 0.9; G.shake = 1; G.invert = 0.2; Snd.S.bell(); Snd.S.shatter(); 
   for (let k = 0; k < 60; k++) { const an = rnd(0, TAU), sp = rnd(2, 8); G.fx.push({ k: 'shard', x: B.x, y: rnd(0.5, 2.5), z: B.z, vx: Math.cos(an) * sp, vy: rnd(2, 6), vz: Math.sin(an) * sp, life: rnd(0.8, 1.8), s: rnd(0.05, 0.14), gold: k % 2 === 0 }); }
   hurtEnemy(B, 999, 0, 'upg'); }
 
