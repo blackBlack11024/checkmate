@@ -1,4 +1,9 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>[hidden]{display:none!important}</style>
 <title>將死之前</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="吞下棋子，在被將死之前，先吃掉國王。">
@@ -419,6 +424,43 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 .bpg { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; } .bp { appearance: none; background: var(--panel); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
 .bp:hover { border-color: var(--gold); transform: translateY(-2px); } .bp .pa .ic { width: 40px; height: 40px; color: var(--blood); } .bp.inv .pa .ic { transform: rotate(180deg); color: var(--silver); } .bp b { font-size: 15px; } .bp small { color: var(--dim); font-size: 12px; display: flex; align-items: center; gap: 2px; } .bp small .ic { width: 13px; height: 13px; }
 #end .modeline { display: flex; align-items: center; gap: 4px; color: var(--dim); font-size: 15px; } #end .modeline b { color: var(--ink); font-size: 18px; } #end .modeline .ic { width: 18px; height: 18px; }
+
+/* ---- UI pass (v83): one panel language, readable secondary text, numbers that stand out, nothing hanging off the screen ---- */
+/* route nodes for special rooms (the class used to collide with the start-pick buttons and blew up into tall pills) */
+.rt .n.spn, .rtm .n.spn { color: var(--silver); } .rt .n.spn.cur, .rtm .n.spn.cur { color: #140e06; }
+/* numbers in descriptions */
+em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: nowrap; }
+.card span em.nm { color: #f0c77a; }
+/* upgrade cards: rarity reads at a glance (a coloured top edge + a faint glow), the number key sits in a proper key chip */
+.card { border-radius: 10px; padding: 26px 20px 22px; gap: 12px; background: linear-gradient(180deg, rgba(26, 20, 14, .96), rgba(12, 10, 8, .96)); box-shadow: 0 10px 30px rgba(0, 0, 0, .55); overflow: hidden; }
+.card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--mute); }
+.card.r2::before { background: var(--silver); } .card.r3::before { background: var(--gold); box-shadow: 0 0 14px rgba(227, 180, 101, .8); }
+.card.r3 { border-color: rgba(227, 180, 101, .45); } .card.r2 { border-color: rgba(201, 214, 232, .3); } .card.deal::before { background: #9a86ff; }
+.card .ck { position: absolute; top: 12px; left: 12px; min-width: 22px; height: 22px; display: grid; place-items: center; font: 600 12px/1 var(--f-en); color: var(--dim); border: 1px solid var(--line); border-radius: 5px; }
+.card:hover .ck, .card:focus-visible .ck { color: var(--gold); border-color: var(--gold); }
+.card b { font-size: 22px; letter-spacing: .04em; } .card span { font-size: 14.5px; color: #cfc4b1; line-height: 1.75; max-width: 17em; margin: 0 auto; }
+.card .big .ic { width: 52px; height: 52px; } .card.r3 .big { color: var(--gold); } .card.r2 .big { color: var(--silver); }
+.card:hover, .card:focus-visible { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0, 0, 0, .6), 0 0 0 1px var(--gold); }
+/* pedestal labels: compact chips; only the one you stand next to opens up */
+.ped { border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, .5); }
+.ped.near { opacity: 1; width: 176px; border-color: var(--gold); } .ped.near span { display: block; } .ped span { color: #d8cdb9; }
+/* pause & title settings: two small toggles side by side */
+.optrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.optrow .btn { min-height: 42px !important; padding: 8px 12px !important; justify-content: center !important; font-size: 14px; border-radius: 8px; }
+.optrow .btn .ic { width: 18px !important; height: 18px !important; } .optrow .btn small, .optrow .btn span { font-size: 14px; color: var(--dim); }
+.optrow .btn.off small, .optrow .btn.off span { color: var(--mute); }
+.pmenu .btn { gap: 12px; } .pmenu .btn .ic { width: 20px; height: 20px; flex: none; }
+.ppanel { border-radius: 14px; min-width: 320px; padding: 30px 32px; } .ppanel h2 { margin: 0 0 6px; text-align: center; font-size: 30px; letter-spacing: .3em; padding-left: .3em; }
+/* intro & info cards: secondary text you can actually read */
+.panel { border-radius: 10px; } .panel .n { color: #a99e8b; font-size: 13.5px; line-height: 1.6; padding: 0 8px; }
+.gcard { border-radius: 14px; } .gcard ul li { line-height: 1.7; }
+/* start pick: the unlock condition was 9px */
+.sp small { font-size: 11px; line-height: 1.3; } .sp { border-radius: 8px; }
+/* hint pill a little calmer */
+#hint { box-shadow: 0 6px 20px rgba(0, 0, 0, .5); } #hint b { letter-spacing: .03em; }
+.card span em.nm { display: inline; } #codexBtn .sv { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--dim); font-size: 14px; } #codexBtn .sv .ic { width: 14px; height: 14px; }
+#roomcard b { text-shadow: 0 2px 22px rgba(0, 0, 0, .95), 0 0 2px rgba(0, 0, 0, .8); } #roomcard .dots { display: inline-flex; padding: 4px 10px; margin-top: 6px; border-radius: 999px; background: rgba(7, 6, 5, .55); }
+.tpanel .logo { margin-bottom: 14px; }
 </style>
 <canvas id="cv" aria-label="遊戲畫面"></canvas>
 <div id="hud" hidden>
@@ -461,7 +503,6 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 <div id="title">
   <div class="tpanel">
     <div class="logo"><h1>將死之前</h1><div class="sub">BEFORE CHECKMATE</div></div>
-    <div class="tag">吞下棋子，變成棋子。在被將死之前，先吃掉國王。</div>
     <nav class="menu" id="tmenu">
       <button class="btn primary ib" id="start" aria-label="開始"><span class="playi"></span>開始</button>
     </nav>
@@ -475,7 +516,7 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 <div class="ov" id="end" hidden></div>
 <div class="ov" id="pause" hidden><div class="ppanel"><h2>暫停</h2><div class="row pmenu"><button class="btn primary ib" id="resume" aria-label="繼續"></button><button class="btn ib" id="pMap" aria-label="路線與增益"></button><button class="btn ib" id="helpBtn" aria-label="怎麼玩"></button><button class="btn ib" id="quit" aria-label="回標題"></button></div></div></div>
 <div class="ov" id="intro" hidden></div>
-<div id="nogl" hidden><p>這個遊戲需要支援 WebGL2 的瀏覽器。</p></div>
+<div id="nogl" hidden><p>無法啟動 3D 繪圖（WebGL2）<br><small style="opacity:.7">開啟瀏覽器的「硬體加速」，然後重新啟動瀏覽器</small></p></div>
 <script>
 'use strict';
 (() => {
@@ -760,8 +801,14 @@ void main(){
   let room = { x0: 0, z0: 0, w: 1, h: 1 };
   function init(canvas) {
     cv = canvas;
-    gl = cv.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+    // try a few ways; a canvas that failed once can stay failed, so each retry gets a fresh canvas
+    const tries = [{ antialias: false, alpha: false, powerPreference: 'high-performance' }, { antialias: false, alpha: false }, {}, { failIfMajorPerformanceCaveat: false }];
+    Gfx.why = '';
+    for (const o of tries) { const onErr = ev => { Gfx.why = ev.statusMessage || Gfx.why; }; cv.addEventListener('webglcontextcreationerror', onErr);
+      try { gl = cv.getContext('webgl2', o); } catch (e) { gl = null; Gfx.why = String(e); } cv.removeEventListener('webglcontextcreationerror', onErr);
+      if (gl) break; const fresh = cv.cloneNode(false); cv.replaceWith(fresh); cv = fresh; }
     if (!gl) return false;
+    canvas = cv;
     buildGeo();
     PS = prog(VS, FS); PL = prog(QVS, LMFS); PP = prog(QVS, PFS);
     LMT = target(192, 144, false);
@@ -1332,12 +1379,12 @@ function genRoom(idx, seed) {
   const rng = new RNG(seed);
   const FL = floorOf(idx), boss = FL.t === 'boss', rn = boss ? 6 : FL.rn, BK = boss ? FL.kind : null, BD = BK ? BOSS[BK] : null, special = ['shop', 'deal', 'puzzle', 'rest'].includes(FL.t) ? FL.t : null, elite = FL.t === 'elite';
   // each room after the first two has a rule of its own
-  const MODS = ['knights', 'bishops', 'rooks', 'race', 'dark', 'endgame', 'mirrorhall', 'inverse'];
+  const MODS = ['knights', 'bishops', 'rooks', 'race', 'dark', 'endgame', 'mirrorhall', 'inverse', 'rampage', 'ironwall', 'ironfire'];
   const mr = new RNG(((G.runSeed || 1) * 31 + 7) >>> 0); for (let k = MODS.length - 1; k > 0; k--) { const q = Math.floor(mr.next() * (k + 1)); [MODS[k], MODS[q]] = [MODS[q], MODS[k]]; }
-  let mod = boss || rn < 2 || special || elite ? 'normal' : MODS[(rn - 2) % MODS.length];
+  let mod = window.__mod && !boss && !special && idx > 0 ? window.__mod : boss || rn < 2 || special || elite ? 'normal' : MODS[(rn - 2) % MODS.length];
   // the board itself can change shape (normal and elite rooms from the second one on)
   const shape = !boss && !special && idx > 0 && window.__shape ? window.__shape : !boss && !special && idx > 0 && G.state !== 'title' && rng.chance(0.5) ? rng.pick(Object.keys(SHAPES)) : null;
-  if (shape && !['dark', 'inverse'].includes(mod)) mod = 'normal';
+  if (shape && !['dark', 'inverse'].includes(mod) && !window.__mod) mod = 'normal';
   const SH = shape ? SHAPES[shape] : null;
   const cols = SH ? SH.cols : boss ? 9 : rn < 2 ? 7 : 8, rows = SH ? SH.rows : boss ? 8 : rn < 2 ? 6 : 7;
   const W = Math.ceil(cols * SQ + 2.2), D = Math.ceil(rows * SQ + 2.4);
@@ -1357,7 +1404,7 @@ function genRoom(idx, seed) {
   S('plane', M4.trs(0, 0.002, (R.bz0 + R.bz1) / 2, 0, cols * SQ + 0.36, 1, rows * SQ + 0.36), boss ? [0.32, 0.3, 0.34] : [0.36, 0.25, 0.1], 0);
   R.voids = new Set(); if (SH && SH.void) for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) if (SH.void(i, j, cols, rows, rng) && !(j === rows - 1 && Math.abs(i - Math.floor(cols / 2)) <= 1)) R.voids.add(i + ',' + j);
   const INVR = boss && isInvBoss(BK); R.inv = INVR;
-  const lightSq = INVR ? [0.16, 0.17, 0.22] : boss ? [0.55, 0.56, 0.6] : [0.66, 0.58, 0.46], darkSq = INVR ? [0.7, 0.72, 0.8] : boss ? [0.1, 0.1, 0.13] : [0.14, 0.09, 0.07];
+  const lightSq = INVR ? [0.16, 0.17, 0.22] : boss ? [0.55, 0.56, 0.6] : [0.66, 0.58, 0.46], darkSq = INVR ? [0.7, 0.72, 0.8] : boss ? [0.1, 0.1, 0.13] : [0.14, 0.09, 0.07]; R.sqCols = [lightSq, darkSq];
   for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const [x, z] = ctr(i, j);
     if (R.voids.has(i + ',' + j)) { // a pit: no square, just the dark below, with a worn rim
       S('plane', M4.trs(x, 0.003, z, 0, SQ, 1, SQ), [0.03, 0.025, 0.02], 0); S('plane', M4.trs(x, 0.0035, z, 0, SQ * 0.86, 1, SQ * 0.86), [0.004, 0.004, 0.006], 1); S('plane', M4.trs(x, 0.004, z, 0, SQ * 0.6, 1, SQ * 0.6), [0, 0, 0], 1);
@@ -1451,7 +1498,7 @@ function genRoom(idx, seed) {
   if (mod !== 'dark') { const cz = (R.bz0 + R.bz1) / 2 + 0.6; R.candles.push({ x: 0, z: cz, h: 3.4, stand: false, sconce: true, life: 999, max: 999, lit: true });
   }
   // swallowable props
-  const nP = BK === 'bLance' || BK === 'bStar' ? 0 : boss ? rng.int(1, 2) : rng.int(2, 4);
+  const nP = BK === 'bLance' || BK === 'bStar' ? 0 : boss ? rng.int(1, 2) : mod === 'rampage' ? rng.int(4, 5) : rng.int(2, 4); // (暴走之夜: more pillars to hide behind)
   for (let k = 0; k < nP; k++) {
     const pos = placeSq(2, rows - 2); if (!pos) continue;
     const type = rng.pick(['vase', 'vase', 'urn', 'chair']);
@@ -1477,13 +1524,21 @@ function genRoom(idx, seed) {
     if (mod === 'bishops') army = ['bishop', 'bishop', 'bishop', 'bishop', 'pawn'];   // every line on the board is a diagonal
     if (mod === 'rooks') army = ['rook', 'rook', 'rook', 'pawn', 'pawn'];            // a siege: ranks and files
     if (mod === 'endgame') army = ['queen'];
+    if (mod === 'rampage') army = rn >= 4 ? ['rook', 'bishop', 'knight', 'rook'] : ['rook', 'bishop', 'knight'];   // 暴走之夜: few, all berserk
+    if (mod === 'ironwall') army = rn >= 4 ? ['rook', 'bishop', 'knight', 'queen'] : ['rook', 'bishop', 'knight', 'pawn']; // 鐵壁: all heavy
+    if (mod === 'ironfire') { army = ['rook', 'bishop', 'rook']; for (const t of ['rook', 'bishop', 'knight']) { const pos = placeSq(2, 3) || placeSq(2, 4); if (pos) R.spawnList.push({ type: t, x: pos[0], z: pos[1], var: 'heavy', anchor: true }); } } // 鐵與火: heavy walls that hold their ground, berserk runners between them
     if (mod === 'race') { army = ['rook']; for (let c = 0; c < cols; c += 2) { const key = c + ',1'; const [x, z] = ctr(c, 1); if (!usedSq.has(key) && free(x, z, 0.5)) { usedSq.add(key); R.spawnList.push({ type: 'pawn', x, z }); } } }
     if (L(3)) army.push(rn % 2 ? 'knight' : 'pawn');
     for (const t of army) { const deep = SH ? Math.max(3, Math.floor(rows * (SH.half || 0.45))) : 3; const pos = t === 'pawn' ? placeSq(1, 2) || placeSq(1, deep) : placeSq(0, 1) || placeSq(0, 2) || placeSq(0, deep); if (pos) R.spawnList.push({ type: t, x: pos[0], z: pos[1], hpMul: mod === 'endgame' ? 1.6 : 1 }); }
     if (elite) { const ks = Object.keys(ELITES), cand = R.spawnList.filter(q => q.type !== 'king').sort((a, b) => (a.type === 'pawn') - (b.type === 'pawn')); for (let k = 0; k < (L(7) ? 2 : 1) + 1 && k < cand.length; k++) { cand[k].elite = ks[rng.int(0, ks.length - 1)]; if (L(16)) cand[k].elite2 = ks[rng.int(0, ks.length - 1)]; } }
     // phantoms: visible only in a mirror's light
     // variants: berserk pieces move every half beat and never stop attacking; heavy pieces warn long and hit for two
-    if (rn >= 2 || G.mode !== 'normal') for (const q of R.spawnList) if (q.type !== 'king' && !q.elite) { const r = rng.next(); if (r < 0.13) q.var = 'berserk'; else if (r < 0.26) q.var = 'heavy'; }
+    if (rn >= 1 || G.mode !== 'normal') { const cand = R.spawnList.filter(q => q.type !== 'king' && !q.elite && !q.phantom);
+      for (const q of cand) { const r = rng.next(); if (r < 0.17) q.var = 'berserk'; else if (r < 0.34) q.var = 'heavy'; }
+    }
+    if (mod === 'rampage') for (const q of R.spawnList) if (q.type !== 'king') q.var = 'berserk';
+    if (mod === 'ironwall') for (const q of R.spawnList) if (q.type !== 'king') q.var = 'heavy';
+    if (mod === 'ironfire') for (const q of R.spawnList) if (q.type !== 'king') q.var = q.anchor ? 'heavy' : 'berserk';
     for (const q of R.spawnList) if (q.type !== 'king' && (mod === 'inverse' || (rn >= 2 && q.type !== 'pawn' && rng.chance(0.3)))) q.inv = true;
     const nPh = 0;
     const cand = R.spawnList.filter(q => q.type !== 'king'); for (let k = 0; k < nPh && cand.length; k++) cand.splice(rng.int(0, cand.length - 1), 1)[0].phantom = true;
@@ -1682,6 +1737,7 @@ function chessTick(e, W, dt) {
   if (!moves.length) return;
   let pick = null, cap = false;
   if (ps && e.type !== 'king') { const c = moves.find(m => m[0] === ps[0] && m[1] === ps[1]); if (c) { pick = c; cap = true; } }
+  if (!pick && e.anchor) return; // a wall: it only strikes what steps into its reach
   if (!pick && e.var === 'berserk') { // berserk: not hunting you — just the longest line it can tear down, over and over
     const r0 = aiRand(e, i * 5 + j * 11 + (e.nb = (e.nb || 0) + 1) * 17), byLen = moves.slice().sort((a, b) => Math.hypot(b[0] - i, b[1] - j) - Math.hypot(a[0] - i, a[1] - j)); pick = byLen[Math.floor(r0 * Math.min(3, byLen.length))]; }
   if (!pick && ps && R.idx >= 2 && e.type !== 'king' && P.vx !== undefined) { // read where you are heading
@@ -1887,10 +1943,11 @@ function enterRoom(i) {
   const P = G.P; [P.x, P.z] = sqC(R, Math.floor(R.cols / 2), R.rows - 1); P.vx = P.vz = 0; P.inMirror = null; P.lungeT = 0; P.jump = null; P.dash = null; P.hop = 0; P.face = -Math.PI / 2;
   if (!R.free(P.x, P.z, 0.6)) for (let k = 0; k < 40; k++) { const x = rnd(-3, 3), z = R.D / 2 - rnd(1.2, 3); if (R.free(x, z, 0.6)) { P.x = x; P.z = z; break; } }
   uploadOcc(R);
-  R.spawnList.forEach((s, k) => { const e = makeEnemy(s.type, s.x, s.z, (G.runSeed + i * 131 + k * 17) % 1000, k); if (s.phantom) e.phantom = true; if (s.inv) e.inv = true; if (s.var) { e.var = s.var; if (s.var === 'heavy') { e.hp *= 1.5; e.maxHp = e.hp; } } for (const el of [s.elite, s.elite2]) if (el) { e.elite = e.elite || el; e['el_' + el] = true; } if (e.el_big) { e.hp *= 2.5; e.maxHp = e.hp; e.big = 1.3; } if (e.el_shield) e.shieldN = 2; if (e.el_swift) e.swift = true; if (s.hpMul) { e.hp *= s.hpMul; e.maxHp = e.hp; } G.E.push(e); if (e.d.boss && !e.d.minor) { G.boss = e; e.spawnT = 1.6; bossInit(e); } });
+  R.spawnList.forEach((s, k) => { const e = makeEnemy(s.type, s.x, s.z, (G.runSeed + i * 131 + k * 17) % 1000, k); if (s.phantom) e.phantom = true; if (s.inv) e.inv = true; if (s.var) { e.var = s.var; if (s.var === 'heavy') { e.hp *= 1.5; e.maxHp = e.hp; } } if (s.anchor) e.anchor = true; for (const el of [s.elite, s.elite2]) if (el) { e.elite = e.elite || el; e['el_' + el] = true; } if (e.el_big) { e.hp *= 2.5; e.maxHp = e.hp; e.big = 1.3; } if (e.el_shield) e.shieldN = 2; if (e.el_swift) e.swift = true; if (s.hpMul) { e.hp *= s.hpMul; e.maxHp = e.hp; } G.E.push(e); if (e.d.boss && !e.d.minor) { G.boss = e; e.spawnT = 1.6; bossInit(e); } });
   if (R.shape) setTimeout(() => { if (G.room === R) UI.toast('board', SHAPES[R.shape].name); }, 700);
+  G.hintShown = G.hintShown || {}; for (const v of ['berserk', 'heavy']) if (!G.hintShown['v_' + v] && G.E.some(e => e.var === v)) { G.hintShown['v_' + v] = 1; setTimeout(() => { if (G.room === R) UI.hint(v === 'berserk' ? `<span class="red">${IC.skull}</span><b>狂暴：不停衝</b>` : `<span class="silver">${IC.shield}</span><b>沈重：一擊兩血</b>`); }, 2200); }
   G.puddles = [];
-  G.lasers = []; G.laserWarn = []; G.shells = [];
+  G.lasers = []; G.laserWarn = []; G.shells = []; G.bossKO = null;
   const FORCE = { bKing: 'chess', bLance: 'agile', bStar: 'giant' }, fm = FORCE[R.bossKind];
   if (G.P && G.P.forcedMode && !fm) { G.P.forcedMode = false; setMode(G.P.prevMode || 'normal', true); }
   if (G.P && fm === 'chess') { if (!G.P.forcedMode) G.P.prevMode = G.P.mode; G.P.forcedMode = true; setMode(fm, true); }
@@ -1906,8 +1963,16 @@ function enterRoom(i) {
   HIST.length = 0; G.crumbleT = undefined; G.twin = null; G.P.shield = G.P.shield || 0; G.P.form2 = G.P.form2 || null; setTimeout(() => hook('room', {}), 50);
   if (R.boss) { Snd.music(BOSS[R.bossKind].track, 0.8); Snd.phase(1); Snd.setInv(!!R.inv); UI.boss(true); } else { Snd.music(0, 0.35); Snd.setInv(false); UI.boss(false); }
 }
+function fillPits(R) {
+  const list = [...R.voids].map(k => k.split(',').map(Number)); R.fills = R.fills || [];
+  list.forEach(([i, j], n) => { const [x, z] = sqC(R, i, j);
+    for (let jj = Math.floor((z - SQ / 2 + 0.02 - R.z0) * CELL); jj < Math.ceil((z + SQ / 2 - 0.02 - R.z0) * CELL); jj++) for (let ii = Math.floor((x - SQ / 2 + 0.02 - R.x0) * CELL); ii < Math.ceil((x + SQ / 2 - 0.02 - R.x0) * CELL); ii++) if (ii >= 0 && jj >= 0 && ii < R.gw && jj < R.gh && R.grid[jj * R.gw + ii] === 254) R.grid[jj * R.gw + ii] = 0;
+    R.sqBlock[j * R.cols + i] = 0; R.fills.push({ x, z, c: (R.sqCols || [[0.6, 0.5, 0.4], [0.14, 0.09, 0.07]])[(i + j) % 2], t: -0.25 - n * 0.06 }); });
+  R.voids.clear(); uploadOcc(R); Snd.S.land();
+}
 function roomCleared() {
   const R = G.room; R.cleared = true; R.door.open = true; if (R.door2) R.door2.open = true;
+  if (R.voids && R.voids.size && R.bx0 !== undefined) fillPits(R); // the fight is over: the holes close up
   if (R.special) { Snd.S.door(); return; }
   Snd.S.door();
   META.addSand(R.boss ? 15 : R.elite ? 8 : 3); if (R.boss) G.shards = (G.shards || 0) + 12;
@@ -2361,7 +2426,9 @@ function hurtPlayer(dmg, src) {
   UI.hurt && UI.hurt();
   hook('hurtAfter', { dmg });
   if (P.hp <= 0 && !window.__noMeta) { try { const n = Object.keys(P.tr).filter(id => UPGS.some(u => u.id === id)).length; if (n >= 1 && G.roomIdx >= 1) { META.saveGhost({ room: G.roomIdx, tr: Object.fromEntries(Object.entries(P.tr).filter(([id]) => UPGS.some(u => u.id === id))), form: ['knight', 'bishop', 'rook', 'queen', 'king'].includes(P.form) ? P.form : null }); G.ghostSaved = true; } const pz = makePuzzle(src); if (pz) { savePuzzle(pz); G.newPuz = pz; } } catch (err) { console.error(err); } }
-  if (P.hp <= 0) { P.hp = 0; G.state = 'dead'; Snd.S.death(); Snd.music(null, 0); setTimeout(() => UI.end(false), 1600); }
+  if (P.hp <= 0) { P.hp = 0; G.state = 'dead'; Snd.S.death(); Snd.music(null, 0);
+    const B = G.boss, ko = B && !B.dead && (B.type === 'bLance' || B.type === 'bStar') && !P.inMirror ? bossKOStart(B) : 0; // 貫星 / 天樞 finish you off themselves
+    if (ko) G.bossKO.after = () => setTimeout(() => UI.end(false), 700); else setTimeout(() => UI.end(false), 1600); } // (the end screen waits for the finishing move)
   return true;
 }
 function triggerFate() {
@@ -2382,6 +2449,7 @@ const BUF_T = 0.2;
 function update(dtReal, ev) {
   const P = G.P, R = G.room;
   G.time += dtReal;
+  if (G.bossKO) bossKOStep(dtReal);
   if (G.rollA && Math.abs(G.rollA) > 0.01) { const c = Math.cos(G.rollA), s = Math.sin(G.rollA), mx = Inp.st.mx, my = Inp.st.my; Inp.st.mx = mx * c - my * s; Inp.st.my = mx * s + my * c; }
   G.buf = G.buf || {}; for (const k of ['atk', 'jump', 'act', 'eat', 'swap']) if (ev[k]) G.buf[k] = G.time;
   const want = k => G.buf[k] !== undefined && G.time - G.buf[k] <= BUF_T;
@@ -2432,7 +2500,7 @@ function update(dtReal, ev) {
     P.dark = lightHere < DARK;
     const rush = P.tr.endgameRush && G.E.filter(e => !e.dead).length <= 2 ? 1.3 : 1, fz = P.tr.frenzy && G.combo && G.combo.t > 0 ? Math.min(1.5, 1 + G.combo.n * 0.08) : 1, think = P.tr.deepThink && G.gazing ? 1 / Math.max(0.3, G.ts) : 1;
     const P0x = P.x, P0z = P.z, md = modeOf();
-    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think;
+    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think * (1 + (P.tr.tempoUp ? P.tempoB || 0 : 0)) * ((P.newSkinT || 0) > G.time ? 1.25 : 1) * (P.tr.rat && P.hp === 1 ? 1.3 : 1);
     P.stillT = Math.hypot(P.vx, P.vz) < 0.4 && P.lungeT <= 0 ? (P.stillT || 0) + dt : 0;
     if (P.hopJ) { const J = P.hopJ; if (J.freeze > 0) J.freeze -= dt; else J.t += dt; const k = clamp01(J.t / J.dur); P.x = lerp(J.fx, J.tx, k); P.z = lerp(J.fz, J.tz, k); P.hop = Math.sin(k * Math.PI) * 0.9; if (k >= 1) { P.hopJ = null; P.hop = 0; fixPos(R, P); P.squash = -0.4; Snd.S.land(); P.dblUsed = false; if (P.diveNext) { P.diveNext = false; U.aoe(P.x, P.z, 1.8, 3 * dmgMul(P), [0.6, 0.5, 0.9], 'lunge'); G.shake = 0.5; Snd.S.slam(); } hook('land', { perf: J.perf }); if (J.perf && P.tr.stomp) { const rr = 1.5; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 2 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'lunge'); ring(P.x, P.z, rr, [1, 0.8, 0.4]); G.shake = 0.3; } } P.vx = (J.tx - J.fx) / J.dur * 0.3; P.vz = (J.tz - J.fz) / J.dur * 0.3; }
     else if (P.jump) { // knight leap: untouchable in the air, crushes where it lands
@@ -2491,7 +2559,7 @@ function update(dtReal, ev) {
     // pieces are solid: walk around them or jump over
     if (!P.hopJ && !P.jump && !P.dash && P.lungeT <= 0) for (const e of G.E) { if (e.dead || !e.d.chess || e.spawnT > 0 || e.mv) continue; const d = dist(P.x, P.z, e.x, e.z), rr = P.r + e.r * 0.8; if (d < rr && d > 0.001) move(R, P, (P.x - e.x) / d * (rr - d), (P.z - e.z) / d * (rr - d)); }
     // door
-    for (const Dr of [R.door, R.door2]) if (Dr && Dr.open && Math.abs(P.x - Dr.x) < 1.3 && P.z < R.z0 + 1.9 && !G.choosing && G.state === 'play') { nextRoom(Dr.dest); return; }
+    for (const Dr of [R.door, R.door2]) if (Dr && Dr.open && Math.abs(P.x - Dr.x) < 1.3 + Math.max(0, P.r - 0.45) && P.z < R.z0 + 1.9 + Math.max(0, P.r - 0.45) * 1.2 && !G.choosing && G.state === 'play') { nextRoom(Dr.dest); return; }
   }
   // ---------------- world step (present)
   const W = { R, decoy: G.decoy, P: { x: P.x, z: P.z, vx: P.vx, vz: P.vz, calmB: P.calmB, mimic: P.mimic, form: P.form, finv: P.finv, r: P.r, pts: modePts(), air: !!(P.hopJ || P.jump), hidden: !!P.inMirror || G.state !== 'play', dark: P.dark }, E: G.E, B: G.B, t: G.t, events: [], fut: false };
@@ -2499,7 +2567,7 @@ function update(dtReal, ev) {
   for (const evn of W.events) {
     if (evn.k === 'hitP' && evn.parry && evn.parry.type === 'bLance' && lanceParried(evn.parry)) { lanceParry(evn.parry, false); continue; }
     if (evn.k === 'hitP' && !evn.clone && giantBlock(evn)) continue; // 巨大's little round shield
-    if (evn.k === 'hitP') { if (evn.clone) { if (!G.puddles || !G.puddles.some(p => p.id === evn.clone)) continue; popPuddle(evn.clone); if (G.P.tr.decoy) continue; G.P.inv = 0; } if (hurtPlayer(evn.dmg, evn.src)) { if (G.fate) G.fate.hurt = true; } }
+    if (evn.k === 'hitP') { if (evn.clone) { if (!G.puddles || !G.puddles.some(p => p.id === evn.clone)) continue; popPuddle(evn.clone); if (G.P.tr.liqDecoy) continue; G.P.inv = 0; } if (hurtPlayer(evn.dmg, evn.src)) { if (G.fate) G.fate.hurt = true; } }
     else if (evn.k === 'smashMirror') { const m = R.mirrors[evn.m]; if (m) damageMirror(m, 1); }
     else if (evn.k === 'relight') { const c = R.candles[evn.c]; if (c && !c.gone) { c.lit = true; c.life = Math.max(c.life, 40); Snd.S.light(); } }
     else if (evn.k === 'slam') { Snd.S.slam(); G.shake = evn.small ? 0.25 : 0.6; ring(evn.x, evn.z, evn.small ? 1.5 : 2.9, [0.9, 0.8, 0.7]); }
@@ -3162,7 +3230,7 @@ const UPGS = [
   { id: 'warcry', name: '戰吼', desc: '狂暴：每四拍吼一聲，兩格內的棋子全部暈一拍', ic: 'skull', rar: R2, flag: true, mode: 'berserk' },
   { id: 'momentum', name: '慣性', desc: '狂暴：同一方向連走，每拍傷害 +30%（最多三層），轉向就歸零', ic: 'speed', rar: R1, flag: true, mode: 'berserk' },
   { id: 'splash', name: '濺射', desc: '液態：水彈落地時濺開，周圍一格的棋子都受傷', ic: 'drop', rar: R1, flag: true, mode: 'liquid' },
-  { id: 'decoy', name: '替身', desc: '液態：分身被打只會碎掉，你不會扣血', ic: 'drop', rar: R2, flag: true, mode: 'liquid' },
+  { id: 'liqDecoy', name: '替身', desc: '液態：分身被打只會碎掉，你不會扣血', ic: 'drop', rar: R2, flag: true, mode: 'liquid' },
   { id: 'whirl', name: '漩渦', desc: '液態：按 Q 收回時，分身會把碰到的棋子一起拖過來', ic: 'drop', rar: R2, flag: true, mode: 'liquid' },
   { id: 'spikeShield', name: '刺盾', desc: '巨大：盾牌撞到的棋子受傷並被頂開', ic: 'shield', rar: R1, flag: true, mode: 'giant' },
   { id: 'tremor', name: '震步', desc: '巨大：每走四格踏一次地，周圍的棋子暈一拍', ic: 'crown', rar: R1, flag: true, mode: 'giant' },
@@ -3182,6 +3250,59 @@ const UPGS = [
   { id: 'deathMark', name: '亡者之禮', desc: '每次擊殺，留下一個會吸引棋子撞上去的骷髏陷阱', ic: 'skull', rar: R1, on: { kill(o) { const [i, j] = sqOf(G.room, o.e.x, o.e.z); U.trap(i, j, 12, 3, 'spike'); } } },
   { id: 'overture', name: '序曲', desc: '每間房開場的前四拍，你的每次出手都是準拍', ic: 'clock', rar: R1, flag: true },
   { id: 'cascade', name: '骨牌', desc: '擊殺的棋子會往後倒，壓到後面那顆', ic: 'pawn', rar: R1, on: { kill(o) { if (o.src === 'upg') return; const R = G.room, a = Math.atan2(o.e.z - G.P.z, o.e.x - G.P.x), x = o.e.x + Math.cos(a) * 1.5, z = o.e.z + Math.sin(a) * 1.5; const e = U.near(x, z, 1.1); if (e) setTimeout(() => { if (!e.dead) { hurtEnemy(e, 4, a, 'upg'); burst(e.x, 0.5, e.z, 10, [0.5, 0.3, 0.2]); } }, 180); } } },
+  // ---- fifty more (v81)
+  { id: 'ricochet', name: '彈射', desc: '撲擊打中後，彈出一道光打下一顆棋子', ic: 'lunge', rar: R1, on: { hit(o) { if (o.src !== 'lunge' || (G.P.ricoT || 0) > G.time) return; G.P.ricoT = G.time + 0.3; const n = U.near(o.e.x, o.e.z, 4, o.e); if (n) U.bolt(o.e.x, o.e.z, n, Math.max(1, o.dmg * 0.5)); } } },
+  { id: 'impale', name: '穿刺', desc: '撲擊打穿棋子，背後那一格的棋子也受傷', ic: 'pierce', rar: R1, on: { hit(o) { if (o.src !== 'lunge') return; const bx = o.e.x + Math.cos(o.a) * SQ, bz = o.e.z + Math.sin(o.a) * SQ; for (const e of G.E.slice()) if (e !== o.e && !e.dead && e.spawnT <= 0 && dist(e.x, e.z, bx, bz) < 0.8) { hurtEnemy(e, o.dmg * 0.6, o.a, 'upg'); U.zap(o.e.x, o.e.z, e.x, e.z, [1.4, 0.9, 0.5]); } } } },
+  { id: 'sweep', name: '橫掃', desc: '撲擊結束時，左右兩側的棋子受傷', ic: 'blade', rar: R1, on: { lungeEnd() { const P = G.P; for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < 1.9 && Math.abs(Math.abs(wrapA(angTo(P.x, P.z, e.x, e.z) - P.face)) - Math.PI / 2) < 0.6) hurtEnemy(e, 1.5 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'upg'); G.fx.push({ k: 'swing', x: P.x, z: P.z, a: P.face + Math.PI / 2, y: 0.5, life: 0.14, max: 0.14 }, { k: 'swing', x: P.x, z: P.z, a: P.face - Math.PI / 2, y: 0.5, life: 0.14, max: 0.14 }); } } },
+  { id: 'ram', name: '重擊', desc: '撲擊把棋子打退一格；撞到別的棋子，兩顆都受傷', ic: 'quake', rar: R2, on: { hit(o) { if (o.src !== 'lunge' || o.e.dead || o.e.d.boss) return; const R = G.room, [di, dj] = U.dirSq(o.a), [i, j] = sqOf(R, o.e.x, o.e.z), b = G.E.find(x => x !== o.e && !x.dead && sqOf(R, x.x, x.z).join() === (i + di) + ',' + (j + dj));
+      if (b) { hurtEnemy(o.e, 2, o.a, 'upg'); if (!b.dead) hurtEnemy(b, 2, o.a, 'upg'); Snd.S.crack(); G.shake = Math.max(G.shake, 0.35); } else U.push(o.e, di, dj); } } },
+  { id: 'lastStand', name: '迴光', desc: '只剩 1 顆心時，傷害三倍', ic: 'heartup', rar: R2, on: { hit(o) { if (G.P.hp === 1 && o.src !== 'upg' && !o.e.dead) hurtEnemy(o.e, o.dmg * 2, o.a, 'upg'); } } },
+  { id: 'firstStrike', name: '先手', desc: '每顆棋子第一次被你打中，傷害加倍', ic: 'lunge', rar: R1, on: { hit(o) { if (o.src === 'upg' || o.e.touched) return; o.e.touched = 1; if (!o.e.dead) hurtEnemy(o.e, o.dmg, o.a, 'upg'); } } },
+  { id: 'cull', name: '收尾', desc: '血量剩三成以下的棋子，撲擊直接打死（國王與 Boss 除外）', ic: 'blade', rar: R2, on: { hit(o) { const e = o.e; if (o.src !== 'lunge' || e.dead || e.d.boss || e.type === 'king' || e.hp > e.maxHp * 0.3) return; hurtEnemy(e, e.hp + 1, o.a, 'upg'); G.flash = Math.max(G.flash, 0.15); } } },
+  { id: 'runup', name: '助跑', desc: '一直移動就蓄力，下一次撲擊最多多 3 點傷害', ic: 'speed', rar: R1, on: { tick(dt) { const P = G.P; if (Math.hypot(P.vx || 0, P.vz || 0) > 1) P.runB = Math.min(3, (P.runB || 0) + dt * 1.5); }, lunge() { const P = G.P; P.runHit = P.runB || 0; P.runB = 0; }, hit(o) { const P = G.P; if (o.src === 'lunge' && P.runHit > 0.3 && !o.e.dead) { hurtEnemy(o.e, P.runHit, o.a, 'upg'); P.runHit = 0; } } } },
+  { id: 'jumpShot', name: '起跳彈', desc: '起跳時朝瞄準方向射出一顆光彈', ic: 'jumpI', rar: R1, on: { jump() { const P = G.P; U.shot(P.x, P.z, aimAngle(), 2, { sp: 14, life: 0.9, col: [1.3, 1.2, 0.7] }); } } },
+  { id: 'landPush', name: '震地波', desc: '落地時，前後左右的棋子被震開一格', ic: 'quake', rar: R1, on: { land() { const P = G.P, R = G.room; if (R.bx0 === undefined) return; const q = sqOf(R, P.x, P.z); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0 && sqOf(R, e.x, e.z).join() === (q[0] + a) + ',' + (q[1] + b)) { hurtEnemy(e, 1, Math.atan2(b, a), 'upg'); U.push(e, a, b); } ring(P.x, P.z, 1.6, [0.9, 0.8, 0.5]); } } },
+  { id: 'airRefill', name: '浮空', desc: '變身時每次跳躍，有兩成機率回復 1 次', ic: 'jumpI', rar: R2, on: { jump() { const P = G.P; if (P.form && Math.random() < 0.2) { P.charges++; UI.toast(P.form, '+1'); UI.form(); } } } },
+  { id: 'leapStun', name: '蛙跳', desc: '跳過的棋子會暈一拍', ic: 'jumpI', rar: R1, on: { jump() { G.P.jfx = G.P.x; G.P.jfz = G.P.z; }, land() { const P = G.P; if (P.jfx === undefined) return; const a = angTo(P.jfx, P.jfz, P.x, P.z), ln = dist(P.jfx, P.jfz, P.x, P.z); for (const e of G.E) if (!e.dead && e.spawnT <= 0 && ln > 0.3 && segDist(e.x, e.z, P.jfx, P.jfz, a, ln) < e.r + 0.3 && dist(e.x, e.z, P.x, P.z) > 0.5) U.stun(e, 1); P.jfx = undefined; } } },
+  { id: 'tempoUp', name: '漸快', desc: '在同一間房越久越快（最多 +30%）', ic: 'speed', rar: R1, on: { room() { G.P.tempoB = 0; }, beat(o) { if (o.n % 8 === 0) G.P.tempoB = Math.min(0.3, (G.P.tempoB || 0) + 0.05); } } },
+  { id: 'cymbal', name: '鈸', desc: '每 4 拍，身邊一圈的棋子受傷', ic: 'clock', rar: R1, on: { beat(o) { if (o.n % 4 === 0) { const P = G.P; U.aoe(P.x, P.z, 1.7, 1.5, [1.3, 1.1, 0.5], 'upg'); Snd.S.bell(); } } } },
+  { id: 'syncopate', name: '搶拍', desc: '準拍出手後，攻擊立刻可以再用', ic: 'clock', rar: R1, on: { perfect() { G.P.atkCd = 0; } } },
+  { id: 'timeBomb', name: '定時炸彈', desc: '每 12 拍，在最近的棋子腳下放一顆三拍後爆炸的炸彈', ic: 'redsq', rar: R1, on: { beat(o) { if (o.n % 12 !== 0) return; const P = G.P, e = U.near(P.x, P.z, 8); if (!e) return; const x = e.x, z = e.z, R = G.room, b = R.beat || 0.5; ring(x, z, 1.4, [1.4, 0.4, 0.2]); for (let k = 1; k <= 3; k++) setTimeout(() => { if (G.room !== R || G.state !== 'play') return; if (k < 3) ring(x, z, 1.4, [1.4, 0.4 + k * 0.2, 0.2]); else { U.aoe(x, z, 1.6, 4, [1.5, 0.5, 0.2], 'upg'); burst(x, 0.5, z, 24, [1.4, 0.6, 0.2]); Snd.S.slam(); G.shake = Math.max(G.shake, 0.5); } }, k * b * 1000); } } },
+  { id: 'tuning', name: '調音', desc: '連續 4 次準拍後，下一次打中的棋子暈兩拍', ic: 'clock', rar: R2, on: { perfect(o) { if (o.n >= 4 && o.n % 4 === 0) { G.P.tuned = true; ring(G.P.x, G.P.z, 1, [1.3, 1.2, 0.5]); } }, hit(o) { if (G.P.tuned && o.src !== 'upg') { G.P.tuned = false; U.stun(o.e, 2); } } } },
+  { id: 'carapace', name: '甲殼', desc: '變身時，沒有護盾就得到一層', ic: 'shield', rar: R1, on: { form() { if (!(G.P.shield > 0)) U.shield(1); } } },
+  { id: 'newSkin', name: '新皮', desc: '變身後三秒，移動加快', ic: 'speed', rar: R1, on: { form() { G.P.newSkinT = G.time + 3; } } },
+  { id: 'leftover', name: '剩菜', desc: '變身用完時，地上留下一顆同種棋子可以再吞', ic: 'swallow', rar: R2, on: { formEnd(o) { const P = G.P; if (o.spit || !o.type || o.type === 'pawn' || (G.room.leftN || 0) >= 2) return; G.room.leftN = (G.room.leftN || 0) + 1; dropPiece(o.type, P.x + rnd(-0.8, 0.8), P.z + rnd(0.6, 1.2), o.inv); } } },
+  { id: 'finale', name: '謝幕', desc: '變身的最後一擊傷害三倍', ic: 'crown', rar: R1, on: { lunge() { const P = G.P; P.finaleHit = !!(P.form && P.form !== 'pawn' && P.charges <= 1); }, hit(o) { const P = G.P; if (P.finaleHit && o.src !== 'upg' && !o.e.dead) { P.finaleHit = false; hurtEnemy(o.e, o.dmg * 2, o.a, 'upg'); G.flash = Math.max(G.flash, 0.2); } } } },
+  { id: 'shock', name: '錯愕', desc: '吞下棋子時，場上同種的棋子全部暈一拍', ic: 'devour', rar: R1, on: { form(o) { for (const e of G.E) if (!e.dead && e.type === o.type) U.stun(e, 1); } } },
+  { id: 'mirrorBath', name: '鏡浴', desc: '每間房第一次穿過鏡子回 1 血', ic: 'mirror', rar: R1, on: { mirror() { if (G.room.mBath) return; G.room.mBath = true; U.heal(1); } } },
+  { id: 'mirrorRay', name: '鏡光', desc: '穿過鏡子時，出口射出一道光打最近的棋子', ic: 'mirror', rar: R1, on: { mirror() { const P = G.P; setTimeout(() => { if (G.state !== 'play') return; const e = U.near(P.x, P.z, 9); if (e) U.bolt(P.x, P.z, e, 4); }, 120); } } },
+  { id: 'refresh', name: '疾風', desc: '擊殺時，跳躍冷卻立刻好', ic: 'jumpI', rar: R1, on: { kill() { G.P.jumpCd = 0; } } },
+  { id: 'chainBlast', name: '殉爆', desc: '擊殺的棋子一拍後爆炸，傷害周圍', ic: 'quake', rar: R1, on: { kill(o) { const x = o.e.x, z = o.e.z, R = G.room; setTimeout(() => { if (G.room !== R || G.state !== 'play') return; U.aoe(x, z, 1.5, 2, [1.4, 0.6, 0.3], 'upg'); burst(x, 0.5, z, 14, [1.4, 0.6, 0.2]); Snd.S.crack(); }, (R.beat || 0.5) * 1000); } } },
+  { id: 'soulShard', name: '拾魂', desc: '擊殺時有兩成機率多掉 1 片鏡片', ic: 'shard', rar: R1, on: { kill(o) { if (Math.random() < 0.2) { G.shards = (G.shards || 0) + 1; burst(o.e.x, 1, o.e.z, 8, [0.9, 0.9, 1.3]); } } } },
+  { id: 'terror', name: '恐懼', desc: '擊殺時，周圍的棋子嚇得往外退一格', ic: 'skull', rar: R1, on: { kill(o) { const R = G.room; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, o.e.x, o.e.z) < 2.4) { const [a, b] = U.dirSq(angTo(o.e.x, o.e.z, e.x, e.z)); U.push(e, a, b); } } } },
+  { id: 'overkill', name: '溢傷', desc: '打死棋子多出來的傷害，傳給最近的棋子', ic: 'pierce', rar: R1, on: { kill(o) { const over = -(o.e.hp || 0); if (over < 0.5) return; const n = U.near(o.e.x, o.e.z, 5, o.e); if (n) U.bolt(o.e.x, o.e.z, n, Math.min(over, 12)); } } },
+  { id: 'comboShield', name: '連殺盾', desc: '連殺到 5 時得到一層護盾', ic: 'shield', rar: R2, on: { kill() { if (G.combo && G.combo.n === 5) { U.shield(1); UI.toast('shield', '+1'); } } } },
+  { id: 'thorns', name: '荊棘', desc: '受傷後兩秒內，碰到你的棋子都會受傷', ic: 'blade', rar: R1, on: { hurtAfter() { G.P.thornT = G.time + 2; }, tick() { const P = G.P; if ((P.thornT || 0) < G.time) return; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < P.r + e.r + 0.25 && (e.thornHit || 0) < G.time) { e.thornHit = G.time + 0.5; hurtEnemy(e, 2, angTo(P.x, P.z, e.x, e.z), 'upg'); } } } },
+  { id: 'adrenaline', name: '腎上腺素', desc: '受傷後三秒，傷害加倍', ic: 'heartup', rar: R1, on: { hurtAfter() { G.P.buffT = Math.max(G.P.buffT || 0, 3); } } },
+  { id: 'molt', name: '換皮', desc: '受到攻擊時，有四分之一機率完全沒事', ic: 'ghost', rar: R2, on: { hurt(ho) { if (Math.random() < 0.25) { ho.cancel = true; const P = G.P; burst(P.x, 0.6, P.z, 16, [0.6, 0.6, 0.7]); UI.toast('ghost', '換皮'); } } } },
+  { id: 'rat', name: '窮鼠', desc: '只剩 1 顆心時，移動加快', ic: 'speed', rar: R1, flag: true },
+  { id: 'breather', name: '喘息', desc: '每清完三間房回 1 血', ic: 'heartup', rar: R1, on: { clear() { G.breathN = (G.breathN || 0) + 1; if (G.breathN % 3 === 0) U.heal(1); } } },
+  { id: 'warReady', name: '戰備', desc: '進入 Boss 房時得到兩層護盾', ic: 'shield', rar: R2, on: { room() { if (G.room.boss) U.shield(2); } } },
+  { id: 'piggy', name: '存錢筒', desc: '清完房間時，每存 10 片鏡片多得 1 片', ic: 'sand', rar: R1, on: { clear() { const n = Math.floor((G.shards || 0) / 10); if (n) { G.shards += n; UI.toast('sand', '+' + n); } } } },
+  { id: 'scout', name: '斥候', desc: '每間房開始時，離你最遠的棋子暈三拍', ic: 'eye', rar: R1, on: { room() { setTimeout(() => { const P = G.P; let far = null, fd = 0; for (const e of G.E) if (!e.dead && !e.d.boss) { const d = dist(e.x, e.z, P.x, P.z); if (d > fd) { fd = d; far = e; } } if (far) U.stun(far, 3); }, 900); } } },
+  { id: 'treasure', name: '尋寶', desc: '每間房有一顆棋子帶著寶物，打死牠掉 5 片鏡片', ic: 'sand', rar: R1, on: { room() { setTimeout(() => { const c = G.E.filter(e => !e.dead && !e.d.boss && e.type !== 'king'); if (c.length) c[(Math.random() * c.length) | 0].loot = true; }, 600); }, kill(o) { if (o.e.loot) { G.shards = (G.shards || 0) + 5; UI.toast('sand', '+5'); burst(o.e.x, 1, o.e.z, 24, [1.4, 1.2, 0.5]); Snd.S.pick(); } } } },
+  { id: 'pillarShot', name: '反彈柱', desc: '撲擊撞到牆或柱子時，朝最近的棋子彈出光彈', ic: 'rook', rar: R1, on: { wall(o) { const P = G.P, e = U.near(P.x, P.z, 9); if (e) U.shot(P.x, P.z, angTo(P.x, P.z, e.x, e.z), 3, { sp: 16, life: 1.2, col: [1.3, 1.1, 0.6] }); } } },
+  { id: 'hearth', name: '火之心', desc: '每間房第一次撞翻燭台回 1 血', ic: 'candle', rar: R1, on: { candle() { if (G.room.hearth) return; G.room.hearth = true; U.heal(1); } } },
+  { id: 'abyssCall', name: '深淵之喚', desc: '每 8 拍，站在坑邊的棋子被拉下去受傷', ic: 'board', rar: R2, on: { beat(o) { if (o.n % 8) return; const R = G.room; if (R.bx0 === undefined) return; const pit = (i, j) => onBoard(R, i, j) && (R.sqBlock[j * R.cols + i] === 4 || R.sqBlock[j * R.cols + i] === 3);
+      for (const e of G.E.slice()) { if (e.dead || e.spawnT > 0) continue; const [i, j] = sqOf(R, e.x, e.z); if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => pit(i + a, j + b))) { hurtEnemy(e, 3, 0, 'upg'); burst(e.x, 0.2, e.z, 10, [0.15, 0.1, 0.2]); } } } } },
+  { id: 'comrade', name: '戰友', desc: '有盟友在場時，傷害 +25%', ic: 'flag', rar: R1, on: { hit(o) { if (o.src !== 'upg' && !o.e.dead && G.allies && G.allies.length) hurtEnemy(o.e, o.dmg * 0.25, o.a, 'upg'); } } },
+  { id: 'lastRook', name: '援軍', desc: '剩 1 顆心時，召來一名盟友城堡（每間房一次）', ic: 'rook', rar: R2, on: { hurtAfter() { const P = G.P; if (P.hp === 1 && !G.room.lastRook) { G.room.lastRook = true; U.ally('rook', P.x + 1, P.z, 24); } } } },
+  { id: 'ironStomach', name: '鐵胃', desc: '吞下沈重棋子時回 1 血', ic: 'devour', rar: R1, on: { form() { if (G.P.fvar === 'heavy') U.heal(1); } } },
+  { id: 'lone', name: '孤軍', desc: '場上只剩一顆棋子時，牠會嚇得暈三拍', ic: 'foe', rar: R1, on: { tick() { const R = G.room; if (!R || R.boss || R.loneDone) return; const live = G.E.filter(e => !e.dead && !e.d.boss); if (live.length === 1 && G.kills > 0) { R.loneDone = true; U.stun(live[0], 3); } } } },
+  { id: 'embers', name: '餘燼', desc: '擊殺的格子燒兩拍', ic: 'candle', rar: R1, on: { kill(o) { const R = G.room; if (R.bx0 === undefined) return; const [i, j] = sqOf(R, o.e.x, o.e.z); U.trap(i, j, 2, 2, 'fire'); } } },
+  { id: 'kingFear', name: '王之恐懼', desc: '打中國王時，全場棋子暈一拍（每 4 秒一次）', ic: 'king', rar: R2, on: { hit(o) { if (o.e.type !== 'king' || (G.kfT || 0) > G.time) return; G.kfT = G.time + 4; for (const e of G.E) if (!e.dead && e !== o.e && !e.d.boss) U.stun(e, 1); G.flash = Math.max(G.flash, 0.2); } } },
+  { id: 'aftershock', name: '殘震', desc: '落地一拍後，落點再震一次', ic: 'quake', rar: R1, on: { land() { const P = G.P, x = P.x, z = P.z, R = G.room; setTimeout(() => { if (G.room !== R || G.state !== 'play') return; U.aoe(x, z, 1.3, 1.5, [0.9, 0.8, 0.5], 'upg'); }, (R.beat || 0.5) * 1000); } } },
+  { id: 'stillShield', name: '靜心', desc: '站著不動兩拍得到一層護盾（每間房兩次）', ic: 'eye', rar: R1, on: { tick() { const P = G.P, R = G.room; if ((R.stillN || 0) >= 2 || P.shield > 0) return; if ((P.stillT || 0) > 2 * (R.beat || 0.5)) { R.stillN = (R.stillN || 0) + 1; U.shield(1); P.stillT = 0; ring(P.x, P.z, 1, [0.8, 0.85, 1.2]); } } } },
 ];
 // pedestal diagrams default to a picture of the icon on a board
 for (const u of UPGS) { u.max = u.max || 1; if (!u.diag) u.diag = { p: [[2, 2, u.ic === 'invi' ? 'rook' : u.ic, u.rar === 3 ? 'gold' : u.rar === 2 ? 'silver' : '']], hint: true }; }
@@ -4128,7 +4249,7 @@ function setMode(m, quiet) {
   if (m !== 'normal' && m !== 'chess') { G.modesSeen = G.modesSeen || {}; G.modesSeen[m] = 1; }
   if (P.tr.coreHeal && !quiet && m !== 'chess') U.heal(1);
   if (P.tr.shedSkin && !quiet && m !== 'chess') { for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0 && !e.ally && dist(e.x, e.z, P.x, P.z) < 2.6 * SQ * 0.75) { hurtEnemy(e, 3 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'upg'); if (!e.dead && !e.d.boss) U.stun(e, 1.5); } ring(P.x, P.z, 2.6, [1.2, 1.1, 0.8]); G.shake = Math.max(G.shake, 0.6); Snd.S.slam(); }
-  P.r = m === 'giant' ? 1.0 : 0.45; if (m === 'liquid') P.water = WATER_MAX; if (m !== 'liquid') G.puddles = [];
+  P.r = m === 'giant' ? 1.0 : m === 'liquid' ? 0.16 : 0.45; // (液態 is a puddle: it slips through any gap) if (m === 'liquid') P.water = WATER_MAX; if (m !== 'liquid') G.puddles = [];
   if (m === 'liquid' && P.form) { P.form = null; P.fuse = null; P.fvar = null; P.charges = 0; }
   P.bqAtk = P.bqJump = false; fixPos(G.room, P);
   if (!quiet) { const D = SMODES[m]; G.flash = Math.max(G.flash, 0.3); G.shake = Math.max(G.shake, 0.4); ring(P.x, P.z, 1.8, D.col.map(v => v * 2 + 0.3)); burst(P.x, 0.6, P.z, 24, D.col.map(v => v + 0.2)); Snd.S.gulp(); Snd.S.bell();
@@ -4625,6 +4746,38 @@ function shellsStep(dt) {
   G.shells = G.shells.filter(S => S.st !== 'gone');
 }
 
+// ---------------------------------------------------------------- when 貫星騎士 or 天樞主教 kills you: a finishing move of their own
+//  貫星騎士 「最後一槍」: he turns, leaps at you, runs you through, hoists you up on the lance and flings you off.
+//  天樞主教 「星葬」: seven stars open around you, link into a figure, all fire into you; you crystallise and shatter into starlight.
+const KO_DUR = { bLance: 2.7, bStar: 3.0 };
+function bossKOStart(B) {
+  const P = G.P; G.lasers = []; G.laserWarn = []; G.shells = []; if (B.orbs) B.orbs = []; B.seq = null; B.grab = null; B.duel = null; B.mv = null; B.busy = true; B.next = 99; B.tele = 99; B.pend = null; G.impale = null;
+  const a = angTo(B.x, B.z, P.x, P.z);
+  G.bossKO = { k: B.type, B, t: 0, dur: KO_DUR[B.type], px: P.x, pz: P.z, bx: B.x, bz: B.z, a, stars: Array.from({ length: 7 }, (_, n) => { const q = -Math.PI / 2 + n / 7 * TAU; return [P.x + Math.cos(q) * 4.2, P.z + Math.sin(q) * 4.2]; }), ev: {} };
+  G.slowT = 0; G.shake = 0.5; G.flash = 0.3; return G.bossKO.dur;
+}
+function bossKOStep(dt) {
+  const K = G.bossKO, P = G.P, B = K.B; if (!K) return; K.t += dt; const t = K.t, once = (k, f) => { if (!K.ev[k]) { K.ev[k] = 1; f(); } };
+  P.x = K.px; P.z = K.pz; P.vx = P.vz = 0;
+  if (K.k === 'bLance') {
+    const stand = [K.px - Math.cos(K.a) * 1.7, K.pz - Math.sin(K.a) * 1.7];
+    if (t < 0.45) { B.face = K.a; B.x = K.bx; B.z = K.bz; once('turn', () => { Snd.S.neigh && Snd.S.neigh(); }); }
+    else if (t < 0.95) { const k = (t - 0.45) / 0.5; B.x = lerp(K.bx, stand[0], k); B.z = lerp(K.bz, stand[1], k); B.hop = Math.sin(k * Math.PI) * 2.4; B.face = K.a; once('leap', () => Snd.S.lunge()); }
+    else { B.x = stand[0]; B.z = stand[1]; B.hop = 0; B.face = K.a; once('land', () => { G.shake = 0.6; Snd.S.slam(); burst(B.x, 0.2, B.z, 20, [0.6, 0.55, 0.5]); }); }
+    if (t >= 0.95) once('stab', () => { G.hitstop = 0.2; G.flash = 0.6; G.red = 1; G.crack = 0.8; G.shake = 1; Snd.S.slash(); Snd.S.shatter(); for (let n = 0; n < 24; n++) { const an = K.a + rnd(-0.6, 0.6), sp = rnd(2, 7); G.fx.push({ k: 'chip', x: K.px, y: rnd(0.6, 1.2), z: K.pz, vx: Math.cos(an) * sp, vy: rnd(1, 4), vz: Math.sin(an) * sp, life: rnd(0.6, 1.2), s: rnd(0.05, 0.12), col: n % 2 ? [0.04, 0.03, 0.05] : [0.75, 0.1, 0.08], r0: rnd(0, 6) }); } });
+    if (t >= 2.0) once('fling', () => { G.flash = 0.8; G.shake = 1.2; G.red = 1; Snd.S.slam(); Snd.S.shatter(); const y = 2.6;
+      for (let n = 0; n < 40; n++) { const an = rnd(0, TAU), sp = rnd(2, 8); G.fx.push({ k: 'chip', x: K.px + Math.cos(K.a) * 0.6, y, z: K.pz + Math.sin(K.a) * 0.6, vx: Math.cos(an) * sp, vy: rnd(0, 5), vz: Math.sin(an) * sp, life: rnd(0.8, 1.6), s: rnd(0.06, 0.16), col: n % 3 ? [0.03, 0.02, 0.04] : [0.8, 0.1, 0.08], r0: rnd(0, 6) }); }
+      G.fx.push({ k: 'stain', x: K.px + Math.cos(K.a) * 2.5, z: K.pz + Math.sin(K.a) * 2.5, life: 20, max: 20, s: 1.4, a: rnd(0, TAU) }); });
+  } else {
+    B.face = angTo(B.x, B.z, K.px, K.pz);
+    K.stars.forEach((s, n) => { if (t > 0.25 + n * 0.08) once('s' + n, () => { Snd.S.bell(); burst(s[0], 1.2, s[1], 8, [1.2, 1.2, 1.7]); }); });
+    if (t > 1.0) once('link', () => { Snd.S.mirrorOut(); G.flash = 0.25; });
+    if (t > 1.45) once('fire', () => { G.flash = 1; G.shake = 1; G.invert = 0.25; Snd.S.slash(); Snd.S.slam(); for (const s of K.stars) G.fx.push({ k: 'zapline', x: s[0], z: s[1], tx: K.px, tz: K.pz, life: 0.5, max: 0.5, col: [1.8, 1.7, 2.2] }); });
+    if (t > 2.35) once('shatter', () => { G.flash = 0.9; G.shake = 0.8; Snd.S.shatter(); for (let n = 0; n < 70; n++) { const an = rnd(0, TAU), sp = rnd(1, 6); G.fx.push({ k: 'shard', x: K.px, y: rnd(1.4, 2.4), z: K.pz, vx: Math.cos(an) * sp, vy: rnd(1, 6), vz: Math.sin(an) * sp, life: rnd(0.9, 2), s: rnd(0.05, 0.14), gold: n % 2 === 0 }); } });
+  }
+  if (t >= K.dur) { G.bossKO = null; B.busy = false; if (K.after) K.after(); }
+}
+
 // ============================================================================
 // e4_view.js — turn game state into draw lists for the renderer
 // ============================================================================
@@ -4748,6 +4901,26 @@ const View = (() => {
   }
   // one telegraph square: frame (always the same), fill that grows with p (0 → 1), bright core on the final beat
   // a lance along angle a from (x,z): u0 = where the grip sits relative to the holder
+  // a boss finishing you off (see bossKOStep): the slime held up on the lance, or crystallising inside seven stars
+  function koItems(K, present, decals, t) { const P = G.P, B = K.B, T = K.t;
+    const slime = (y, s, col, kind) => { const it = slimeItem(K.px, K.pz, P, kind, t); if (col) it.col = col; it.m = M4.mul(M4.trs(K.px, y, K.pz, 0, s, s, s), M4.mul(M4.trs(-K.px, 0, -K.pz, 0, 1, 1, 1), it.m)); it.wob = 0; present.push(it); };
+    if (K.k === 'bLance') {
+      const hy = 1.6 * (B.d.scale || 1) * 0.55 + 0.35;
+      if (T < 0.95) slime(0, 1 - Math.min(0.15, T * 0.3), null, 3);
+      else if (T < 2.0) { const k = clamp01((T - 1.05) / 0.8), y = lerp(0.55, 2.6, k * k * (3 - 2 * k)); // run through, then hoisted up
+        lanceModel(present, B.x, hy + (y - 0.55) * 0.9, B.z, K.a, 0.2, 1); slime(y - 0.35, 0.95 + Math.sin(T * 30) * 0.04 * (1 - k), [0.5, 0.06, 0.05], 9);
+        if (Math.random() < 0.5) G.fx.push({ k: 'chip', x: K.px + rnd(-0.2, 0.2), y: y - 0.3, z: K.pz + rnd(-0.2, 0.2), vx: 0, vy: -1, vz: 0, life: 0.7, s: 0.05, col: [0.6, 0.05, 0.04], r0: 0 }); }
+      else lanceModel(present, B.x, hy + 1.8, B.z, K.a + (T - 2.0) * -2.5, 0.2, 0);
+    } else {
+      const lit = K.stars.filter((s, n) => T > 0.25 + n * 0.08);
+      for (const [x, z] of lit) { const k = 0.8 + 0.2 * Math.sin(t * 9 + x); present.push({ geo: 'sphere', m: M4.trs(x, 1.2, z, t, 0.22 * k, 0.22 * k, 0.22 * k), col: [1.6, 1.6, 2.2], kind: 5 }); decals.push({ geo: 'ringT', m: M4.trs(x, 0.04, z, 0, 0.5, 1, 0.5), col: [0.9, 0.9, 1.4], kind: DECAL, alpha: 1 }); }
+      if (T > 1.0 && T < 2.35) for (let n = 0; n < 7; n++) { const A = K.stars[n], Bq = K.stars[(n + 3) % 7], a = Math.atan2(Bq[1] - A[1], Bq[0] - A[0]), L = Math.hypot(Bq[0] - A[0], Bq[1] - A[1]) * clamp01((T - 1.0) / 0.35); // a seven-pointed star, drawn in light
+        present.push({ geo: 'box', m: M4.trs(A[0] + Math.cos(a) * L / 2, 1.2, A[1] + Math.sin(a) * L / 2, -a, L, 0.04, 0.04), col: [1.3, 1.3, 2.0], kind: 5 }); }
+      if (T > 1.45 && T < 2.35) present.push({ geo: 'box', m: M4.trs(K.px, 4, K.pz, t * 2, 0.9 * (1 - (T - 1.45) / 0.9) + 0.2, 8, 0.9 * (1 - (T - 1.45) / 0.9) + 0.2), col: [1.6, 1.6, 2.2], kind: 5 }); // the pillar of light
+      if (T < 1.45) slime(0, 1, null, 3);
+      else if (T < 2.35) { const k = clamp01((T - 1.45) / 0.9); slime(k * 1.4, 1 - k * 0.45, [0.3 + k * 1.5, 0.3 + k * 1.5, 0.45 + k * 1.8], 5); }
+    }
+  }
   function lanceModel(out, x, y, z, a, u0, glow) { const c = Math.cos(a), s = Math.sin(a), at = (u, h = 0) => [x + c * (u0 + u), y + h, z + s * (u0 + u)], P = (u, L, th, col, kind = 2, h = 0) => { const [px, py, pz] = at(u + L / 2, h); out.push({ geo: 'box', m: M4.trs(px, py, pz, -a, L, th, th), col, kind }); };
     const steel = glow ? [1.5, 0.4, 0.3] : [0.78, 0.8, 0.86], gk = glow ? 5 : 2;
     P(-0.2, 0.75, 0.11, [0.26, 0.15, 0.08], 1); // grip
@@ -4936,6 +5109,10 @@ const View = (() => {
   function build() {
     const R = G.room, P = G.P, t = G.t;
     const world = R.statics.slice();
+    if (R.fills && R.fills.length) { for (const f of R.fills) { f.t += 1 / 60; const k = clamp01(f.t / 0.35); if (k <= 0) continue; const e = 1 - Math.pow(1 - k, 3); // a square slides up out of the dark and settles
+        world.push({ geo: 'plane', m: M4.trs(f.x, 0.0045 - (1 - e) * 0.25, f.z, 0, (SQ - 0.03) * (0.6 + 0.4 * e), 1, (SQ - 0.03) * (0.6 + 0.4 * e)), col: f.c, kind: 0 });
+        if (k >= 1 && !f.done) { f.done = true; R.statics.push({ geo: 'plane', m: M4.trs(f.x, 0.0045, f.z, 0, SQ - 0.03, 1, SQ - 0.03), col: f.c, kind: 0, board: true, c0: f.c, cAlt: f.c }); burst(f.x, 0.1, f.z, 6, [0.5, 0.45, 0.4]); } }
+      R.fills = R.fills.filter(f => !f.done); }
     if (R.inv) { for (const it of world) if (it.board) it.col = R.swapped ? it.cAlt : it.c0;
       if (R.flipT > 0) { const ang = Math.PI * ss(clamp01(R.flipT / 1.8)), cz = (R.bz0 + R.bz1) / 2, F = M4.mul(M4.mul(M4.trs(0, 0, cz), RX(ang)), M4.trs(0, 0, -cz));
         for (let k = 0; k < world.length; k++) { const it = world[k]; if (it.board || (it.geo === 'plane' && it.m[13] < 0.02 && Math.abs(it.m[14] - cz) < 7)) world[k] = Object.assign({}, it, { m: M4.mul(F, it.m) }); } } }
@@ -5066,13 +5243,14 @@ const View = (() => {
       world.push({ geo: 'box', m: M4.trs(D.x, 2.7, R.z0 + 0.1, 0, 2.0, 0.25, 0.2), col: COL.gold, kind: 2 });
       for (const sx of [-0.9, 0.9]) world.push({ geo: 'box', m: M4.trs(D.x + sx, 1.3, R.z0 + 0.1, 0, 0.2, 2.6, 0.2), col: COL.gold, kind: 2 }); }
     for (const e of G.E) if (!e.dead && e.var && !e.phantom) { const k = 0.7 + 0.3 * Math.sin(t * (e.var === 'berserk' ? 14 : 2) + e.seed);
-      if (e.var === 'berserk') { for (let n = 0; n < 6; n++) { const a = n / 6 * TAU + t * 3; decals.push({ geo: 'plane', m: M4.trs(e.x + Math.cos(a) * 0.55, 0.036, e.z + Math.sin(a) * 0.55, -a, 0.22, 1, 0.05), col: [1.3 * k, 0.15, 0.08], kind: DECAL, alpha: 1 }); } }
-      else { decals.push({ geo: 'disc', m: M4.trs(e.x, 0.034, e.z, 0, 0.8, 1, 0.8), col: [0.12, 0.12, 0.16], kind: DECAL, alpha: 1 }); decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.036, e.z, 0, 0.8, 1, 0.8), col: [0.45 * k, 0.48 * k, 0.6 * k], kind: DECAL, alpha: 1 }); } }
+      if (e.var === 'berserk') { decals.push({ geo: 'disc', m: M4.trs(e.x, 0.033, e.z, 0, 0.75, 1, 0.75), col: [0.9 * k, 0.06, 0.03], kind: DECAL, alpha: 1 }); for (let n = 0; n < 8; n++) { const a = n / 8 * TAU + t * 3; decals.push({ geo: 'plane', m: M4.trs(e.x + Math.cos(a) * 0.72, 0.036, e.z + Math.sin(a) * 0.72, -a, 0.3, 1, 0.07), col: [1.3 * k, 0.15, 0.08], kind: DECAL, alpha: 1 }); } }
+      else { decals.push({ geo: 'disc', m: M4.trs(e.x, 0.034, e.z, 0, 0.95, 1, 0.95), col: [0.05, 0.05, 0.08], kind: DECAL, alpha: 1 }); for (const rr of [0.95, 0.8]) decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.036, e.z, 0, rr, 1, rr), col: [0.75 * k, 0.8 * k, 1.0 * k], kind: DECAL, alpha: 1 }); for (let n = 0; n < 4; n++) { const a = n / 4 * TAU + Math.PI / 4; decals.push({ geo: 'plane', m: M4.trs(e.x + Math.cos(a) * 0.95, 0.037, e.z + Math.sin(a) * 0.95, -a, 0.2, 1, 0.2), col: [0.7, 0.75, 0.95], kind: DECAL, alpha: 1 }); } } }
     for (const e of G.E) if (!e.dead && e.elite) { const c = ELITES[e.elite][1], k = 0.7 + 0.3 * Math.sin(t * 6 + e.seed); decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.035, e.z, 0, 0.95, 1, 0.95), col: [c[0] * k, c[1] * k, c[2] * k], kind: DECAL, alpha: 1 }); if (e.shieldN > 0) decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.04, e.z, 0, 0.7, 1, 0.7), col: [0.7, 0.8, 1.2], kind: DECAL, alpha: 1 }); }
     if (G.allies) for (const a of G.allies) if (a.army && !a.dead) decals.push({ geo: 'ringT', m: M4.trs(a.x, 0.033, a.z, 0, 0.6, 1, 0.6), col: [0.8, 0.8, 0.85], kind: DECAL, alpha: 1 });
     for (const e of G.E) if (!e.dead && e.pinT > G.time) decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.04, e.z, 0, 0.8, 1, 0.8), col: [1.2, 0.9, 0.3], kind: DECAL, alpha: 1 });
     // present actors
     const X = G.exec;
+    if (G.bossKO) { try { koItems(G.bossKO, present, decals, t); } catch (err) { console.error(err); } }
     if (X) { try { execItems(X, present, decals, G.time); } catch (err) { console.error(err); } }
     else if (!P.inMirror && G.state !== 'dead') {
       const blink = P.inv > 0 && Math.sin(G.time * 40) > 0;
@@ -5190,10 +5368,11 @@ const View = (() => {
     const portrait = Gfx.W < Gfx.H;
     const bcz = R.bz0 !== undefined ? (R.bz0 + R.bz1) / 2 : 0, tx = (P.inMirror ? lerp(P.x, P.inMirror.ex, 0.5) : P.x) * 0.6, tz = lerp(P.inMirror ? lerp(P.z, P.inMirror.ez, 0.5) : P.z, bcz - 0.6, 0.65);
     let CH = portrait ? 20 : 15, CO = portrait ? 6.6 : 7.6; const FOV = portrait ? 0.95 : 0.64;
-    G.camZ = expD(G.camZ || 0, X ? (X.kind === 'shatter' ? 0.22 : X.kind === 'crush' ? 0.12 : 0.26) : 0, X ? 7 : 4, 1 / 60);
+    const KO = G.bossKO; G.camZ = expD(G.camZ || 0, KO ? (KO.k === 'bStar' ? 0.18 : 0.3) : X ? (X.kind === 'shatter' ? 0.22 : X.kind === 'crush' ? 0.12 : 0.26) : 0, X || KO ? 5 : 4, 1 / 60);
     const pa = Math.atan2(CH, CO + 0.4), zb = CO - CH / Math.tan(pa + FOV / 2), zt = CO - CH / Math.tan(pa - FOV / 2);
     const zlo = R.z0 - zt - 1.2, zhi = -R.z0 - zb + (portrait ? 2.5 : 0.5);
-    if (X) { const fx = lerp(X.px, X.ex, 0.65), fz = lerp(X.pz, X.ez, 0.65) + (X.kind === 'crush' && !X.fired ? -0.6 : 0); G.cam.x = expD(G.cam.x, fx, 6, 1 / 60); G.cam.z = expD(G.cam.z, fz, 6, 1 / 60); }
+    if (KO) { const fx = KO.k === 'bLance' ? lerp(KO.px, KO.B.x, 0.35) : KO.px, fz = (KO.k === 'bLance' ? lerp(KO.pz, KO.B.z, 0.35) : KO.pz) + 0.8; G.cam.x = expD(G.cam.x, fx, 4, 1 / 60); G.cam.z = expD(G.cam.z, fz, 4, 1 / 60); }
+    else if (X) { const fx = lerp(X.px, X.ex, 0.65), fz = lerp(X.pz, X.ez, 0.65) + (X.kind === 'crush' && !X.fired ? -0.6 : 0); G.cam.x = expD(G.cam.x, fx, 6, 1 / 60); G.cam.z = expD(G.cam.z, fz, 6, 1 / 60); }
     else { G.cam.x = expD(G.cam.x, clamp(tx, R.x0 + 5, -R.x0 - 5), 5, 1 / 60); G.cam.z = expD(G.cam.z, zlo > zhi ? zhi : clamp(tz, zlo, zhi), 5, 1 / 60); }
     CH *= 1 - G.camZ; CO *= 1 - G.camZ * 0.8;
     // trauma shake: amplitude = trauma², smooth layered sines (no per-frame random buzz); scaled by the player's shake option
@@ -5348,20 +5527,21 @@ const UI = (() => {
     if (G.room.peds && G.room.peds.some(p => p.alive) && G.state === 'play' && G.PV) {
       if (pw._r !== G.room) { pw._r = G.room; pw.innerHTML = G.room.peds.map((p, k) => { const h = p.t.id === '__reroll' ? null : evoHint(p.t); const ev = h ? `<em class="evo ${h.have + 1 >= h.need ? 'go' : ''}">${IC[h.v.ic]}${Array.from({ length: h.need }, (_, n) => `<i class="${n < h.have ? 'on' : n === h.have ? 'nx' : ''}"></i>`).join('')}</em>` : '';
         const pr = p.shop ? `<em class="price ${(G.shards || 0) >= priceOf(p.t) ? '' : 'no'}">${IC.sand}${priceOf(p.t)}</em>` : '';
-        return `<div class="ped r${p.t.rar || 1} ${p.t._past ? 'past' : ''} ${p.t.deal ? 'deal' : ''} ${p.t.id === '__reroll' ? 'rr' : ''}" data-k="${k}">${pr}${p.t._past ? `<div class="pastic">${IC.ghost}</div>` : ''}${diag(p.t.diag)}<b>${p.t.name}</b>${p.t.id === '__reroll' ? `<span>${IC.again.repeat(G.rerolls)}</span>` : `<span>${p.t.desc}</span>`}${ev}</div>`; }).join(''); }
+        return `<div class="ped r${p.t.rar || 1} ${p.t._past ? 'past' : ''} ${p.t.deal ? 'deal' : ''} ${p.t.id === '__reroll' ? 'rr' : ''}" data-k="${k}">${pr}${p.t._past ? `<div class="pastic">${IC.ghost}</div>` : ''}${diag(p.t.diag)}<b>${p.t.name}</b>${p.t.id === '__reroll' ? `<span>${IC.again.repeat(G.rerolls)}</span>` : `<span>${fmtD(p.t.desc)}</span>`}${ev}</div>`; }).join(''); }
       const near = G.room.peds.reduce((b, p) => p.alive && (!b || dist(P.x, P.z, p.x, p.z) < dist(P.x, P.z, b.x, b.z)) ? p : b, null);
-      pw.hidden = false; G.room.peds.forEach((p, k) => { const el = pw.children[k]; if (!el) return; if (!p.alive) { el.hidden = true; return; } const s = Gfx.project(G.PV, p.x, 2.1, p.z); el.hidden = false; el.classList.toggle('near', p === near && dist(P.x, P.z, p.x, p.z) < 3.2); el.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`; });
+      pw.hidden = false; G.room.peds.forEach((p, k) => { const el = pw.children[k]; if (!el) return; if (!p.alive) { el.hidden = true; return; } const s = Gfx.project(G.PV, p.x, 2.1, p.z); el.hidden = false; el.classList.toggle('near', p === near && dist(P.x, P.z, p.x, p.z) < 3.2); const hh = el.offsetHeight || 60, hw = (el.offsetWidth || 92) / 2, y = Math.max(s.y, hh + 14), x = clamp(s.x, hw + 8, innerWidth - hw - 8); el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`; el.style.zIndex = el.classList.contains('near') ? 3 : 1; }); // (kept inside the screen: pedestals on the far row used to hang off the top)
     } else { pw.hidden = true; pw._r = null; }
     const mk = $('#mark');
     if (G.fate && G.fate.live && G.state === 'play' && !TUT.dodge && G.PV) { const s = Gfx.project(G.PV, G.fate.x, 1.6, G.fate.z); if (mk._k !== 1) { mk._k = 1; mk.innerHTML = '<b>!</b>' + IC.speed; } mk.hidden = false; mk.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`; }
     else mk.hidden = true;
   }
-  function nodeIc(k) { const f = G.run && G.run.floors[k]; if (!f) return ['dot', '']; if (f.t === 'boss') return ['boss' + (BOSS[f.kind] && BOSS[f.kind].inv ? ' invb' : ''), IC[BOSS[f.kind] ? BOSS[f.kind].body : 'king']]; if (f.t === 'choice') return ['q', '?']; if (f.t !== 'room' && ROOMT[f.t]) return ['sp', IC[ROOMT[f.t][0]]]; return ['dot', '']; }
+  function nodeIc(k) { const f = G.run && G.run.floors[k]; if (!f) return ['dot', '']; if (f.t === 'boss') return ['boss' + (BOSS[f.kind] && BOSS[f.kind].inv ? ' invb' : ''), IC[BOSS[f.kind] ? BOSS[f.kind].body : 'king']]; if (f.t === 'choice') return ['q', '?']; if (f.t !== 'room' && ROOMT[f.t]) return ['spn', IC[ROOMT[f.t][0]]]; return ['dot', '']; }
   function miniRoute(i) { const nd = k => { const [c, h] = nodeIc(k); return `<span class="n ${c} ${k === i ? 'cur' : ''}">${h}</span>`; };
     const N = G.run ? G.run.floors.length : ROOMS_PER_RUN; let nx = ''; for (let k = i + 1; k < Math.min(N, i + 3); k++) nx += '<i class="ar">›</i>' + nd(k);
     return `<span class="rtm"><b>${i + 1}</b><span>/${G.mode === 'endless' ? '∞' : N}</span>${nd(i)}${nx}</span>`; }
   function dots(i) { return `<span class="rt">${Array.from({ length: G.run ? Math.min(G.run.floors.length, i + 14) : ROOMS_PER_RUN }, (_, k) => { const [c, h] = nodeIc(k); return (k ? '<i class="ln"></i>' : '') + `<span class="n ${c} ${k < i ? 'past' : k === i ? 'cur' : ''}">${h}</span>`; }).join('')}</span>`; }
   const pic = (t, inv) => inv ? `<span class="invi">${IC[t]}</span>` : IC[t];
+  const fmtD = d => String(d || '').replace(/([+\-−]?\d+(?:\.\d+)?\s*(?:%|倍|拍|秒|格|次|顆|片|層|血)?|×\s*\d+(?:\.\d+)?|兩倍|三倍|加倍|兩拍|三拍|一拍|一格|兩格)/g, '<em class="nm">$1</em>'); // the numbers in a description are what you compare: they get a little weight
   // the little 5x5 board that explains an upgrade at a glance
   function diag(d) {
     const C = 14, sq = [];
@@ -5390,7 +5570,7 @@ const UI = (() => {
   }
   function toast(ic, b) { const t = $('#toast'); t.innerHTML = `${IC[ic] || ''}<b>${b}</b>`; t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
   function roomCard(i) {
-    const MOD = { knights: ['knight', '騎士之夜'], bishops: ['bishop', '主教之晨'], rooks: ['rook', '城堡之圍'], race: ['pawn', '升變賽跑'], dark: ['moon', '黑暗棋盤'], endgame: ['queen', '殘局'], mirrorhall: ['mirror', '鏡廳'] }[G.room.mod];
+    const MOD = { knights: ['knight', '騎士之夜'], bishops: ['bishop', '主教之晨'], rooks: ['rook', '城堡之圍'], race: ['pawn', '升變賽跑'], dark: ['moon', '黑暗棋盤'], endgame: ['queen', '殘局'], mirrorhall: ['mirror', '鏡廳'], rampage: ['skull', '暴走之夜'], ironwall: ['shield', '鐵壁'], ironfire: ['quake', '鐵與火'] }[G.room.mod];
     const BK = G.room.bossKind, bic = BK ? `<div class="bossic">${BK === 'bReflect' ? IC.ghost : IC[BOSS[BK].body]}</div>` : '';
     const c = $('#roomcard'); c.innerHTML = `${bic}<b>${floorName(i)}</b>${MOD ? `<div class="mod">${IC[MOD[0]]}<span>${MOD[1]}</span></div>` : ''}<div class="dots">${dots(i)}</div>`; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
     const K = Inp.st.mode === 'touch' ? '' : IC.key(Inp.st.mode === 'pad' ? 'X' : 'E');
@@ -5460,7 +5640,7 @@ const UI = (() => {
   function choose(list) {
     const c = $('#choose');
     const kb = Inp.st.mode !== 'touch';
-    c.innerHTML = `<div class="cards">${list.map((t, i) => { const lv = G.P.tr[t.id] || 0; return `<button class="card" data-i="${i}">${kb ? `<small>${i + 1}</small>` : ''}<div class="big">${IC[t.ic]}</div><b>${t.name}</b><span>${t.desc}</span>${t.max > 1 ? `<em>${Array.from({ length: t.max }, (_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('')}</em>` : ''}</button>`; }).join('')}</div>`;
+    c.innerHTML = `<div class="cards">${list.map((t, i) => { const lv = G.P.tr[t.id] || 0; return `<button class="card r${t.rar || 1}${t.deal ? ' deal' : ''}" data-i="${i}">${kb ? `<kbd class="ck">${i + 1}</kbd>` : ''}<div class="big">${IC[t.ic]}</div><b>${t.name}</b><span>${fmtD(t.desc)}</span>${t.max > 1 ? `<em>${Array.from({ length: t.max }, (_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('')}</em>` : ''}</button>`; }).join('')}</div>`;
     c.hidden = false;
     const done = i => { if (c.hidden) return; takeTrait(list[i]); c.hidden = true; };
     c.onclick = e => { const b = e.target.closest('[data-i]'); if (b) done(+b.dataset.i); };
@@ -5511,7 +5691,7 @@ const UI = (() => {
     const mo = META.get(); let lp = $('#layerPick'); if (!lp) { lp = document.createElement('div'); lp.id = 'layerPick'; $('#tmenu').appendChild(lp); lp.addEventListener('click', ev => { const b = ev.target.closest('[data-d]'); if (!b) return; const o = META.get(); o.layerSel = clamp((o.layerSel || 0) + +b.dataset.d, 0, o.layerMax || 0); META.set(o); Snd.S.ui(); title(); }); }
     if (mo.layerMax) { const L0 = Math.min(mo.layerSel || 0, mo.layerMax); lp.hidden = false; lp.innerHTML = `<button class="lb" data-d="-1" ${L0 ? '' : 'disabled'}>‹</button><span class="lv">${IC.mirror}<b>${L0 ? '鏡層 ' + L0 : '鏡層 0'}</b>${L0 ? `<small>${LAYERS[L0]}${L0 > 1 ? ` ＋前 ${L0 - 1} 層` : ''}</small>` : '<small>原本的規則</small>'}</span><button class="lb" data-d="1" ${L0 < mo.layerMax ? '' : 'disabled'}>›</button>`; } else lp.hidden = true;
     let cb = $('#codexBtn'); if (!cb) { cb = document.createElement('button'); cb.id = 'codexBtn'; cb.className = 'btn ib'; $('#tmenu').insertBefore(cb, lp); cb.addEventListener('click', () => { Snd.init(); $('#title').hidden = true; MUI.codex(); }); }
-    cb.innerHTML = `${IC.book}<span class="sv">${IC.sand}${mo.sand}</span>${mo.puz.length ? `<span class="pzn">${IC.board}${mo.puz.length}</span>` : ''}`;
+    cb.innerHTML = `${IC.book}<span>圖鑑</span><span class="sv">${IC.sand}${mo.sand}</span>${mo.puz.length ? `<span class="pzn">${IC.board}${mo.puz.length}</span>` : ''}`;
     // starting piece picker
     const u = UNLOCK.get(), sp = $('#startPick');
     sp.innerHTML = ['none', 'knight', 'bishop', 'rook', 'queen'].map(k => { const own = k === 'none' || u[k], on = (u.pick || 'none') === k;
@@ -5522,7 +5702,7 @@ const UI = (() => {
       const hb = mk('hardBtn', ''); const paintH = () => { const h = !!META.get().hard; hb.innerHTML = IC.skull + `<span class="hl">難度　${h ? '困難' : '普通'}${h ? '<small>血量 ×2.5・鏡砂 ×1.5</small>' : ''}</span>`; hb.classList.toggle('hard', h); };
       hb.addEventListener('click', () => { const o = META.get(); o.hard = !o.hard; META.set(o); paintH(); Snd.S.ui(); if (o.hard) Snd.S.warn(); }); paintH();
       mk('ctrlBtn', IC.mouse + '<span>操作</span>').addEventListener('click', () => { const c = $('#ctrl'); c.hidden = !c.hidden; Snd.S.ui(); });
-      const bs = mk('tShake', ''), bf = mk('tFlash', ''); const paint = () => { bs.innerHTML = IC.quake + `<span>震動　${['關', '弱', '強'][OPT.shake >= 1 ? 2 : OPT.shake > 0 ? 1 : 0]}</span>`; bf.innerHTML = IC.eye + `<span>閃光　${OPT.flash ? '強' : '弱'}</span>`; };
+      const bs = mk('tShake', ''), bf = mk('tFlash', ''); { const r2 = document.createElement('div'); r2.className = 'optrow'; bs.before(r2); r2.append(bs, bf); } const paint = () => { bs.innerHTML = IC.quake + `<span>震動　${['關', '弱', '強'][OPT.shake >= 1 ? 2 : OPT.shake > 0 ? 1 : 0]}</span>`; bf.innerHTML = IC.eye + `<span>閃光　${OPT.flash ? '強' : '弱'}</span>`; };
       bs.addEventListener('click', () => { OPT.shake = OPT.shake >= 1 ? 0.5 : OPT.shake > 0 ? 0 : 1; saveOpt(); paint(); Snd.S.ui(); }); bf.addEventListener('click', () => { OPT.flash = OPT.flash ? 0 : 1; saveOpt(); paint(); Snd.S.ui(); }); paint(); }
     // title scene: a quiet room
     // the title: one fixed, posed tableau — the black slime facing a red king across a lit board (nothing moves)
@@ -5570,8 +5750,9 @@ const Main = (() => {
   }
   function loop(t) { const raw = Math.max(0, t - last), dt = Math.min(0.05, raw / 1000); last = t; if (!document.hidden && raw > 0 && raw < 500) adapt(raw); if (window.__noloop) { requestAnimationFrame(loop); return; } try { frame(dt); } catch (e) { const m = String(e.stack || e); if (m !== loop._last) { loop._last = m; console.error(e); } if ((window.__err || '').length < 4000) window.__err = (window.__err || '') + m; } requestAnimationFrame(loop); }
   function boot() {
-    const cv = $('#cv');
-    if (!Gfx.init(cv)) { $('#nogl').hidden = false; return; }
+    let cv = $('#cv');
+    if (!Gfx.init(cv)) { const n = $('#nogl'); n.hidden = false; if (Gfx.why) n.querySelector('p').insertAdjacentHTML('beforeend', `<br><small style="opacity:.45">${Gfx.why}</small>`); console.warn('WebGL2 failed:', Gfx.why); return; }
+    cv = $('#cv');
     Inp.init(cv);
     addEventListener('resize', resize); resize();
     const unlock = () => { const was = Snd.ok; Snd.init(); if (!was && G.state === 'title') Snd.music('title'); };
@@ -5580,7 +5761,7 @@ const Main = (() => {
     $('#buff').innerHTML = IC.lunge + '×2'; $('#fatecard').innerHTML = IC.lunge + '×2'; $('.playi').innerHTML = IC.play;
     $('#start').addEventListener('click', () => { Snd.init(); UI.startSelected(); });
     { const row = $('#pause .row'), mk = (id, lbl) => { const b = document.createElement('button'); b.className = 'btn ib opt'; b.id = id; b.setAttribute('aria-label', lbl); row.appendChild(b); return b; };
-      const bs = mk('optShake', '畫面震動'), bf = mk('optFlash', '閃光效果');
+      const bs = mk('optShake', '畫面震動'), bf = mk('optFlash', '閃光效果'); { const r2 = document.createElement('div'); r2.className = 'optrow'; row.appendChild(r2); r2.append(bs, bf); }
       const paint = () => { bs.innerHTML = IC.quake + `<small>震動 ${['關', '弱', '強'][OPT.shake >= 1 ? 2 : OPT.shake > 0 ? 1 : 0]}</small>`; bf.innerHTML = IC.eye + `<small>${OPT.flash ? '閃光 強' : '閃光 弱'}</small>`; bs.classList.toggle('off', !OPT.shake); bf.classList.toggle('off', !OPT.flash); };
       bs.addEventListener('click', () => { OPT.shake = OPT.shake >= 1 ? 0.5 : OPT.shake > 0 ? 0 : 1; saveOpt(); paint(); G.shake = 0.8; });
       bf.addEventListener('click', () => { OPT.flash = OPT.flash ? 0 : 1; saveOpt(); paint(); });
@@ -5592,7 +5773,7 @@ const Main = (() => {
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') { paused = true; $('#pause').hidden = false; } });
     UI.title();
     last = performance.now(); requestAnimationFrame(loop);
-    window.__X = { eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
+    window.__X = { hurtPlayer: (d, s) => hurtPlayer(d, s), eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
     window.__T = {
       goto(i) { enterRoom(i); },
       sim(sec, bot) { const dt = 1 / 30; for (let i = 0; i < sec * 30; i++) { const ev = bot ? Bot(dt) : {}; if (G.state === 'play' || G.state === 'dead' || G.state === 'won') update(dt, ev); if (!$('#choose').hidden) UI._chooseKey(0); if (G.state !== 'play') break; } return { st: G.state, room: G.roomIdx, hp: G.P.hp, kills: G.kills, fates: G.fates, en: G.E.filter(e => !e.dead).length, err: window.__err || '', boss: G.boss ? Math.round(G.boss.hp) : null, tr: Object.keys(G.P.tr).join(',') }; },
@@ -5800,4 +5981,4 @@ const MUI = (() => {
 
 </script>
 
-</body></html>
+</html>
