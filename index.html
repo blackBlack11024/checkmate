@@ -4458,9 +4458,9 @@ const LW = { thrust: 0.4, thrustFast: 0.26, combo: 0.24, sweep: 0.42, jav: 0.4 }
 function lanceAtkStart(evn) { const B = evn.e; if (!B || B.dead) return; B.seq = { kind: evn.kind, n: evn.n || 1, k: 0, t: evn.fast ? LW.thrustFast : LW[evn.kind], max: evn.fast ? LW.thrustFast : LW[evn.kind], a: evn.a !== undefined ? evn.a : angTo(B.x, B.z, G.P.x, G.P.z), fixed: evn.a !== undefined }; if (evn.kind === 'sweep') Snd.S.warn(); }
 function segDist(px, pz, x0, z0, a, L) { const dx = px - x0, dz = pz - z0, c = Math.cos(a), s = Math.sin(a), t = clamp(dx * c + dz * s, 0, L); return Math.hypot(dx - c * t, dz - s * t); }
 function lanceHit(B, kind, a) { // you, or the parry
-  const P = G.P; if (G.state !== 'play' || P.inMirror) return;
-  if (kind === 'thrust' && lanceParried(B)) { lanceParry(B, false); return true; }
-  if (kind === 'thrust') { B.pend = { t: 0.1, big: false, f: () => hurtPlayer(1, 'lance') }; return true; } // blades crossing: a swing that overlaps the thrust as it lands still parries
+  const P = G.P; if (G.state !== 'play' || P.inMirror) return; const la = B.seq && B.seq.a !== undefined ? B.seq.a : B.face;
+  if (kind === 'thrust' && lanceParried(B, la)) { lanceParry(B, false); return true; }
+  if (kind === 'thrust') { B.pend = { t: 0.1, big: false, la, f: () => hurtPlayer(1, 'lance') }; return true; } // blades crossing: a swing that overlaps the thrust as it lands still parries
   hurtPlayer(1, 'lance'); return true;
 }
 function lanceSeqStep(B, dt) {
@@ -4523,7 +4523,7 @@ function lancePresent(dt) {
   if (B.grab) { const g = B.grab; g.t -= dt; if (g.t > g.lock) g.a = angTo(B.x, B.z, P.x, P.z); B.face = g.a;
     if (g.t <= 0) { B.grab = null; B.rest = 2; G.fx.push({ k: 'zapline', x: B.x, z: B.z, tx: B.x + Math.cos(g.a) * 16, tz: B.z + Math.sin(g.a) * 16, life: 0.3, max: 0.3, col: [1.6, 1.3, 0.6] }); Snd.S.slash(); G.shake = Math.max(G.shake, 0.6);
       const dx = P.x - B.x, dz = P.z - B.z, along = dx * Math.cos(g.a) + dz * Math.sin(g.a), side = Math.abs(-dx * Math.sin(g.a) + dz * Math.cos(g.a));
-      if (along > 0 && side < 0.6 && !P.inMirror && G.state === 'play') { if (lanceParried(B)) lanceParry(B, true); else B.pend = { t: 0.1, big: true, f: () => impale(B, g.a) }; } } } // (being invulnerable does not save you: only being off the line)
+      if (along > 0 && side < 0.6 && !P.inMirror && G.state === 'play') { if (lanceParried(B, g.a)) lanceParry(B, true); else B.pend = { t: 0.1, big: true, la: g.a, f: () => impale(B, g.a) }; } } } // (being invulnerable does not save you: only being off the line)
   // the duel
   if (B.duel) duelStep(B, dt);
   if (B.pend) { B.pend.t -= dt; if (B.pend.t <= 0) { const f = B.pend.f; B.pend = null; f(); } }
@@ -4550,8 +4550,8 @@ function duelStep(e, dt) {
     if (!D.hit) { const want = angTo(e.x, e.z, P.x, P.z), da = wrapA(want - D.a); D.a += clamp(da, -2.8 * dt, 2.8 * dt); } // it homes in on you until it reaches you
     e.face = D.a; e.x += Math.cos(D.a) * 16 * dt; e.z += Math.sin(D.a) * 16 * dt; if (Math.random() < 0.7) burst(e.x, 0.2, e.z, 1, [0.5, 0.45, 0.4]); G.shake = Math.max(G.shake, 0.15);
     if (!D.hit && dist(e.x, e.z, P.x, P.z) < 1.0) { D.hit = true;
-      if (lanceParried(e)) { duelParry(e); return; }
-      if (P.inv <= 0) e.pend = { t: 0.1, duel: true, f: () => { hurtPlayer(2, 'joust'); move(R, P, Math.cos(D.a) * 1.2, Math.sin(D.a) * 1.2); } }; }
+      if (lanceParried(e, e.face, 2.6)) { duelParry(e); return; }
+      if (P.inv <= 0) e.pend = { t: 0.1, duel: true, la: e.face, reach: 2.6, f: () => { hurtPlayer(2, 'joust'); move(R, P, Math.cos(D.a) * 1.2, Math.sin(D.a) * 1.2); } }; }
     if (edge(e.x, e.z) && D.t > 0.3) { e.x = clamp(e.x, R.bx0 + 0.6, R.bx1 - 0.6); e.z = clamp(e.z, R.bz0 + 0.6, R.bz1 - 0.6); D.st = 'aim'; D.t = 0; G.shake = 0.5; Snd.S.slam(); }
   }
 }
@@ -4562,11 +4562,18 @@ function duelParry(e) { // the lance meets your swing: he is thrown, and that is
 }
 // a swing can parry the charge outright when it is close and you face it
 function lanceSwing(a) { const P = G.P, B = G.boss; P.swingSpam = G.time - (P.swingT || -9) < 0.6; P.swingT = G.time; P.swingA = a;
-  if (B && B.type === 'bLance' && B.pend && !P.swingSpam && Math.abs(wrapA(a - angTo(P.x, P.z, B.x, B.z))) < 0.7) { const pd = B.pend; B.pend = null; if (pd.duel) { duelParry(B); return; } lanceParry(B, pd.big); return; } // the swing met the lance as it landed
-  if (B && B.type === 'bLance' && B.duel && B.duel.st === 'charge' && !B.duel.hit && !P.swingSpam && dist(P.x, P.z, B.x, B.z) < 1.5 && Math.abs(wrapA(a - angTo(P.x, P.z, B.x, B.z))) < 0.7) duelParry(B); }
+  if (B && B.type === 'bLance' && B.pend && !P.swingSpam && lanceTouch(B, B.pend.la !== undefined ? B.pend.la : angTo(B.x, B.z, P.x, P.z), a, B.pend.reach)) { const pd = B.pend; B.pend = null; if (pd.duel) { duelParry(B); return; } lanceParry(B, pd.big); return; } // the swing met the lance as it landed
+  if (B && B.type === 'bLance' && B.duel && B.duel.st === 'charge' && !B.duel.hit && !P.swingSpam && lanceTouch(B, B.face, a, 2.6)) duelParry(B); }
 
 // a swing that meets a thrust (or the grab): facing him, within a quarter second before the lance lands
-function lanceParried(B) { const P = G.P; return !P.swingSpam && G.time - (P.swingT || -9) < 0.15 && Math.abs(wrapA((P.swingA || 0) - angTo(P.x, P.z, B.x, B.z))) < 0.7; } // tight, and a swing right after another swing never parries
+function lanceParried(B, la, reach) { const P = G.P; return !P.swingSpam && G.time - (P.swingT || -9) < 0.15 && lanceTouch(B, la !== undefined ? la : angTo(B.x, B.z, P.x, P.z), P.swingA || 0, reach); }
+// does the swing's arc actually meet the lance — its point or anywhere along the shaft?
+function lanceTouch(B, la, sa, reach) { const P = G.P, L = reach || LANCE_REACH, R = 1.9 + 0.3, half = 1.3, c = Math.cos(la), s = Math.sin(la);
+  const Lm = Math.min(L, Math.max(0.5, (P.x - B.x) * c + (P.z - B.z) * s - 0.15)); // the lance stops where it meets you: only what is in front of you can be struck
+  for (let k = 0; k <= 28; k++) { const u = 0.3 + (Lm - 0.3) * k / 28, x = B.x + c * u, z = B.z + s * u, d = dist(P.x, P.z, x, z);
+    if (d < R && d > 0.05 && Math.abs(wrapA(angTo(P.x, P.z, x, z) - sa)) < half) return true; }
+  return false; }
+window.__lanceTouch = (bx, bz, la, sa, reach) => lanceTouch({ x: bx, z: bz }, la, sa, reach); // tight, and a swing right after another swing never parries
 function lanceParry(B, big) { const P = G.P, a = angTo(B.x, B.z, P.x, P.z); // recoil: you are thrown back along the lance, he is rocked back too
   P.recoil = { dx: Math.cos(a), dz: Math.sin(a), left: big ? 2.2 : 1.4, sp: big ? 14 : 11 }; G.punch = { x: Math.cos(a) * 0.5, z: Math.sin(a) * 0.5, t: 0.14 }; P.squash = -0.6;
   { const R = G.room; move(R, B, -Math.cos(a) * (big ? 0.9 : 0.5), -Math.sin(a) * (big ? 0.9 : 0.5)); B.hitT = 0.25; B.hitA = a + Math.PI; } G.hitstop = Math.max(G.hitstop || 0, big ? 0.22 : 0.1); G.flash = Math.max(G.flash, big ? 0.6 : 0.3); G.shake = Math.max(G.shake, big ? 0.9 : 0.5); Snd.S.bell(); Snd.S.crack();
