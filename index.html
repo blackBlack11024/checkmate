@@ -461,6 +461,23 @@ em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: n
 .card span em.nm { display: inline; } #codexBtn .sv { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--dim); font-size: 14px; } #codexBtn .sv .ic { width: 14px; height: 14px; }
 #roomcard b { text-shadow: 0 2px 22px rgba(0, 0, 0, .95), 0 0 2px rgba(0, 0, 0, .8); } #roomcard .dots { display: inline-flex; padding: 4px 10px; margin-top: 6px; border-radius: 999px; background: rgba(7, 6, 5, .55); }
 .tpanel .logo { margin-bottom: 14px; }
+
+/* the metronome (v89): bottom centre, two ticks closing in on the beat */
+#beat { display: none !important; }
+#metro { position: absolute; left: 50%; bottom: 104px; width: min(420px, 46vw); height: 22px; transform: translateX(-50%); pointer-events: none; transition: opacity .25s; --p: 1; --w: .17; }
+#metro.dim { opacity: .18; }
+#metro .trk { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: linear-gradient(90deg, transparent, rgba(239, 230, 214, .28) 12%, rgba(239, 230, 214, .28) 88%, transparent); }
+#metro .win { position: absolute; top: 50%; left: calc(50% - var(--w) * 50%); width: calc(var(--w) * 100%); height: 3px; margin-top: -1px; background: rgba(227, 180, 101, .35); border-radius: 2px; }
+#metro .tk { position: absolute; top: 3px; width: 2px; height: 16px; border-radius: 1px; background: var(--gold); box-shadow: 0 0 8px rgba(227, 180, 101, .7); }
+#metro .tk.l { left: calc(50% - var(--p) * 50% - 1px); opacity: calc(1 - var(--p) * .6); } #metro .tk.r { left: calc(50% + var(--p) * 50% - 1px); opacity: calc(1 - var(--p) * .6); }
+#metro .tk.l2, #metro .tk.r2 { height: 10px; top: 6px; opacity: .22; box-shadow: none; } /* the beat after this one, waiting at the ends */
+#metro .tk.l2 { left: calc(50% - var(--p2) * 50% - 1px); } #metro .tk.r2 { left: calc(50% + var(--p2) * 50% - 1px); }
+#metro .gem { position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: var(--gold); transform: rotate(45deg); border-radius: 1px; box-shadow: 0 0 10px rgba(227, 180, 101, .8); }
+#metro.hit .gem { animation: mgem .28s ease-out; } #metro.perf .gem { animation: mperf .4s ease-out; }
+@keyframes mgem { 0% { transform: rotate(45deg) scale(1.7); } 100% { transform: rotate(45deg) scale(1); } }
+@keyframes mperf { 0% { transform: rotate(45deg) scale(2.6); background: #fff; box-shadow: 0 0 24px #fff, 0 0 40px var(--gold); } 100% { transform: rotate(45deg) scale(1); } }
+#metro .pn { position: absolute; left: calc(50% + 14px); top: -14px; font: 600 13px/1 var(--f-en); color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { #metro.hit .gem, #metro.perf .gem { animation: none; } }
 </style>
 <canvas id="cv" aria-label="遊戲畫面"></canvas>
 <div id="hud" hidden>
@@ -4249,7 +4266,7 @@ function setMode(m, quiet) {
   if (m !== 'normal' && m !== 'chess') { G.modesSeen = G.modesSeen || {}; G.modesSeen[m] = 1; }
   if (P.tr.coreHeal && !quiet && m !== 'chess') U.heal(1);
   if (P.tr.shedSkin && !quiet && m !== 'chess') { for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0 && !e.ally && dist(e.x, e.z, P.x, P.z) < 2.6 * SQ * 0.75) { hurtEnemy(e, 3 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'upg'); if (!e.dead && !e.d.boss) U.stun(e, 1.5); } ring(P.x, P.z, 2.6, [1.2, 1.1, 0.8]); G.shake = Math.max(G.shake, 0.6); Snd.S.slam(); }
-  P.r = m === 'giant' ? 1.0 : m === 'liquid' ? 0.16 : 0.45; // (液態 is a puddle: it slips through any gap) if (m === 'liquid') P.water = WATER_MAX; if (m !== 'liquid') G.puddles = [];
+  P.r = m === 'giant' ? 1.0 : m === 'liquid' ? 0.16 : 0.45; /* (液態 is a puddle: it slips through any gap) */ if (m === 'liquid') P.water = WATER_MAX; if (m !== 'liquid') G.puddles = [];
   if (m === 'liquid' && P.form) { P.form = null; P.fuse = null; P.fvar = null; P.charges = 0; }
   P.bqAtk = P.bqJump = false; fixPos(G.room, P);
   if (!quiet) { const D = SMODES[m]; G.flash = Math.max(G.flash, 0.3); G.shake = Math.max(G.shake, 0.4); ring(P.x, P.z, 1.8, D.col.map(v => v * 2 + 0.3)); burst(P.x, 0.6, P.z, 24, D.col.map(v => v + 0.2)); Snd.S.gulp(); Snd.S.bell();
@@ -5491,7 +5508,7 @@ const UI = (() => {
       ab('#sJump', IC.jumpI, false, false, Math.max(0, P.jumpCd || 0) / 0.42);
       ab('#sLook', IC.eye, G.gazing, G.gaze < 0.2);
       ab('#sAct', txt === 'enter' ? IC.enter : txt === 'ped' ? IC.crown : txt === 'pz' ? IC.board : IC.swallow, !!txt, !txt);
-      const R0 = G.room; if (R0.beat) { const ph = ((G.beatT || 0) % R0.beat) / R0.beat, bt = $('#beat i'); bt.style.setProperty('--s', 2.2 - ph * 1.2); bt.style.setProperty('--o', 0.15 + ph * 0.85); const bb = $('#beat b'), pn = G.perfN || 0; if (bb._n !== pn) { bb._n = pn; bb.textContent = pn >= 2 ? '×' + pn : ''; } } }
+      metroStep(); }
     const ak = txt === 'enter' ? 'enter' : 'swallow'; const ta = $('#tAct'); if (ta.dataset.k !== ak) { ta.dataset.k = ak; ta.innerHTML = IC[ak]; }
     const bk = P.held ? 'spit' : 'lunge'; const tb = $('#tAtk'); if (tb.dataset.k !== bk) { tb.dataset.k = bk; tb.innerHTML = IC[bk]; }
     // first few red ghosts get a pointer so the player learns what they mean
@@ -5591,7 +5608,17 @@ const UI = (() => {
     if (i === 2 && !G.hintShown.c) { G.hintShown.c = 1; setTimeout(() => hint(`${IC.moon}${IC.lunge}<b>×2</b>`), 1400); }
   }
   let perfUntil = 0, perfN = 0;
-  function perfect(n) { perfUntil = performance.now() + 420; perfN = n; const p = $('#perf'); p.innerHTML = `準${n >= 2 ? `<small>×${n}</small>` : ''}`; p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop'); }
+  // the metronome: a thin line at the bottom centre; two ticks slide in from its ends and meet in the middle on the beat.
+  let metroPh = 0;
+  function metroStep() {
+    const R = G.room, P = G.P, m = $('#metro') || (() => { const d = document.createElement('div'); d.id = 'metro'; d.innerHTML = '<i class="trk"></i><i class="win"></i><i class="tk l"></i><i class="tk r"></i><b class="gem"></b><span class="pn"></span>'; $('#hud').appendChild(d); return d; })();
+    if (!R || !R.beat || R.chess || G.state !== 'play') { m.hidden = true; return; } m.hidden = false;
+    const b = R.beat, ph = ((G.beatT || 0) % b) / b, win = Math.max(0.07, b * 0.17) / b; // (same window as the judge)
+    if (ph < metroPh - 0.5) { m.classList.remove('hit'); void m.offsetWidth; m.classList.add('hit'); } metroPh = ph;
+    m.style.setProperty('--p', (1 - ph).toFixed(4)); m.style.setProperty('--w', Math.min(0.5, win).toFixed(3));
+    const pn = G.perfN || 0, pe = m.querySelector('.pn'); if (pe._n !== pn) { pe._n = pn; pe.textContent = pn >= 2 ? '×' + pn : ''; }
+  }
+  function perfect(n) { { const m = $('#metro'); if (m) { m.classList.remove('perf'); void m.offsetWidth; m.classList.add('perf'); } } perfUntil = performance.now() + 420; perfN = n; const p = $('#perf'); p.innerHTML = `準${n >= 2 ? `<small>×${n}</small>` : ''}`; p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop'); }
   function combo(n) { const c = $('#combo'); c.querySelector('b').textContent = n; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
   function intro(after) {
     const o = $('#intro'), ar = '<i class="ar">→</i>';
