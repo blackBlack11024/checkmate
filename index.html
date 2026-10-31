@@ -478,6 +478,13 @@ em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: n
 @keyframes mperf { 0% { transform: rotate(45deg) scale(2.6); background: #fff; box-shadow: 0 0 24px #fff, 0 0 40px var(--gold); } 100% { transform: rotate(45deg) scale(1); } }
 #metro .pn { position: absolute; left: calc(50% + 14px); top: -14px; font: 600 13px/1 var(--f-en); color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { #metro.hit .gem, #metro.perf .gem { animation: none; } }
+
+/* shape / variant fusions on the piece card */
+#held .x2 { position: absolute; left: 0; min-width: 100%; bottom: calc(100% + 22px); display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 8px; background: rgba(12, 9, 6, .88); border: 1px solid rgba(227, 180, 101, .5); white-space: nowrap; }
+#held .x2 b { font-size: 14px; color: var(--gold); letter-spacing: .06em; } #held .x2 small { font: 600 12px/1 var(--f-en); color: var(--dim); min-width: 16px; text-align: right; }
+#held .x2 .xbar { flex: 1; min-width: 50px; height: 4px; border-radius: 2px; background: rgba(239, 230, 214, .14); overflow: hidden; } #held .x2 .xbar i { display: block; height: 100%; background: var(--gold); transition: width .2s; }
+#held .x2.low { animation: x2low .5s ease-in-out infinite alternate; } #held .x2.low .xbar i { background: var(--blood); }
+@keyframes x2low { from { border-color: rgba(200, 64, 46, .3); } to { border-color: rgba(200, 64, 46, 1); } }
 </style>
 <canvas id="cv" aria-label="遊戲畫面"></canvas>
 <div id="hud" hidden>
@@ -2063,17 +2070,18 @@ function mixVar(a, b) { return a === 'heavy' || b === 'heavy' ? 'heavy' : null; 
 function becomePiece(type, inv, v) {
   const P = G.P; if (P.tr.topsy && type !== 'king') inv = true;
   if (modeOf() === 'liquid') return; // a puddle can't hold a piece
+  if (fx2Trigger(type, inv, v)) return; /* shape / variant fusions (e3l_fuse2) */
   const had = P.form ? P.fvar : null;
   if (tryFuse(type)) { const nv = mixVar(had, v); if (nv && nv !== had) { P.fvar = nv; UI.toast('skull', FVAR[nv][0] + (P.fuse ? P.fuse.name : '')); UI.form(); } return; }
   P.fvar = v === 'heavy' ? 'heavy' : null; if (P.fvar) { const fv = FVAR[P.fvar]; setTimeout(() => UI.toast('skull', fv[0]), 400); }
-  const wasPawn = P.form === 'pawn' && type !== 'pawn';
+  fx2OnLoseForm(); const wasPawn = P.form === 'pawn' && type !== 'pawn';
   if (P.tr.twoStomach && P.form && P.form !== type) P.form2 = { form: P.form, finv: P.finv, charges: P.charges, fuse: P.fuse, fvar: P.fvar };
   P.form = type; P.finv = !!inv; P.fuse = null; P.charges = (FORM[type] || 3) + (P.tr.charge || 0) + (type === 'queen' ? (P.tr.queenCrown || 0) * 2 : 0) + (wasPawn ? 2 : 0); P.squash = 0.6;
   Snd.S.swallow(); Snd.S.pick(); burst(P.x, 0.6, P.z, 16, [0.05, 0.04, 0.06]); UI.form && UI.form();
   tutDone('form'); hook('form', { type, inv }); MUI.pieceGuide(effKind(type, P.finv), type, P.finv);
 }
 function loseForm(spit) {
-  const P = G.P; if (!P.form) return;
+  const P = G.P; fx2OnLoseForm(); if (!P.form) return;
   hook('formEnd', { type: P.form, inv: P.finv, spit });
   if (!spit && P.form2) { const f = P.form2; P.form2 = null; P.form = f.form; P.finv = f.finv; P.charges = f.charges; P.fuse = f.fuse || null; P.fvar = f.fvar || null; UI.form(); return; }
   P.fuse = null;
@@ -2103,12 +2111,12 @@ function formAttack(a) {
   if (!(P.jump && P.jump.free)) P.charges--; tutDone('use_' + f0); UI.form(); return true;
 }
 function hook(ev, o) { if (G.room && G.room.chess) return; if (typeof UPG !== 'undefined') UPG.fire(ev, o || {}); } // (孤王's chess game: no upgrades)
-function dmgMul(P) { return dmgMul0(P) * (P.mode === 'berserk' && P.tr && P.tr.momentum ? 1 + 0.3 * (P.bStreak || 0) : 1) * (1 + 0.3 * ((P.tr && P.tr.might) || 0)) * (P.form && P.fvar === 'heavy' ? 1.8 : 1); }
+function dmgMul(P) { return dmgMul0(P) * fx2DmgMul() * (P.mode === 'berserk' && P.tr && P.tr.momentum ? 1 + 0.3 * (P.bStreak || 0) : 1) * (1 + 0.3 * ((P.tr && P.tr.might) || 0)) * (P.form && P.fvar === 'heavy' ? 1.8 : 1); }
 function dmgMul0(P) { let k = (P.mirrorStrike > 0 ? (P.mirror3 ? 2.5 : 2) : 1) * (P.perfT > 0 ? 1.5 : 1) * (1 + (G.combo && G.combo.t > 0 ? Math.min(G.combo.n, 4) * 0.25 : 0)); if (P.buffT > 0) k *= 2; if (P.dark) k *= P.tr.shade ? 3 : 2; if (P.glass) k *= 1.6; if (P.tacT > 0) k *= 3; if (P.tr.drum && G.allies) k *= 1 + 0.08 * G.allies.filter(a => a.army).length; return k; }
 function onBeat(n) {
   G.beatN = n; Snd.beat(n, G.room);
   const P = G.P; if (P.calmB > 0) P.calmB--;
-  if (!G.room.chess) { alliesBeat(n); trapsBeat(); pinsBeat(); } twistsBeat(); beatStep(); hook('beat', { n });
+  if (!G.room.chess) { alliesBeat(n); trapsBeat(); pinsBeat(); } twistsBeat(); beatStep(); fx2Beat(n); hook('beat', { n });
 }
 // how far from the beat? (seconds, 0 = exactly on it)
 function beatOff() { const b = G.room.beat || 0.5, ph = (G.beatT || 0) % b; return Math.min(ph, b - ph); }
@@ -2121,6 +2129,7 @@ function judge() {
 }
 function jump() {
   const P = G.P, R = G.room;
+  if (fx2NoJump()) return; if (fx2Jump()) return;
   if (modeOf() === 'agile' && P.hopJ && agileSlam()) return;
   const air = !!P.hopJ; if (air && !(P.tr.dbljump && !P.dblUsed)) return;
   if ((P.jumpCd > 0 && !air) || P.inMirror || P.jump || P.dash) return; if (air) P.dblUsed = true;
@@ -2146,6 +2155,7 @@ function attack0() {
     G.S.push({ x: P.x + Math.cos(a) * 0.5, z: P.z + Math.sin(a) * 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, life: 1.4, type: held, dmg: (held === 'chair' ? 6 : held === 'urn' ? 5 : 4) + (P.tr.spit || 0) * 2, pierce: (P.tr.spit || 0) > 0, hit: [], fire: held === 'candle', rot: 0 });
     P.atkCd = 0.35; P.squash = -0.35; Snd.S.spit(); UI.form(); return;
   }
+  if (P.fx2 && fx2Attack(a)) return;
   if (modeOf() === 'liquid') { liquidShoot(a); return; }
   if (modeOf() === 'agile' && !P.form) { agileSwing(a); return; }
   if (P.form && !['pawn', 'pawnR'].includes(effKind(P.form, P.finv)) && formAttack(a)) return;
@@ -2292,7 +2302,7 @@ function hurtEnemy(e, dmg, a, src) {
   burst(e.x, 1.0, e.z, 5, [1.2, 1.1, 0.9]);
   Snd.S.hitX(dmg, perf, e.d.boss);
   G.dmgN = G.dmgN || []; G.dmgN.push({ x: e.x, y: 2.1 * (e.d.scale || 1), z: e.z, v: Math.round(dmg * 10) / 10, crit: perf || big, t: G.time });
-  hook('hit', { e, dmg, a, src, perf });
+  fx2Hit(e, dmg); hook('hit', { e, dmg, a, src, perf });
   if (e.hp <= 0) { if (canExec(e, src)) startExec(e, a); else killEnemy(e); }
 }
 // ------------------------------------------------------------------ executions (處決)
@@ -2393,6 +2403,7 @@ function fixPos(R, P) { // nudge out of solids after landing on an enemy's spot
   for (let r = 0.25; r < 3; r += 0.25) for (let k = 0; k < 12; k++) { const a = k / 12 * TAU, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r; if (!gridAt(R, x, z)) { P.x = x; P.z = z; return; } }
 }
 function killEnemy(e, executed) {
+  fx2Kill(e); fx2LiquidKill(e);
   if (G.room.bossKind === 'bKing' && e.d.chess && !e.d.boss && !e.ally && G.state === 'play') setTimeout(() => { if (G.room.bossKind === 'bKing') { becomePiece(e.type, e.inv); UI.toast(e.type, '吃子'); } }, 0); // real chess: take a piece and you become it
   e.dead = true; G.kills++; META.addSand(executed ? 2 : 1);
   if (!e.d.boss || e.d.minor) G.shards = (G.shards || 0) + (e.elite ? 4 * (G.P.tr.eliteHunter ? 2 : 1) : 1) * (G.P.tr.magnet ? 2 : 1) * (G.greed ? 2 : 1);
@@ -2432,7 +2443,7 @@ function hurtPlayer(dmg, src) {
   if (P.shield > 0) { P.shield--; P.inv = 0.8; G.flash = 0.25; Snd.S.crack(); ring(P.x, P.z, 1.2, [0.8, 0.85, 1]); return false; }
   if (P.glass) dmg += 1;
   const ho = { dmg, src, cancel: false }; hook('hurt', ho); if (ho.cancel) { P.inv = Math.max(P.inv, 0.8); return false; } dmg = ho.dmg; if (dmg <= 0) { P.inv = 0.8; return false; }
-  P.hp -= dmg; P.inv = 1.0; P.lastHurt = G.time; G.red = 1; Snd.S.hurt(); P.jump = null; P.dash = null; P.hop = 0; loseForm(true);
+  P.hp -= dmg; P.inv = 1.0; P.lastHurt = G.time; G.red = 1; Snd.S.hurt(); P.jump = null; P.dash = null; P.hop = 0; fx2Hurt(); loseForm(true);
   // getting hit has to hurt: freeze, recoil away from the hitter, flash, splatter, a red number and a cracking heart
   const src0 = nearestEnemy(P.x, P.z, 20), ka = src0 ? angTo(src0.x, src0.z, P.x, P.z) : P.face + Math.PI;
   G.hitstop = 0.16; G.shake = 0.9; G.slowT = Math.max(G.slowT || 0, 0.22); G.crack = Math.max(G.crack || 0, 0.35); G.flash = Math.max(G.flash || 0, 0.12);
@@ -2519,7 +2530,7 @@ function update(dtReal, ev) {
     P.dark = lightHere < DARK;
     const rush = P.tr.endgameRush && G.E.filter(e => !e.dead).length <= 2 ? 1.3 : 1, fz = P.tr.frenzy && G.combo && G.combo.t > 0 ? Math.min(1.5, 1 + G.combo.n * 0.08) : 1, think = P.tr.deepThink && G.gazing ? 1 / Math.max(0.3, G.ts) : 1;
     const P0x = P.x, P0z = P.z, md = modeOf();
-    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think * (1 + (P.tr.tempoUp ? P.tempoB || 0 : 0)) * ((P.newSkinT || 0) > G.time ? 1.25 : 1) * (P.tr.rat && P.hp === 1 ? 1.3 : 1);
+    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think * (1 + (P.tr.tempoUp ? P.tempoB || 0 : 0)) * ((P.newSkinT || 0) > G.time ? 1.25 : 1) * (P.tr.rat && P.hp === 1 ? 1.3 : 1) * fx2Speed();
     P.stillT = Math.hypot(P.vx, P.vz) < 0.4 && P.lungeT <= 0 ? (P.stillT || 0) + dt : 0;
     if (P.hopJ) { const J = P.hopJ; if (J.freeze > 0) J.freeze -= dt; else J.t += dt; const k = clamp01(J.t / J.dur); P.x = lerp(J.fx, J.tx, k); P.z = lerp(J.fz, J.tz, k); P.hop = Math.sin(k * Math.PI) * 0.9; if (k >= 1) { P.hopJ = null; P.hop = 0; fixPos(R, P); P.squash = -0.4; Snd.S.land(); P.dblUsed = false; if (P.diveNext) { P.diveNext = false; U.aoe(P.x, P.z, 1.8, 3 * dmgMul(P), [0.6, 0.5, 0.9], 'lunge'); G.shake = 0.5; Snd.S.slam(); } hook('land', { perf: J.perf }); if (J.perf && P.tr.stomp) { const rr = 1.5; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 2 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'lunge'); ring(P.x, P.z, rr, [1, 0.8, 0.4]); G.shake = 0.3; } } P.vx = (J.tx - J.fx) / J.dur * 0.3; P.vz = (J.tz - J.fz) / J.dur * 0.3; }
     else if (P.jump) { // knight leap: untouchable in the air, crushes where it lands
@@ -2527,20 +2538,21 @@ function update(dtReal, ev) {
       P.x = lerp(J.fx, J.tx, k); P.z = lerp(J.fz, J.tz, k); P.hop = Math.sin(k * Math.PI) * 1.6;
       if (k >= 1) { P.jump = null; P.hop = 0; fixPos(R, P); const rr = 1.35;
         let nh = 0; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r * 0.5) { nh++; hurtEnemy(e, (3 + (P.tr.edge || 0)) * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'lunge'); }
-        if (nh >= 2 && P.form === 'knight') { P.charges++; UI.toast('knight', '捉雙 +1'); Snd.S.pick(); UI.form(); }
-        strikeMirrors(1.8); ring(P.x, P.z, rr, [0.9, 0.8, 0.6]); G.shake = 0.45; Snd.S.slam(); P.squash = -0.6; if (P.tr.knight2 && !J.free) P.kFreeT = 0.8; hook('knight', { x: P.x, z: P.z }); checkFork(); if (!fuseLand(J) && P.charges <= 0 && !(P.kFreeT > 0)) loseForm(false); }
+        if (nh >= 2 && P.form === 'knight' && !P.fx2) { P.charges++; UI.toast('knight', '捉雙 +1'); Snd.S.pick(); UI.form(); }
+        strikeMirrors(1.8); ring(P.x, P.z, rr, [0.9, 0.8, 0.6]); G.shake = 0.45; Snd.S.slam(); P.squash = -0.6; if (P.tr.knight2 && !J.free) P.kFreeT = 0.8; hook('knight', { x: P.x, z: P.z }); checkFork(); if (!fx2Land(J) && !fuseLand(J) && P.charges <= 0 && !(P.kFreeT > 0)) loseForm(false); }
       P.vx = P.vz = 0;
     } else if (P.dash) { // bishop / rook / queen: slide through everything in a line
       const D = P.dash, st = Math.min(D.left, D.sp * dt); D.left -= st;
       const hitWall = move(R, P, D.dx * st, D.dz * st);
-      for (const e of G.E) if (!e.dead && e.spawnT <= 0 && !D.hit.includes(e) && dist(e.x, e.z, P.x, P.z) < e.r + P.r + 0.25) { D.hit.push(e); hurtEnemy(e, (3 + (P.tr.edge || 0)) * dmgMul(P), Math.atan2(D.dz, D.dx), 'lunge'); if ((P.tr.bulldoze && D.f === 'rook' || D.fu === 'long') && !e.dead && !e.d.boss && e.d.chess) D.carry.push(e); }
+      for (const e of G.E) if (!e.dead && e.spawnT <= 0 && !D.hit.includes(e) && dist(e.x, e.z, P.x, P.z) < e.r + P.r + 0.25) { D.hit.push(e); hurtEnemy(e, (3 + (P.tr.edge || 0)) * dmgMul(P), Math.atan2(D.dz, D.dx), 'lunge'); if ((P.tr.bulldoze && D.f === 'rook' || D.fu === 'long' || D.fu === 'ram') && !e.dead && !e.d.boss && e.d.chess) D.carry.push(e); }
       for (const e of D.carry) if (!e.dead) { e.x = P.x + D.dx * 0.95; e.z = P.z + D.dz * 0.95; e.mv = null; }
       for (const pr of R.props) if (pr.alive && pr.candle && pr.candle.lit && dist(pr.x, pr.z, P.x, P.z) < pr.r + P.r + 0.2) { pr.candle.lit = false; Snd.S.candle(); }
       strikeMirrors(1.3); if (Math.random() < 0.6) burst(P.x, 0.2, P.z, 1, [0.05, 0.04, 0.06]);
-      if ((P.tr.bishopTrail && effKind(P.form, P.finv) === 'bishop') || D.fu === 'trail') { G.trails = G.trails || []; G.trails.push({ x: P.x, z: P.z, life: 2 }); }
-      if ((D.left <= 0 || hitWall) && fuseTurn(D, hitWall)) { }
+      if ((P.tr.bishopTrail && effKind(P.form, P.finv) === 'bishop') || D.fu === 'trail' || D.fu === 'zealot' || D.fu === 'fury') { G.trails = G.trails || []; G.trails.push({ x: P.x, z: P.z, life: 2 }); }
+      if (hitWall && fx2Bounce(D)) { }
+      else if ((D.left <= 0 || hitWall) && fuseTurn(D, hitWall)) { }
       else if (hitWall && P.tr.refract && D.f === 'bishop' && !D.bent) { D.bent = true; const nd = [-D.dz, D.dx]; if (blocked(R, P.x + nd[0] * 0.6, P.z + nd[1] * 0.6, P.r)) { nd[0] = D.dz; nd[1] = -D.dx; } D.dx = nd[0]; D.dz = nd[1]; D.left = 4.5; ring(P.x, P.z, 1, [1.4, 1.4, 1.6]); Snd.S.bell(); }
-      else if (D.left <= 0 || hitWall) { for (const e of D.carry) if (!e.dead) { hurtEnemy(e, 3 + (hitWall ? 3 : 0), Math.atan2(D.dz, D.dx), 'upg'); if (!e.dead) { const q = sqOf(R, e.x, e.z), c = sqC(R, clamp(q[0], 0, R.cols - 1), clamp(q[1], 0, R.rows - 1)); e.x = c[0]; e.z = c[1]; } } hook('dashEnd', { f: D.f, dx: D.dx, dz: D.dz, hits: D.hit, wall: hitWall }); fuseDashEnd(D); checkSkewer(D); checkFork(); if (D.hit.length >= 2 && P.form) { P.charges++; UI.toast(P.form, '貫穿 +1'); Snd.S.pick(); UI.form(); } P.dash = null; P.squash = 0.4; if (hitWall) { G.shake = 0.25; Snd.S.hit(); if (P.tr.rookQuake && effKind(P.form, P.finv) === 'rook') { const rr = 2.4; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 3 * dmgMul(P), angTo(P.x, P.z, e.x, e.z)); ring(P.x, P.z, rr, [1, 0.75, 0.4]); G.shake = 0.7; Snd.S.slam(); } } if (P.charges <= 0 && !P.jump) loseForm(false); }
+      else if (D.left <= 0 || hitWall) { for (const e of D.carry) if (!e.dead) { hurtEnemy(e, 3 + (hitWall ? 3 : 0), Math.atan2(D.dz, D.dx), 'upg'); if (!e.dead) { const q = sqOf(R, e.x, e.z), c = sqC(R, clamp(q[0], 0, R.cols - 1), clamp(q[1], 0, R.rows - 1)); e.x = c[0]; e.z = c[1]; } } hook('dashEnd', { f: D.f, dx: D.dx, dz: D.dz, hits: D.hit, wall: hitWall }); fuseDashEnd(D); fx2DashEnd(D, hitWall); checkSkewer(D); checkFork(); if (D.hit.length >= 2 && P.form && !P.fx2) { P.charges++; UI.toast(P.form, '貫穿 +1'); Snd.S.pick(); UI.form(); } P.dash = null; P.squash = 0.4; if (hitWall) { G.shake = 0.25; Snd.S.hit(); if (P.tr.rookQuake && effKind(P.form, P.finv) === 'rook') { const rr = 2.4; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 3 * dmgMul(P), angTo(P.x, P.z, e.x, e.z)); ring(P.x, P.z, rr, [1, 0.75, 0.4]); G.shake = 0.7; Snd.S.slam(); } } if (P.charges <= 0 && !P.jump) loseForm(false); }
       P.vx = D.dx * 2; P.vz = D.dz * 2;
     } else if (P.lungeT > 0) {
       P.lungeT -= dt;
@@ -2564,12 +2576,14 @@ function update(dtReal, ev) {
     if (P.tacT > 0) P.tacT -= dt;
     if (playing && !P.slide && !clockFrozen('you')) { // buffered: a press up to 0.2 s early still happens as soon as it can
       if (md === 'berserk') { if (ev.atk) P.bqAtk = true; if (ev.jump) P.bqJump = true; delete G.buf.atk; delete G.buf.jump; } // held for the next beat
+      if (want('atk') && P.dash && P.dash.fu === 'sickle' && fx2Bend()) delete G.buf.atk;
+      if (want('atk') && P.jump && fx2Is('swallow') && P.atkCd <= 0) { delete G.buf.atk; const a1 = aimAngle(), n1 = agileSwing(a1); if (n1) { P.jump = null; fx2Leap(a1, { free: true, near: true }); } }
       if (want('atk') && !P.jump && !P.dash && (!P.hopJ || md === 'agile') && P.atkCd <= 0 && !P.inMirror) { delete G.buf.atk; attack(); }
       if (want('jump')) { const was = P.hopJ; jump(); if (P.hopJ && P.hopJ !== was) delete G.buf.jump; }
       if (want('act')) { delete G.buf.act; act(); }
       if (want('eat') && P.atkCd <= 0.2) { delete G.buf.eat; if (md === 'agile') agileDash(); else if (P.held) spit(); } // right mouse: spit what you hold / 敏捷 dash
       if (ev.wheel) { G.isel = (G.isel || 0) + ev.wheel; Snd.S.ui(); }
-      if (want('swap')) { delete G.buf.swap; if (md === 'liquid') recall(); else swapForm(); }
+      if (want('swap')) { delete G.buf.swap; if (md === 'liquid') { if (!fx2Recall()) recall(); } else swapForm(); }
     }
     modesFrame(dt, P.x - P0x, P.z - P0z);
     if (!P.hopJ && !P.jump && !P.dash) unstick(R, P);
@@ -4278,6 +4292,7 @@ const modeCol = P => SMODES[(P && P.mode) || 'normal'].col;
 function setMode(m, quiet) {
   const P = G.P; m = m || 'normal'; if (P.mode === m) return; const was = P.mode || 'normal'; P.mode = m;
   if (m !== 'normal' && m !== 'chess') { G.modesSeen = G.modesSeen || {}; G.modesSeen[m] = 1; }
+  if (P.fx2 && ['fortress', 'giantKing', 'bulwark', 'sickle', 'swallow', 'fury', 'bloodBeat', 'waterHorse'].includes(P.fx2.id)) fx2End(false);
   if (P.tr.coreHeal && !quiet && m !== 'chess') U.heal(1);
   if (P.tr.shedSkin && !quiet && m !== 'chess') { for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0 && !e.ally && dist(e.x, e.z, P.x, P.z) < 2.6 * SQ * 0.75) { hurtEnemy(e, 3 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'upg'); if (!e.dead && !e.d.boss) U.stun(e, 1.5); } ring(P.x, P.z, 2.6, [1.2, 1.1, 0.8]); G.shake = Math.max(G.shake, 0.6); Snd.S.slam(); }
   P.r = m === 'giant' ? 1.0 : m === 'liquid' ? 0.16 : 0.45; /* (液態 is a puddle: it slips through any gap) */ if (m === 'liquid') P.water = WATER_MAX; if (m !== 'liquid') G.puddles = [];
@@ -4352,6 +4367,7 @@ function modesFrame(dt, mdx, mdz) {
   }
   if (m === 'liquid' && G.puddles) for (let a = 0; a < G.puddles.length; a++) for (let b = G.puddles.length - 1; b > a; b--) { const A = G.puddles[a], B = G.puddles[b]; // two small yous that touch become one bigger one
     if (dist(A.x, A.z, B.x, B.z) < A.r + B.r) { const n = (A.n || 1) + (B.n || 1); A.x = (A.x * (A.n || 1) + B.x * (B.n || 1)) / n; A.z = (A.z * (A.n || 1) + B.z * (B.n || 1)) / n; A.n = n; A.r = 0.28 * Math.sqrt(n); A.recall = A.recall || B.recall; G.puddles.splice(b, 1); burst(A.x, 0.2, A.z, 8, [0.3, 0.55, 1.2]); Snd.S.pick(); } }
+  fx2Frame(dt, mdx, mdz);
   if (m === 'agile') agileFrame(dt); else { P.adash = null; P.tail = null; }
   if (m === 'giant') { const want = aimAngle(); P.shieldA = P.shieldA === undefined ? want : P.shieldA + wrapA(want - P.shieldA) * Math.min(1, dt * 14); if (P.shieldT > 0) P.shieldT -= dt; }
   if (m === 'giant' && P.tr.spikeShield) { const sa = P.shieldA || 0, sx = P.x + Math.cos(sa) * 1.25, sz = P.z + Math.sin(sa) * 1.25;
@@ -4399,7 +4415,7 @@ function agileSwing(a) {
     G.fx.push({ k: 'swing', x: P.x, z: P.z, a: a + Math.PI, y: air ? 0.7 + (P.hop || 0) : 0.4, life: 0.14, max: 0.14 }); }
   if (P.tr.airCombo && air && n) { P.adashCd = 0; ring(P.x, P.z, 0.9, [0.9, 0.4, 1.3]); }
   G.fx.push({ k: 'swing', x: P.x, z: P.z, a, y: air ? 0.9 + (P.hop || 0) : 0.6, life: 0.16, max: 0.16 });
-  if (n) { G.hitstop = Math.max(G.hitstop || 0, 0.02); } hook('lunge', { a });
+  if (n) { G.hitstop = Math.max(G.hitstop || 0, 0.02); } hook('lunge', { a }); return n;
 }
 function agileFrame(dt) {
   const P = G.P, R = G.room; if (!P.hopJ) P.pogoN = 0;
@@ -4415,7 +4431,7 @@ window.__MD = { agileSwing, agileDash, agileSlam, setMode, modeOf, beatStep, liq
 
 // ---------------------------------------------------------------- 巨大: a small round shield, held where you aim. What it catches goes back the way it came.
 // the little shield: the face (middle) sends things back, the rim shatters them
-function shieldZone(a) { const P = G.P; if (modeOf() !== 'giant' || P.inMirror) return null; const d = Math.abs(wrapA(a - (P.shieldA || 0))), w = P.tr.wideShield ? 0.25 : 0; const z = d < 0.5 + w ? 'face' : d < 0.95 + w ? 'edge' : null; if (z === 'face' && P.tr.starStep) P.starBuff = true; return z; }
+function shieldZone(a) { const P = G.P; if (modeOf() !== 'giant' || P.inMirror) return null; const d = Math.abs(wrapA(a - (P.shieldA || 0))), w = (P.tr.wideShield ? 0.25 : 0) + (fx2Is('fortress') ? 0.75 : fx2Is('bulwark') ? 1.1 : 0); const z = d < 0.5 + w ? 'face' : d < 0.95 + w ? 'edge' : null; if (z === 'face' && P.tr.starStep) P.starBuff = true; return z; }
 function shieldShatter(x, z) { const P = G.P; P.shieldT = 0.2; G.hitstop = Math.max(G.hitstop || 0, 0.05); G.shake = Math.max(G.shake, 0.3); Snd.S.crack(); burst(x, 0.9, z, 16, [1.3, 1.2, 1.6]);
   for (let k = 0; k < 10; k++) { const an = rnd(0, TAU), sp = rnd(2, 6); G.fx.push({ k: 'shard', x, y: rnd(0.5, 1.3), z, vx: Math.cos(an) * sp, vy: rnd(1.5, 4), vz: Math.sin(an) * sp, life: rnd(0.4, 0.8), s: rnd(0.04, 0.09), gold: k % 3 === 0 }); } }
 function giantBlock(evn) {
@@ -4424,7 +4440,7 @@ function giantBlock(evn) {
   const z = shieldZone(a); if (!z) return false;
   if (z === 'edge') { shieldShatter(P.x + Math.cos(a) * 1.2, P.z + Math.sin(a) * 1.2); if (evn.bolt) return true; const o = evn.from; if (o && !o.dead && !o.d.boss) U.stun(o, 1); return true; } // glancing off the rim: it shatters
   P.shieldT = 0.25; G.hitstop = Math.max(G.hitstop || 0, 0.06); G.shake = Math.max(G.shake, 0.35); Snd.S.clank ? Snd.S.clank() : Snd.S.crack(); Snd.S.bell(); ring(P.x + Math.cos(P.shieldA) * 1.2, P.z + Math.sin(P.shieldA) * 1.2, 0.9, [1.2, 1.0, 0.5]);
-  if (evn.bolt) { const b = evn.bolt, sp = Math.hypot(b.vx, b.vz) || 9; for (const o of (P.tr.prismShield ? [-0.3, 0, 0.3] : [0])) U.shot(P.x + Math.cos(a) * 1.1, P.z + Math.sin(a) * 1.1, a + o, 3, { sp: sp * 1.2, life: 2.2, col: [1.4, 1.2, 0.6] }); return true; } // the bolt flies home
+  if (evn.bolt) { const b = evn.bolt, sp = Math.hypot(b.vx, b.vz) || 9; for (const o of (P.tr.prismShield ? [-0.3, 0, 0.3] : [0])) U.shot(P.x + Math.cos(a) * 1.1, P.z + Math.sin(a) * 1.1, a + o, 3 * (fx2Is('fortress') || fx2Is('bulwark') ? 2 : 1), { sp: sp * 1.2, life: 2.2, col: [1.4, 1.2, 0.6] }); return true; } // the bolt flies home
   const o = evn.from;
   if (o && !o.dead && !o.d.boss && o.mv) { const m = o.mv; o.mv = { fx: o.x, fz: o.z, tx: m.fx, tz: m.fz, t: 0, dur: 0.3, jump: m.jump }; o.mvHit = true; o.plan = null; U.stun(o, 2); hurtEnemy(o, 2, a, 'upg'); } // the piece is thrown back to the square it came from
   return true;
@@ -4661,7 +4677,7 @@ function lasersStep(dt) {
     const hurtsYou = !L.friendly; // once you've sent it back it's yours: it never burns you
     if (hurtsYou && G.state === 'play' && !P.inMirror && P.inv <= 0 && near(P.x, P.z, L.w + P.r * 0.6)) { hurtPlayer(L.dmg, 'laser'); if (L.final && B && B.fin) B.fin.missed = true; }
     if (L.friendly) for (const e of G.E) { if (e.dead || e.spawnT > 0 || (L.hitT[e.id || e.seed] || 0) > G.time) continue; if (dist(L.x, L.z, e.x, e.z) < e.r + L.w + 0.2) { L.hitT[e.id || e.seed] = G.time + 0.4;
-        if (L.final && e === B) { starWin(B); L.life = 0; break; } hurtEnemy(e, G.P.tr.starMirror ? 8 : 4, Math.atan2(L.dz, L.dx), 'upg'); } }
+        if (L.final && e === B) { starWin(B); L.life = 0; break; } hurtEnemy(e, (G.P.tr.starMirror ? 8 : 4) * (fx2Is('fortress') || fx2Is('bulwark') ? 2 : 1), Math.atan2(L.dz, L.dx), 'upg'); } }
   }
   G.lasers = G.lasers.filter(L => L.life > 0);
 }
@@ -4837,6 +4853,205 @@ function bossKOStep(dt) {
     if (t > 2.35) once('shatter', () => { G.flash = 0.9; G.shake = 0.8; Snd.S.shatter(); for (let n = 0; n < 70; n++) { const an = rnd(0, TAU), sp = rnd(1, 6); G.fx.push({ k: 'shard', x: K.px, y: rnd(1.4, 2.4), z: K.pz, vx: Math.cos(an) * sp, vy: rnd(1, 6), vz: Math.sin(an) * sp, life: rnd(0.9, 2), s: rnd(0.05, 0.14), gold: n % 2 === 0 }); } });
   }
   if (t >= K.dur) { G.bossKO = null; B.busy = false; if (K.after) K.after(); }
+}
+
+// ============================================================================
+// e3l_fuse2.js — fusions made from variants and shapes, not just two pieces.
+//  Two kinds of meter: a few uses (burst fusions), or a number of beats (stance fusions).
+//  Beats only tick while there are pieces to fight, so what is left carries into the next room;
+//  every kill adds 2 beats, and hurting a boss slowly adds more. Being hit ends a beat fusion.
+// ============================================================================
+const FX2 = {
+  rampage:   { name: '暴走馬', key: 'skull+knight', base: 'knight', top: null, ch: 2, desc: '一出手連跳 5 次 L 追殺，最後一跳炸開' },
+  ram:       { name: '攻城錘', key: 'shield+rook', base: 'rook', top: null, ch: 2, desc: '推著棋子一起撞牆；整面牆崩塌，碎石往回彈' },
+  ironCrown: { name: '鐵冠', key: 'shield+king', base: 'king', top: null, ch: 3, desc: '5×5 國王震，地面沿十字裂到牆，裂縫上的棋子暈住' },
+  sickle:    { name: '斜刃', key: 'speed+bishop', base: 'bishop', top: null, ch: 4, desc: '斜衝中再按攻擊，折成 V 字；折點一拍後炸開' },
+  zealot:    { name: '狂信者', key: 'skull+bishop', base: 'bishop', top: null, beats: 16, desc: '斜衝撞牆會反彈 4 次，一路留下燃燒的光痕' },
+  fury:      { name: '怒后', key: 'skull+queen', base: 'queen', top: null, beats: 12, desc: '每一拍自動朝你指的方向衝刺，衝過的線燃燒' },
+  swallow:   { name: '飛燕', key: 'speed+knight', base: 'knight', top: null, beats: 20, desc: '空中揮擊打中棋子，就踩著它再跳一次 L' },
+  fortress:  { name: '移動城塞', key: 'crown+rook', base: 'rook', top: null, beats: 24, desc: '盾變成城牆：子彈全彈回、傷害加倍；攻擊把牆往前推，夾住的棋子壓碎' },
+  giantKing: { name: '巨王', key: 'crown+king', base: 'king', top: null, beats: 16, desc: '每走一步都是國王震；走過的格子裂開，踩上去的棋子被卡住' },
+  bulwark:   { name: '不動如山', key: 'crown+shield', base: null, top: null, beats: 16, desc: '慢慢走、不能跳；半圓大盾彈回的傷害加倍，攻擊震開前方' },
+  waterHorse:{ name: '水馬', key: 'drop+knight', base: null, top: null, beats: 20, desc: '空白鍵變成 L 跳，起跳處留下分身；Q 瞬間換到最遠的分身' },
+  bloodBeat: { name: '血拍', key: 'skull+skull', base: null, top: null, beats: 32, desc: '每拍的自動移動都變成撲擊、傷害加倍；每 8 拍扣 1 血，擊殺後 4 拍內不扣' },
+};
+for (const id in FX2) { const F = FX2[id]; F.id = id; F.x2 = true; F.parts = F.key.split('+'); F.mode = 'x2'; FUSE_DESC[id] = F.desc; FUSE_LIST.push(F); }
+const fx2 = () => G.P && G.P.fx2 ? G.P.fx2.id : null;
+const fx2Is = id => fx2() === id;
+
+// ---------------------------------------------------------------- getting one
+// called first thing when you swallow a piece (type, inverted?, variant); true = it became a new fusion
+function fx2Trigger(type, inv, v) {
+  const P = G.P, m = modeOf(); if (G.room && G.room.chess) return false;
+  let id = null;
+  if (m === 'giant' && v === 'heavy') id = 'bulwark';
+  else if (m === 'berserk' && v === 'berserk') id = 'bloodBeat';
+  else if (m === 'giant' && type === 'rook') id = 'fortress';
+  else if (m === 'giant' && type === 'king') id = 'giantKing';
+  else if (m === 'agile' && type === 'bishop') id = 'sickle';
+  else if (m === 'agile' && type === 'knight') id = 'swallow';
+  else if (m === 'berserk' && type === 'queen') id = 'fury';
+  else if (v === 'berserk' && type === 'knight') id = 'rampage';
+  else if (v === 'berserk' && type === 'bishop') id = 'zealot';
+  else if (v === 'heavy' && type === 'rook') id = 'ram';
+  else if (v === 'heavy' && type === 'king') id = 'ironCrown';
+  if (!id) return false;
+  fx2Start(id); return true;
+}
+function fx2Start(id) {
+  const P = G.P, F = FX2[id], isNew = META.mark('fuse', id);
+  if (P.fx2) fx2End(true);
+  P.fx2 = { id, beats: F.beats, max: F.beats, bossD: 0 };
+  if (F.base) { P.form = F.base; P.finv = false; P.fvar = null; P.fuse = F; P.charges = F.ch ? F.ch + (P.tr.charge || 0) : 99; }
+  else { if (P.form) { P.form = null; P.fuse = null; P.charges = 0; } }
+  P.squash = 0.9; G.slowT = 0.5; G.flash = 0.6; G.shake = 0.6; G.invert = 0.1;
+  const col = id === 'waterHorse' ? [0.4, 0.7, 1.5] : id === 'bloodBeat' || id === 'fury' || id === 'rampage' || id === 'zealot' ? [1.5, 0.3, 0.2] : [1.3, 1.0, 0.5];
+  ring(P.x, P.z, 2.6, col); ring(P.x, P.z, 1.3, [1.2, 1.2, 1.2]);
+  for (let k = 0; k < 44; k++) { const an = rnd(0, TAU), sp = rnd(1.5, 5.5); G.fx.push({ k: 'shard', x: P.x, y: rnd(0.4, 1.8), z: P.z, vx: Math.cos(an) * sp, vy: rnd(1.5, 5), vz: Math.sin(an) * sp, life: rnd(0.8, 1.6), s: rnd(0.04, 0.1), gold: k % 2 === 0 }); }
+  Snd.S.swallow(); Snd.S.bell(); Snd.S.gulp(); if (isNew) META.addSand(5);
+  UI.form && UI.form(); MUI.fuse(F, isNew); hook('form', { type: F.base || 'pawn', fuse: id });
+  setTimeout(() => { if (!G.P.fx2 || G.P.fx2.id !== id) return; if (F.base) MUI.pieceGuide('fuse:' + id, F.base, false, F); else MUI.infoCard('fuse:' + id, `<span style="display:inline-flex;gap:4px">${IC[F.parts[0]]}${IC[F.parts[1]]}</span>`, '合體', F.name, [F.desc], 'rgb(230,180,90)'); }, isNew ? 900 : 300);
+}
+function fx2End(quiet) {
+  const P = G.P, X = P.fx2; if (!X) return; P.fx2 = null; P.bbSafe = 0;
+  if (FX2[X.id].base && P.fuse && P.fuse.id === X.id) { P.fuse = null; if (!quiet) { P.form = null; P.charges = 0; } }
+  if (!quiet) { burst(P.x, 0.6, P.z, 14, [0.8, 0.7, 0.6]); Snd.S.crack(); }
+  UI.form && UI.form();
+}
+// (when the piece is spat out or used up, the fusion goes with it)
+function fx2OnLoseForm() { const P = G.P; if (P.fx2 && FX2[P.fx2.id].base) P.fx2 = null; }
+
+// ---------------------------------------------------------------- meters
+function fx2Beat(n) {
+  const P = G.P, X = P.fx2, R = G.room; if (!X || G.state !== 'play') return;
+  const fighting = G.E.some(e => !e.dead && !e.ally && e.spawnT <= 0);
+  if (X.beats !== undefined && fighting) { X.beats--; if (X.beats <= 0) { fx2End(false); UI.toast('again', FX2[X.id].name); return; } UI.form && UI.form(); }
+  if (X.id === 'fury' && fighting && !P.dash && !P.jump && !P.inMirror) { P.hopJ = null; fx2QueenDash(aimAngle()); }
+  if (X.id === 'bloodBeat') { P.bqAtk = true; X.bn = (X.bn || 0) + 1; if (X.bn % 8 === 0 && fighting && !(P.bbSafe > G.time) && P.hp > 1) { P.hp--; G.red = 0.7; Snd.S.hurt(); burst(P.x, 0.5, P.z, 12, [0.8, 0.05, 0.05]); UI.hurt && UI.hurt(); } }
+  if (X.id === 'giantKing' && R.cracks) { R.cracks = R.cracks.filter(c => c.t > G.time); for (const e of G.E) if (!e.dead && !e.d.boss && e.spawnT <= 0) { const q = sqOf(R, e.x, e.z); if (R.cracks.some(c => c.i === q[0] && c.j === q[1])) U.stun(e, 1); } }
+}
+function fx2Kill(e) { const P = G.P, X = P.fx2; if (!X) return;
+  if (X.beats !== undefined) { X.beats = Math.min(X.max + 12, X.beats + 2); UI.form && UI.form(); }
+  if (X.id === 'bloodBeat') P.bbSafe = G.time + 4 * (G.room.beat || 0.5);
+  // 水馬 needs nothing here; 液態 kills a knight → 水馬 (see below)
+}
+function fx2Hit(e, dmg) { const X = G.P.fx2; if (!X || X.beats === undefined || !e.d.boss) return; X.bossD += dmg; while (X.bossD >= 10) { X.bossD -= 10; X.beats = Math.min(X.max + 12, X.beats + 1); } }
+function fx2Hurt() { const P = G.P; if (P.fx2 && FX2[P.fx2.id].beats !== undefined) fx2End(!FX2[P.fx2.id].base); }
+function fx2LiquidKill(e) { if (modeOf() === 'liquid' && e.type === 'knight' && !G.P.fx2 && G.state === 'play') setTimeout(() => { if (modeOf() === 'liquid' && !G.P.fx2) fx2Start('waterHorse'); }, 150); }
+// moving: the walls are slow, nobody else is
+function fx2Speed() { const id = fx2(); return id === 'fortress' ? 0.6 : id === 'bulwark' ? 0.35 : 1; }
+function fx2NoJump() { const id = fx2(); return id === 'fortress' || id === 'bulwark'; }
+function fx2DmgMul() { return fx2Is('bloodBeat') ? 2 : 1; }
+
+// ---------------------------------------------------------------- attacks (true = handled)
+function fx2Attack(a) {
+  const P = G.P, R = G.room, X = P.fx2; if (!X) return false; const id = X.id, F = FX2[id];
+  const spend = () => { if (F.ch) { P.charges--; UI.form && UI.form(); } };
+  if (F.ch && P.charges <= 0) { loseForm(false); return true; } // used up: back to a slime (this press is spent)
+  if (id === 'rampage') { if (!fx2Leap(a, { rampage: 4 })) return false; spend(); P.atkCd = 0.4; Snd.S.neigh && Snd.S.neigh(); return true; }
+  if (id === 'swallow') { if (P.hopJ || P.jump) { const n = agileSwing(a); if (n && !P.jump) fx2Leap(a, { free: true, near: true }); return true; } if (!fx2Leap(a, {})) return false; P.atkCd = 0.32; return true; }
+  if (id === 'ram') { fx2Dash(a, 'rook', 'ram', 11); spend(); P.atkCd = 0.6; return true; }
+  if (id === 'sickle') { fx2Dash(a, 'bishop', 'sickle', 6.5); spend(); P.atkCd = 0.4; return true; }
+  if (id === 'zealot') { fx2Dash(a, 'bishop', 'zealot', 6.5); P.atkCd = 0.42; return true; }
+  if (id === 'fury') { fx2QueenDash(a); P.atkCd = 0.3; return true; }
+  if (id === 'ironCrown') { fx2Crown(); spend(); P.atkCd = 0.7; return true; }
+  if (id === 'giantKing') { royalSlam(3.2, 4 * dmgMul(P)); P.atkCd = 0.5; return true; }
+  if (id === 'fortress') { fx2Push(a, 2.4, 1.7, 8); P.atkCd = 0.5; return true; }
+  if (id === 'bulwark') { fx2Bash(a); P.atkCd = 0.55; return true; }
+  return false;
+}
+// a knight leap toward where you aim (or toward the nearest piece)
+function fx2Leap(a, o) {
+  const P = G.P, R = G.room, tgt = o.near || o.rampage !== undefined ? nearestEnemy(P.x, P.z, 14) : null;
+  let b = null, bd = 1e9;
+  for (const [di, dj] of KN) { const x = P.x + di * SQ, z = P.z + dj * SQ; if (x < R.bx0 + 0.3 || x > R.bx1 - 0.3 || z < R.bz0 + 0.3 || z > R.bz1 - 0.3 || blocked(R, x, z, P.r)) continue;
+    const s = tgt ? dist(x, z, tgt.x, tgt.z) : Math.abs(wrapA(angTo(P.x, P.z, x, z) - a)); if (s < bd) { bd = s; b = [x, z]; } }
+  if (!b) return false;
+  P.jump = { fx: P.x, fz: P.z, tx: b[0], tz: b[1], t: 0, dur: o.rampage !== undefined ? 0.24 : 0.3, free: true, auto: !!o.rampage, rampage: o.rampage, swallow: fx2Is('swallow') };
+  P.inv = Math.max(P.inv, 0.36); P.face = angTo(P.x, P.z, b[0], b[1]); Snd.S.lunge(); Snd.S.spit(); hook('knightJump', { tx: b[0], tz: b[1] }); return true;
+}
+// called when a knight leap lands; true = it carried on into another leap
+function fx2Land(J) {
+  const P = G.P;
+  if (J.rampage !== undefined) {
+    if (J.rampage > 0 && nearestEnemy(P.x, P.z, 14)) { if (fx2Leap(0, { rampage: J.rampage - 1 })) return true; }
+    U.aoe(P.x, P.z, 2.4, 6 * dmgMul(P), [1.5, 0.4, 0.2], 'lunge'); burst(P.x, 0.5, P.z, 30, [1.4, 0.5, 0.2]); G.shake = 0.9; G.flash = Math.max(G.flash, 0.3); Snd.S.slam(); Snd.S.shatter();
+    if (P.charges <= 0) setTimeout(() => { if (G.P.fx2 && G.P.fx2.id === 'rampage' && G.P.charges <= 0) loseForm(false); }, 200);
+    return true;
+  }
+  return false;
+}
+function fx2Dash(a, kind, fu, len) {
+  const P = G.P, dirs = DIRS[kind]; let d = dirs[0], bd = 9; for (const q of dirs) { const da = Math.abs(wrapA(Math.atan2(q[1], q[0]) - a)); if (da < bd) { bd = da; d = q; } }
+  const l = Math.hypot(d[0], d[1]); P.dash = { dx: d[0] / l, dz: d[1] / l, left: len, sp: fu === 'ram' ? 20 : 24, hit: [], f: kind, carry: [], fu, bounces: fu === 'zealot' ? 4 : 0 };
+  P.face = Math.atan2(d[1], d[0]); P.inv = Math.max(P.inv, 0.25); hook('dash', { f: kind, dx: d[0] / l, dz: d[1] / l }); Snd.S.lunge(); Snd.S.slash();
+}
+function fx2QueenDash(a) { fx2Dash(a, 'queen', 'fury', 7.5); }
+// 斜刃: a second press while dashing bends the line; the bend explodes a beat later
+function fx2Bend() {
+  const P = G.P, D = P.dash, R = G.room; if (!D || D.fu !== 'sickle' || D.bent) return false;
+  const a = aimAngle(), c1 = [-D.dz, D.dx], c2 = [D.dz, -D.dx], pick = Math.abs(wrapA(Math.atan2(c1[1], c1[0]) - a)) < Math.abs(wrapA(Math.atan2(c2[1], c2[0]) - a)) ? c1 : c2;
+  D.dx = pick[0]; D.dz = pick[1]; D.left = 6.5; D.bent = true; D.hit = []; P.face = Math.atan2(D.dz, D.dx);
+  const x = P.x, z = P.z, R0 = R; ring(x, z, 1.2, [1.3, 0.9, 1.6]); Snd.S.slash();
+  G.fx.push({ k: 'swing', x, z, a: Math.PI / 4, y: 0.4, life: 0.2, max: 0.2 }, { k: 'swing', x, z, a: -Math.PI / 4, y: 0.4, life: 0.2, max: 0.2 });
+  setTimeout(() => { if (G.room !== R0 || G.state !== 'play') return; U.aoe(x, z, 1.9, 5 * dmgMul(G.P), [1.4, 0.8, 1.6], 'upg'); for (const [di, dj] of DIRS.bishop) for (let k = 1; k <= 2; k++) burst(x + di * SQ * k, 0.3, z + dj * SQ * k, 4, [1.3, 0.8, 1.5]); G.shake = Math.max(G.shake, 0.5); Snd.S.slam(); }, (R.beat || 0.5) * 1000);
+  return true;
+}
+// 狂信者: a wall turns the dash instead of ending it
+function fx2Bounce(D) {
+  const P = G.P, R = G.room; if (D.fu !== 'zealot' || !(D.bounces > 0)) return false;
+  const tx = blocked(R, P.x + D.dx * 0.6, P.z, P.r), tz = blocked(R, P.x, P.z + D.dz * 0.6, P.r);
+  if (tx || (!tx && !tz)) D.dx = -D.dx; if (tz || (!tx && !tz)) D.dz = -D.dz;
+  D.bounces--; D.left = 6.5; D.hit = []; P.face = Math.atan2(D.dz, D.dx); ring(P.x, P.z, 1, [1.5, 0.5, 0.3]); Snd.S.bell(); G.shake = Math.max(G.shake, 0.3); return true;
+}
+// 攻城錘: the wall gives way
+function fx2DashEnd(D, hitWall) {
+  const P = G.P;
+  if (D.fu === 'ram' && hitWall) { U.aoe(P.x + D.dx * 0.6, P.z + D.dz * 0.6, 2.2, 5 * dmgMul(P), [0.9, 0.8, 0.6], 'upg'); const a0 = Math.atan2(-D.dz, -D.dx);
+    for (let k = -3; k <= 3; k++) U.shot(P.x, P.z, a0 + k * 0.22, 3, { sp: 13, life: 0.8, col: [0.75, 0.7, 0.62] });
+    for (let k = 0; k < 30; k++) { const an = rnd(0, TAU), sp = rnd(2, 7); G.fx.push({ k: 'chip', x: P.x + D.dx * 0.8, y: rnd(0.3, 2), z: P.z + D.dz * 0.8, vx: Math.cos(an) * sp, vy: rnd(1, 6), vz: Math.sin(an) * sp, life: rnd(0.7, 1.4), s: rnd(0.08, 0.2), col: [0.42, 0.38, 0.34], r0: rnd(0, 6) }); }
+    G.shake = 1; G.hitstop = Math.max(G.hitstop || 0, 0.12); Snd.S.slam(); Snd.S.shatter(); }
+  if (P.fx2 && FX2[P.fx2.id].ch && P.charges <= 0) setTimeout(() => { if (G.P.fx2 && FX2[G.P.fx2.id].ch && G.P.charges <= 0 && !G.P.dash) loseForm(false); }, 150);
+}
+// 鐵冠: a 5×5 slam, then the floor splits in a cross out to the walls
+function fx2Crown() {
+  const P = G.P, R = G.room; royalSlam(3.8, 5 * dmgMul(P)); if (R.bx0 === undefined) return; const [i, j] = sqOf(R, P.x, P.z), sqs = [];
+  for (const [di, dj] of DIRS.rook) for (let k = 1; k < 14; k++) { const a = i + di * k, b = j + dj * k; if (!onBoard(R, a, b)) break; sqs.push([a, b]); }
+  G.fx.push({ k: 'zap', sqs, life: 0.6, max: 0.6 });
+  for (const e of G.E.slice()) if (!e.dead && e.spawnT <= 0) { const q = sqOf(R, e.x, e.z); if (sqs.some(s => s[0] === q[0] && s[1] === q[1])) { hurtEnemy(e, 2 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'upg'); U.stun(e, 2); } }
+  G.shake = 1; Snd.S.shatter();
+  if (P.charges <= 0) setTimeout(() => { if (G.P.fx2 && G.P.fx2.id === 'ironCrown' && G.P.charges <= 0) loseForm(false); }, 300);
+}
+// 移動城塞: the wall shoves forward one square; what is pinned against something is crushed
+function fx2Push(a, reach, half, dmg) {
+  const P = G.P, R = G.room, sa = P.shieldA !== undefined ? P.shieldA : a, [di, dj] = U.dirSq(sa), c = Math.cos(sa), s = Math.sin(sa); let n = 0;
+  for (const e of G.E.slice()) { if (e.dead || e.spawnT > 0 || e.ally) continue; const dx = e.x - P.x, dz = e.z - P.z, along = dx * c + dz * s, side = Math.abs(-dx * s + dz * c); if (along < 0.3 || along > reach + e.r || side > half + e.r) continue;
+    n++; if (e.d.boss || !U.push(e, di, dj)) { hurtEnemy(e, (e.d.boss ? dmg / 2 : dmg) * dmgMul(P), sa, 'lunge'); burst(e.x, 0.6, e.z, 16, [0.7, 0.6, 0.5]); } else hurtEnemy(e, 1.5 * dmgMul(P), sa, 'lunge'); }
+  G.fx.push({ k: 'swing', x: P.x, z: P.z, a: sa, y: 0.7, life: 0.18, max: 0.18 }); P.shieldT = 0.3; G.shake = Math.max(G.shake, n ? 0.6 : 0.3); Snd.S.slam();
+}
+// 不動如山: the shield bashes everything in front of it away
+function fx2Bash(a) {
+  const P = G.P, sa = P.shieldA !== undefined ? P.shieldA : a, [di, dj] = U.dirSq(sa);
+  for (const e of G.E.slice()) { if (e.dead || e.spawnT > 0 || e.ally) continue; const d = dist(P.x, P.z, e.x, e.z); if (d > 2.8 + e.r || Math.abs(wrapA(angTo(P.x, P.z, e.x, e.z) - sa)) > 1.0) continue; hurtEnemy(e, 3 * dmgMul(P), sa, 'lunge'); if (!e.dead) { U.push(e, di, dj); U.stun(e, 1); } }
+  G.B = (G.B || []).filter(b => !(dist(b.x, b.z, P.x, P.z) < 3 && Math.abs(wrapA(angTo(P.x, P.z, b.x, b.z) - sa)) < 1.0));
+  ring(P.x + Math.cos(sa) * 1.6, P.z + Math.sin(sa) * 1.6, 1.6, [1.1, 1.0, 0.7]); P.shieldT = 0.35; G.shake = Math.max(G.shake, 0.6); Snd.S.slam(); Snd.S.bell();
+}
+// per frame: 巨王's quaking steps
+function fx2Frame(dt, mdx, mdz) {
+  const P = G.P, R = G.room, X = P.fx2; if (!X || G.state !== 'play') return;
+  if (X.id === 'giantKing' && R.bx0 !== undefined) { X.walk = (X.walk || 0) + Math.hypot(mdx, mdz);
+    if (X.walk > SQ * 0.95) { X.walk = 0; royalSlam(2.3, 2.5 * dmgMul(P)); R.cracks = R.cracks || []; const q = sqOf(R, P.x, P.z); R.cracks.push({ i: q[0], j: q[1], t: G.time + (R.beat || 0.5) * 1.2 }); G.fx.push({ k: 'zap', sqs: [q], life: 0.5, max: 0.5 }); } }
+}
+// 水馬: space leaps like a knight and leaves a small you behind; Q jumps you to the farthest of them
+function fx2Jump() {
+  const P = G.P; if (!fx2Is('waterHorse') || modeOf() !== 'liquid' || P.jump || P.dash || P.inMirror) return false;
+  const fx = P.x, fz = P.z; let dx = Inp.st.mx, dz = Inp.st.my; const a = Math.hypot(dx, dz) > 0.2 ? Math.atan2(dz, dx) : P.face;
+  if (!fx2Leap(a, {})) return false; puddleAt(fx, fz); P.jumpCd = 0.3; return true;
+}
+function fx2Recall() {
+  const P = G.P; if (!fx2Is('waterHorse') || !G.puddles || !G.puddles.length) return false;
+  const far = G.puddles.reduce((b, p) => dist(p.x, p.z, P.x, P.z) > dist(b.x, b.z, P.x, P.z) ? p : b);
+  const x = P.x, z = P.z; ring(x, z, 1, [0.3, 0.6, 1.4]); P.x = far.x; P.z = far.z; far.x = x; far.z = z; far.born = G.time; fixPos(G.room, P); ring(P.x, P.z, 1.2, [0.4, 0.7, 1.5]); burst(P.x, 0.3, P.z, 16, [0.3, 0.6, 1.4]); Snd.S.mirrorIn(); return true;
 }
 
 // ============================================================================
@@ -5329,6 +5544,9 @@ const View = (() => {
       if (P.mode === 'giant' && P.shieldA !== undefined) { const a = P.shieldA, r = 1.25, sx = P.x + Math.cos(a) * r, sz = P.z + Math.sin(a) * r, k = P.shieldT > 0 ? 1 + P.shieldT * 4 : 1; // the little round shield
         present.push({ geo: 'sphere', m: M4.trs(sx, 0.75 + hop, sz, -a, 0.09, 0.5, 0.5), col: [0.5 * k, 0.42 * k, 0.3 * k], kind: P.shieldT > 0 ? 5 : 2 });
         present.push({ geo: 'sphere', m: M4.trs(sx + Math.cos(a) * 0.05, 0.75 + hop, sz + Math.sin(a) * 0.05, -a, 0.06, 0.3, 0.3), col: COL.gold, kind: 2 }); }
+      if (P.mode === 'giant' && P.shieldA !== undefined && (fx2Is('fortress') || fx2Is('bulwark'))) { const a = P.shieldA, fort = fx2Is('fortress'), r = fort ? 1.45 : 1.3, sx = P.x + Math.cos(a) * r, sz = P.z + Math.sin(a) * r, k = P.shieldT > 0 ? 1 + P.shieldT * 3 : 1; // 移動城塞's wall / 不動如山's great shield
+        if (fort) { present.push({ geo: 'box', m: M4.trs(sx, 0.75, sz, -a, 0.35, 1.5, 2.6), col: [0.42 * k, 0.39 * k, 0.36 * k], kind: 2 }); for (let q = -1; q <= 1; q++) present.push({ geo: 'box', m: M4.trs(sx - Math.sin(a) * q * 0.9, 1.65, sz + Math.cos(a) * q * 0.9, -a, 0.4, 0.3, 0.45), col: [0.46 * k, 0.43 * k, 0.4 * k], kind: 2 }); }
+        else present.push({ geo: 'sphere', m: M4.trs(sx, 0.8, sz, -a, 0.14, 1.0, 1.35), col: [0.55 * k, 0.48 * k, 0.32 * k], kind: P.shieldT > 0 ? 5 : 2 }); }
       // the small yous (液態), and where the beat will take you (狂暴)
       for (const pd of G.puddles || []) { const s = 0.3 * Math.sqrt(pd.n || 1), w = Math.sin(t * 5 + pd.x * 3) * 0.04; present.push({ geo: 'sphere', m: M4.trs(pd.x, 0.12, pd.z, t * 0.3, s + w, s * 0.42, s - w), col: modeCol(P), kind: 3, wob: 1 }); decals.push({ geo: 'ringT', m: M4.trs(pd.x, 0.03, pd.z, 0, 0.42 * Math.sqrt(pd.n || 1), 1, 0.42 * Math.sqrt(pd.n || 1)), col: [0.15, 0.3, 0.7], kind: DECAL, alpha: 1 }); }
       if ((P.mode === 'berserk') && G.state === 'play' && !R.chess) { const bt = R.beat || 0.5, ph = ((G.beatT || 0) % bt) / bt, mx = Inp.st.mx, my = Inp.st.my, has = Math.hypot(mx, my) > 0.3, d = has ? (Math.abs(mx) > Math.abs(my) ? [Math.sign(mx), 0] : [0, Math.sign(my)]) : null;
@@ -5621,13 +5839,16 @@ const UI = (() => {
   function held() { form(); }
   function form() { // the piece card, bottom-left: what you are, how many uses, the second stomach (Q), what's in your mouth (right mouse)
     const P = G.P, h = $('#held'); if (!P) return; const kb = Inp.st.mode === 'kb';
-    const pips = P.form && P.form !== 'pawn' ? `<span class="pips">${Array.from({ length: Math.min(P.charges, 12) }, () => '<i></i>').join('')}</span>` : '';
+    const pips = P.form && P.form !== 'pawn' && !(P.fx2 && FX2[P.fx2.id].beats !== undefined) ? `<span class="pips">${Array.from({ length: Math.min(P.charges, 12) }, () => '<i></i>').join('')}</span>` : '';
     const main = P.form ? `<span class="fm ${P.fuse ? 'fused' : ''}">${P.fuse ? IC[P.form] + (P.fuse.top ? `<span class="fzt2">${IC[P.fuse.top]}</span>` : '') : pic(P.form, P.finv)}${pips}</span>` : `<span class="fm slime">${IC.lunge}</span>`;
     const f2 = P.form2 ? `<span class="sub fm2">${pic(P.form2.form, P.form2.finv)}${kb ? '<kbd>Q</kbd>' : ''}</span>` : '';
     const hd = P.held ? `<span class="sub hd">${IC[P.held]}${kb ? `<kbd>${IC.mouseR}</kbd>` : ''}</span>` : '';
     const md = P.mode || 'normal', fv = (md !== 'normal' ? `<span class="fvar m_${md}">${SMODES[md].name}</span>` : '') + (P.form && P.fvar ? `<span class="fvar ${P.fvar}" style="top:auto;bottom:-12px">${FVAR[P.fvar][0]}</span>` : '');
     const wp = md === 'liquid' ? `<span class="pips water">${Array.from({ length: WATER_MAX }, (_, k) => `<i class="${k < (P.water || 0) ? '' : 'off'}"></i>`).join('')}</span>` : '';
-    h.innerHTML = main + wp + fv + f2 + hd; h.classList.add('on');
+    const X = P.fx2, XF = X ? FX2[X.id] : null; // a shape / variant fusion: its name, and (for the beat kind) a draining bar
+    const xb = XF ? `<span class="x2 ${XF.beats !== undefined && X.beats <= 4 ? 'low' : ''}"><b>${XF.name}</b>${XF.beats !== undefined ? `<span class="xbar"><i style="width:${Math.round(100 * clamp01(X.beats / X.max))}%"></i></span><small>${X.beats}</small>` : ''}</span>` : '';
+    const main2 = XF && !XF.base ? `<span class="fm fused">${IC[XF.parts[0]]}<span class="fzt2">${IC[XF.parts[1]]}</span></span>` : '';
+    h.innerHTML = (main2 || main) + wp + fv + xb + f2 + hd; h.classList.add('on');
   }
   function toast(ic, b) { const t = $('#toast'); t.innerHTML = `${IC[ic] || ''}<b>${b}</b>`; t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
   function roomCard(i) {
@@ -5909,7 +6130,7 @@ Object.assign(IC, {
 const MUI = (() => {
   const $ = s => document.querySelector(s);
   const inner = n => (IC[n] || '').replace(/<svg[^>]*>/, '').replace('</svg>', '');
-  const fz = (base, top) => `<span class="fz">${IC[base]}${top ? `<span class="fzt">${IC[top]}</span>` : ''}</span>`;
+  const fz = (base, top) => `<span class="fz">${IC[base] || IC.star}${top ? `<span class="fzt">${IC[top]}</span>` : ''}</span>`; /* (a fusion with no piece of its own shows a star) */
   const BOSSES = ['bKnight', 'bPawn', 'bStar', 'bBishop', 'bRook', 'bLance', 'bQueen', 'bKing', 'iKnight', 'iPawn', 'iBishop', 'iRook', 'iQueen', 'iKing'];
   const EXECS = [['pawnStab', 'pawn', '兵刺'], ['knightStomp', 'knight', '馬踏'], ['bishopSlash', 'bishop', '斜斬'], ['rookRam', 'rook', '城撞'], ['queenCrown', 'queen', '八方連斬'], ['kingResign', 'king', '王的認輸'], ['engulf', 'swallow', '吞噬'], ['spike', 'blade', '黑刺'], ['crush', 'quake', '壓碎'], ['shatter', 'shard', '碎鏡']];
   let cardT = null;
