@@ -1947,7 +1947,9 @@ function startRun(mode = 'normal', opt) {
   UI.hud(true);
   const st = UNLOCK.get().pick; if (st && UNLOCK.has(st)) becomePiece(st);
   const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === cy); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
-  if (mode === 'challenge' && opt !== 'bKing') { for (const u of UPG.roll(5, 2)) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
+  if (mode === 'challenge' && opt !== 'bKing') { const CHP = {'bStar': ['charged', 'lance', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'spikeShield', 'prismShield', 'stomp2', 'quickGiant', 'tremor', 'starMirror', 'gravity', 'wideShield', 'starStep'], 'bLance': ['charged', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'longjump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'aftershock', 'tailWhip', 'airCombo', 'pogo', 'afterimage', 'counter', 'sight', 'riposte', 'sharpEye', 'zanshin', 'evade']}, ids = CHP[opt]; // 天樞 / 貫星: only upgrades that work in that fight (their shape, no pieces, no mirrors)
+    const picks = ids ? (() => { const pool = UPGS.filter(u => ids.includes(u.id)), out = []; while (out.length < 5 && pool.length) { const w = pool.map(u => (u.rar === 1 ? 3 : u.rar === 2 ? 2 : 1) * (u.bossOnly ? 2.5 : 1)); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); } return out; })() : UPG.roll(5, 2);
+    for (const u of picks) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
   if (META.has('startUpg') || mode === 'rush') { const R = G.room, pick = UPG.roll(3, 2); R.peds = []; const ci = Math.floor(R.cols / 2); [ci - 2, ci, ci + 2].forEach((i, k) => { if (!pick[k]) return; const [x, z] = sqC(R, clamp(i, 0, R.cols - 1), R.rows - 2); if (!gridAt(R, x, z)) R.peds.push({ x, z, t: pick[k], rise: 0, alive: true }); }); }
   if (!G.room.boss) Snd.music(0, 0.2); // (boss rush / boss challenge start in a boss room: keep its music)
 }
@@ -3267,6 +3269,15 @@ const UPGS = [
   { id: 'deathMark', name: '亡者之禮', desc: '每次擊殺，留下一個會吸引棋子撞上去的骷髏陷阱', ic: 'skull', rar: R1, on: { kill(o) { const [i, j] = sqOf(G.room, o.e.x, o.e.z); U.trap(i, j, 12, 3, 'spike'); } } },
   { id: 'overture', name: '序曲', desc: '每間房開場的前四拍，你的每次出手都是準拍', ic: 'clock', rar: R1, flag: true },
   { id: 'cascade', name: '骨牌', desc: '擊殺的棋子會往後倒，壓到後面那顆', ic: 'pawn', rar: R1, on: { kill(o) { if (o.src === 'upg') return; const R = G.room, a = Math.atan2(o.e.z - G.P.z, o.e.x - G.P.x), x = o.e.x + Math.cos(a) * 1.5, z = o.e.z + Math.sin(a) * 1.5; const e = U.near(x, z, 1.1); if (e) setTimeout(() => { if (!e.dead) { hurtEnemy(e, 4, a, 'upg'); burst(e.x, 0.5, e.z, 10, [0.5, 0.3, 0.2]); } }, 180); } } },
+  // ---- for the 天樞 / 貫星 boss challenges (offered only there)
+  { id: 'starMirror', name: '星鏡', desc: '盾彈回的雷射傷害兩倍', ic: 'shield', rar: R2, flag: true, bossOnly: true },
+  { id: 'gravity', name: '重力井', desc: '星彈只要擋兩次就會砸向他', ic: 'star', rar: R2, flag: true, bossOnly: true },
+  { id: 'wideShield', name: '大盾', desc: '盾的正面變寬，更容易彈回去', ic: 'shield', rar: R1, flag: true, bossOnly: true },
+  { id: 'starStep', name: '反震', desc: '盾正面擋下攻擊後，下一次撲擊傷害三倍', ic: 'crown', rar: R1, bossOnly: true, on: { hit(o) { const P = G.P; if (P.starBuff && o.src === 'lunge' && !o.e.dead) { P.starBuff = false; hurtEnemy(o.e, o.dmg * 2, o.a, 'upg'); } } } },
+  { id: 'riposte', name: '反刺', desc: '格擋成功時反刺他，造成 6 點傷害', ic: 'blade', rar: R2, flag: true, bossOnly: true },
+  { id: 'sharpEye', name: '見切', desc: '格擋的時機放寬到 0.25 秒', ic: 'eye', rar: R1, flag: true, bossOnly: true },
+  { id: 'zanshin', name: '殘心', desc: '格擋後三秒內，揮擊傷害加倍', ic: 'blade', rar: R1, bossOnly: true, on: { hit(o) { if ((G.P.zanT || 0) > G.time && o.src === 'lunge' && !o.e.dead) hurtEnemy(o.e, o.dmg, o.a, 'upg'); } } },
+  { id: 'evade', name: '閃身', desc: '衝刺的無敵時間變成兩倍', ic: 'speed', rar: R1, flag: true, bossOnly: true },
   // ---- fifty more (v81)
   { id: 'ricochet', name: '彈射', desc: '撲擊打中後，彈出一道光打下一顆棋子', ic: 'lunge', rar: R1, on: { hit(o) { if (o.src !== 'lunge' || (G.P.ricoT || 0) > G.time) return; G.P.ricoT = G.time + 0.3; const n = U.near(o.e.x, o.e.z, 4, o.e); if (n) U.bolt(o.e.x, o.e.z, n, Math.max(1, o.dmg * 0.5)); } } },
   { id: 'impale', name: '穿刺', desc: '撲擊打穿棋子，背後那一格的棋子也受傷', ic: 'pierce', rar: R1, on: { hit(o) { if (o.src !== 'lunge') return; const bx = o.e.x + Math.cos(o.a) * SQ, bz = o.e.z + Math.sin(o.a) * SQ; for (const e of G.E.slice()) if (e !== o.e && !e.dead && e.spawnT <= 0 && dist(e.x, e.z, bx, bz) < 0.8) { hurtEnemy(e, o.dmg * 0.6, o.a, 'upg'); U.zap(o.e.x, o.e.z, e.x, e.z, [1.4, 0.9, 0.5]); } } } },
@@ -4365,7 +4376,7 @@ function agileDash() {
   const P = G.P; if (P.adash || (P.adashCd || 0) > G.time || P.inMirror || P.jump || P.dash) return;
   let dx = Inp.st.mx, dz = Inp.st.my; const l = Math.hypot(dx, dz); if (l < 0.2) { const a = aimAngle(); dx = Math.cos(a); dz = Math.sin(a); } else { dx /= l; dz /= l; }
   const air = !!P.hopJ; if (air) { P.hopJ = null; }
-  P.adash = { dx, dz, left: 3.6, sp: 19, hit: [], air, h0: P.hop || 0 }; P.adashCd = G.time + 0.55; P.inv = Math.max(P.inv, 0.22); P.face = Math.atan2(dz, dx); P.squash = -0.5; Snd.S.lunge(); hook('dash', { f: 'agile', dx, dz });
+  P.adash = { dx, dz, left: 3.6, sp: 19, hit: [], air, h0: P.hop || 0 }; P.adashCd = G.time + 0.55; P.inv = Math.max(P.inv, P.tr.evade ? 0.44 : 0.22); P.face = Math.atan2(dz, dx); P.squash = -0.5; Snd.S.lunge(); hook('dash', { f: 'agile', dx, dz });
 }
 function agileSlam() { // in the air: drop and smash, then spring back up
   const P = G.P, J = P.hopJ; if (!J) return false;
@@ -4401,7 +4412,7 @@ window.__MD = { agileSwing, agileDash, agileSlam, setMode, modeOf, beatStep, liq
 
 // ---------------------------------------------------------------- 巨大: a small round shield, held where you aim. What it catches goes back the way it came.
 // the little shield: the face (middle) sends things back, the rim shatters them
-function shieldZone(a) { const P = G.P; if (modeOf() !== 'giant' || P.inMirror) return null; const d = Math.abs(wrapA(a - (P.shieldA || 0))); return d < 0.5 ? 'face' : d < 0.95 ? 'edge' : null; }
+function shieldZone(a) { const P = G.P; if (modeOf() !== 'giant' || P.inMirror) return null; const d = Math.abs(wrapA(a - (P.shieldA || 0))), w = P.tr.wideShield ? 0.25 : 0; const z = d < 0.5 + w ? 'face' : d < 0.95 + w ? 'edge' : null; if (z === 'face' && P.tr.starStep) P.starBuff = true; return z; }
 function shieldShatter(x, z) { const P = G.P; P.shieldT = 0.2; G.hitstop = Math.max(G.hitstop || 0, 0.05); G.shake = Math.max(G.shake, 0.3); Snd.S.crack(); burst(x, 0.9, z, 16, [1.3, 1.2, 1.6]);
   for (let k = 0; k < 10; k++) { const an = rnd(0, TAU), sp = rnd(2, 6); G.fx.push({ k: 'shard', x, y: rnd(0.5, 1.3), z, vx: Math.cos(an) * sp, vy: rnd(1.5, 4), vz: Math.sin(an) * sp, life: rnd(0.4, 0.8), s: rnd(0.04, 0.09), gold: k % 3 === 0 }); } }
 function giantBlock(evn) {
@@ -4578,12 +4589,12 @@ function duelParry(e) { // the lance meets your swing: he is thrown, and that is
   hurtEnemy(e, 999, angTo(P.x, P.z, e.x, e.z), 'lunge');
 }
 // a swing can parry the charge outright when it is close and you face it
-function lanceSwing(a) { const P = G.P, B = G.boss; P.swingSpam = G.time - (P.swingT || -9) < 0.6; P.swingT = G.time; P.swingA = a;
+function lanceSwing(a) { const P = G.P, B = G.boss; P.swingSpam = false; /* (no spam rule: every swing can parry) */ P.swingT = G.time; P.swingA = a;
   if (B && B.type === 'bLance' && B.pend && !P.swingSpam && lanceTouch(B, B.pend.la !== undefined ? B.pend.la : angTo(B.x, B.z, P.x, P.z), a, B.pend.reach)) { const pd = B.pend; B.pend = null; if (pd.duel) { duelParry(B); return; } lanceParry(B, pd.big); return; } // the swing met the lance as it landed
   if (B && B.type === 'bLance' && B.duel && B.duel.st === 'charge' && !B.duel.hit && !P.swingSpam && lanceTouch(B, B.face, a, 2.6)) duelParry(B); }
 
 // a swing that meets a thrust (or the grab): facing him, within a quarter second before the lance lands
-function lanceParried(B, la, reach) { const P = G.P; return !P.swingSpam && G.time - (P.swingT || -9) < 0.15 && lanceTouch(B, la !== undefined ? la : angTo(B.x, B.z, P.x, P.z), P.swingA || 0, reach); }
+function lanceParried(B, la, reach) { const P = G.P; return !P.swingSpam && G.time - (P.swingT || -9) < (P.tr.sharpEye ? 0.25 : 0.15) && lanceTouch(B, la !== undefined ? la : angTo(B.x, B.z, P.x, P.z), P.swingA || 0, reach); }
 // does the swing's arc actually meet the lance — its point or anywhere along the shaft?
 function lanceTouch(B, la, sa, reach) { const P = G.P, L = reach || LANCE_REACH, R = 1.9 + 0.3, half = 1.3, c = Math.cos(la), s = Math.sin(la);
   const Lm = Math.min(L, Math.max(0.5, (P.x - B.x) * c + (P.z - B.z) * s - 0.15)); // the lance stops where it meets you: only what is in front of you can be struck
@@ -4591,7 +4602,7 @@ function lanceTouch(B, la, sa, reach) { const P = G.P, L = reach || LANCE_REACH,
     if (d < R && d > 0.05 && Math.abs(wrapA(angTo(P.x, P.z, x, z) - sa)) < half) return true; }
   return false; }
 window.__lanceTouch = (bx, bz, la, sa, reach) => lanceTouch({ x: bx, z: bz }, la, sa, reach); // tight, and a swing right after another swing never parries
-function lanceParry(B, big) { const P = G.P, a = angTo(B.x, B.z, P.x, P.z); // recoil: you are thrown back along the lance, he is rocked back too
+function lanceParry(B, big) { const P = G.P, a = angTo(B.x, B.z, P.x, P.z); if (P.tr.riposte) setTimeout(() => { if (!B.dead) { hurtEnemy(B, 6, a + Math.PI, 'upg'); U.zap(P.x, P.z, B.x, B.z, [1.4, 1.3, 0.8]); } }, 90); if (P.tr.zanshin) P.zanT = G.time + 3; // recoil: you are thrown back along the lance, he is rocked back too
   P.recoil = { dx: Math.cos(a), dz: Math.sin(a), left: big ? 2.2 : 1.4, sp: big ? 14 : 11 }; G.punch = { x: Math.cos(a) * 0.5, z: Math.sin(a) * 0.5, t: 0.14 }; P.squash = -0.6;
   { const R = G.room; move(R, B, -Math.cos(a) * (big ? 0.9 : 0.5), -Math.sin(a) * (big ? 0.9 : 0.5)); B.hitT = 0.25; B.hitA = a + Math.PI; } G.hitstop = Math.max(G.hitstop || 0, big ? 0.22 : 0.1); G.flash = Math.max(G.flash, big ? 0.6 : 0.3); G.shake = Math.max(G.shake, big ? 0.9 : 0.5); Snd.S.bell(); Snd.S.crack();
   ring(P.x, P.z, big ? 2 : 1.3, [1.4, 1.2, 0.6]); for (let k = 0; k < (big ? 30 : 14); k++) { const an = angTo(P.x, P.z, B.x, B.z) + rnd(-0.8, 0.8), sp = rnd(2, 7); G.fx.push({ k: 'shard', x: P.x, y: rnd(0.6, 1.4), z: P.z, vx: Math.cos(an) * sp, vy: rnd(1, 4), vz: Math.sin(an) * sp, life: rnd(0.4, 0.9), s: rnd(0.04, 0.1), gold: true }); }
@@ -4636,8 +4647,8 @@ function lasersStep(dt) {
       if (L.inside && !inB) { if (!L.bounce) { if (Math.abs(L.x) > R.W / 2 + 3 || Math.abs(L.z) > R.D / 2 + 3) { L.life = 0; break; } continue; } // the board's edge is a mirror (once it is done, it sails on out of the room)
         if (L.x <= R.bx0 || L.x >= R.bx1) { L.dx = -L.dx; L.x = clamp(L.x, R.bx0 + 0.01, R.bx1 - 0.01); } if (L.z <= R.bz0 || L.z >= R.bz1) { L.dz = -L.dz; L.z = clamp(L.z, R.bz0 + 0.01, R.bz1 - 0.01); } L.trail.push([L.x, L.z]); }
       // the shield: a true reflection about its face
-      if (S && !L.friendlyLock && dist(L.x, L.z, S[0], S[1]) < 0.62 && L.dx * n[0] + L.dz * n[1] < 0 && Math.abs((L.x - S[0]) * -n[1] + (L.z - S[1]) * n[0]) > 0.34) { shieldShatter(L.x, L.z); L.life = 0; break; } // caught on the rim: it shatters
-      if (S && !L.friendlyLock && dist(L.x, L.z, S[0], S[1]) < 0.62 && L.dx * n[0] + L.dz * n[1] < 0) { const d = L.dx * n[0] + L.dz * n[1]; L.dx -= 2 * d * n[0]; L.dz -= 2 * d * n[1]; L.x = S[0] + n[0] * 0.65; L.z = S[1] + n[1] * 0.65; L.trail.push([L.x, L.z]); L.friendly = true; L.friendlyT = G.time; L.friendlyLock = 0.15; L.bounce = true; L.life = Math.max(L.life, 2.5); L.inside = true;
+      if (S && !L.friendlyLock && dist(L.x, L.z, S[0], S[1]) < 0.62 && L.dx * n[0] + L.dz * n[1] < 0 && Math.abs((L.x - S[0]) * -n[1] + (L.z - S[1]) * n[0]) > (P.tr.wideShield ? 0.5 : 0.34)) { shieldShatter(L.x, L.z); L.life = 0; break; } // caught on the rim: it shatters
+      if (S && !L.friendlyLock && dist(L.x, L.z, S[0], S[1]) < 0.62 && L.dx * n[0] + L.dz * n[1] < 0) { const d = L.dx * n[0] + L.dz * n[1]; L.dx -= 2 * d * n[0]; L.dz -= 2 * d * n[1]; L.x = S[0] + n[0] * 0.65; L.z = S[1] + n[1] * 0.65; L.trail.push([L.x, L.z]); L.friendly = true; L.friendlyT = G.time; if (P.tr.starStep) P.starBuff = true; L.friendlyLock = 0.15; L.bounce = true; L.life = Math.max(L.life, 2.5); L.inside = true;
         P.shieldT = 0.25; G.shake = Math.max(G.shake, 0.3); G.hitstop = Math.max(G.hitstop || 0, 0.03); Snd.S.bell(); }
     }
     if (L.friendlyLock > 0) { L.friendlyLock -= dt; if (L.friendlyLock <= 0) L.friendlyLock = 0; }
@@ -4647,7 +4658,7 @@ function lasersStep(dt) {
     const hurtsYou = !L.friendly; // once you've sent it back it's yours: it never burns you
     if (hurtsYou && G.state === 'play' && !P.inMirror && P.inv <= 0 && near(P.x, P.z, L.w + P.r * 0.6)) { hurtPlayer(L.dmg, 'laser'); if (L.final && B && B.fin) B.fin.missed = true; }
     if (L.friendly) for (const e of G.E) { if (e.dead || e.spawnT > 0 || (L.hitT[e.id || e.seed] || 0) > G.time) continue; if (dist(L.x, L.z, e.x, e.z) < e.r + L.w + 0.2) { L.hitT[e.id || e.seed] = G.time + 0.4;
-        if (L.final && e === B) { starWin(B); L.life = 0; break; } hurtEnemy(e, 4, Math.atan2(L.dz, L.dx), 'upg'); } }
+        if (L.final && e === B) { starWin(B); L.life = 0; break; } hurtEnemy(e, G.P.tr.starMirror ? 8 : 4, Math.atan2(L.dz, L.dx), 'upg'); } }
   }
   G.lasers = G.lasers.filter(L => L.life > 0);
 }
@@ -4761,7 +4772,7 @@ function shellsStep(dt) {
           S.vx = rx / l2 * 6.5; S.vz = rz / l2 * 6.5; S.cd = 0.1;
           P.recoil = { dx: -n[0], dz: -n[1], left: 0.7 + S.n * 0.25, sp: 9 }; G.punch = { x: -n[0] * 0.4, z: -n[1] * 0.4, t: 0.12 }; P.squash = -0.5; G.hitstop = Math.max(G.hitstop || 0, 0.06);
           S.x = P.x + Math.cos(a) * (S.size + P.r + 0.45); S.z = P.z + Math.sin(a) * (S.size + P.r + 0.45); S.n++; S.size += 0.15; P.shieldT = 0.25; G.shake = Math.max(G.shake, 0.4); Snd.S.bell(); ring(S.x, S.z, S.size + 0.4, [0.9, 0.85, 1.5]);
-          if (S.n >= 3) { S.st = 'home'; Snd.S.lunge(); } }
+          if (S.n >= (G.P.tr.gravity ? 2 : 3)) { S.st = 'home'; Snd.S.lunge(); } }
         else { hurtPlayer(1 + (S.size > 0.9 ? 1 : 0), 'shell'); burst(S.x, 0.8, S.z, 20, [0.8, 0.8, 1.4]); S.st = 'gone'; } } }
     else if (S.st === 'home') { if (!B || B.dead) { S.st = 'gone'; continue; } const a = angTo(S.x, S.z, B.x, B.z), sp = 16 * dt; S.x += Math.cos(a) * sp; S.z += Math.sin(a) * sp;
       if (dist(S.x, S.z, B.x, B.z) < B.r + S.size * 0.5) { S.st = 'gone'; hurtEnemy(B, 10, a, 'upg'); burst(B.x, 1.4, B.z, 30, [1.2, 1.1, 1.8]); G.shake = 0.6; Snd.S.shatter(); } }
@@ -4784,7 +4795,7 @@ function bossKOStep(dt) {
   const K = G.bossKO, P = G.P, B = K.B; if (!K) return; K.t += dt; const t = K.t, once = (k, f) => { if (!K.ev[k]) { K.ev[k] = 1; f(); } };
   P.x = K.px; P.z = K.pz; P.vx = P.vz = 0;
   if (K.k === 'bLance') {
-    const stand = [K.px - Math.cos(K.a) * 1.7, K.pz - Math.sin(K.a) * 1.7];
+    const stand = [K.px - Math.cos(K.a) * 3.4, K.pz - Math.sin(K.a) * 3.4]; // (a lance-length away: the point goes through you)
     if (t < 0.45) { B.face = K.a; B.x = K.bx; B.z = K.bz; once('turn', () => { Snd.S.neigh && Snd.S.neigh(); }); }
     else if (t < 0.95) { const k = (t - 0.45) / 0.5; B.x = lerp(K.bx, stand[0], k); B.z = lerp(K.bz, stand[1], k); B.hop = Math.sin(k * Math.PI) * 2.4; B.face = K.a; once('leap', () => Snd.S.lunge()); }
     else { B.x = stand[0]; B.z = stand[1]; B.hop = 0; B.face = K.a; once('land', () => { G.shake = 0.6; Snd.S.slam(); burst(B.x, 0.2, B.z, 20, [0.6, 0.55, 0.5]); }); }
@@ -4931,10 +4942,10 @@ const View = (() => {
     if (K.k === 'bLance') {
       const hy = 1.6 * (B.d.scale || 1) * 0.55 + 0.35;
       if (T < 0.95) slime(0, 1 - Math.min(0.15, T * 0.3), null, 3);
-      else if (T < 2.0) { const k = clamp01((T - 1.05) / 0.8), y = lerp(0.55, 2.6, k * k * (3 - 2 * k)); // run through, then hoisted up
-        lanceModel(present, B.x, hy + (y - 0.55) * 0.9, B.z, K.a, 0.2, 1); slime(y - 0.35, 0.95 + Math.sin(T * 30) * 0.04 * (1 - k), [0.5, 0.06, 0.05], 9);
+      else if (T < 2.0) { const k = clamp01((T - 1.05) / 0.8), y = lerp(0.42, 2.7, k * k * (3 - 2 * k)), u0 = lerp(-1.0, 0.2, clamp01((T - 0.95) / 0.08)); // run through at body height, then hoisted up — the slime rides the shaft
+        lanceModel(present, B.x, y, B.z, K.a, u0, 1); slime(y - 0.38, 0.92 + Math.sin(T * 30) * 0.04 * (1 - k), [0.5, 0.06, 0.05], 9);
         if (Math.random() < 0.5) G.fx.push({ k: 'chip', x: K.px + rnd(-0.2, 0.2), y: y - 0.3, z: K.pz + rnd(-0.2, 0.2), vx: 0, vy: -1, vz: 0, life: 0.7, s: 0.05, col: [0.6, 0.05, 0.04], r0: 0 }); }
-      else lanceModel(present, B.x, hy + 1.8, B.z, K.a + (T - 2.0) * -2.5, 0.2, 0);
+      else lanceModel(present, B.x, 2.7, B.z, K.a + (T - 2.0) * -2.5, 0.2, 0);
     } else {
       const lit = K.stars.filter((s, n) => T > 0.25 + n * 0.08);
       for (const [x, z] of lit) { const k = 0.8 + 0.2 * Math.sin(t * 9 + x); present.push({ geo: 'sphere', m: M4.trs(x, 1.2, z, t, 0.22 * k, 0.22 * k, 0.22 * k), col: [1.6, 1.6, 2.2], kind: 5 }); decals.push({ geo: 'ringT', m: M4.trs(x, 0.04, z, 0, 0.5, 1, 0.5), col: [0.9, 0.9, 1.4], kind: DECAL, alpha: 1 }); }
@@ -5515,7 +5526,7 @@ const UI = (() => {
     document.body.classList.toggle('exec', !!G.exec);
     // damage numbers float up from the struck piece
     const dw = $('#dmgs'); if (G.dmgN && G.dmgN.length && G.PV) { for (const d of G.dmgN) { const el = document.createElement('i'); el.className = d.hurt ? 'hurt' : d.crit ? 'crit' : ''; el.textContent = d.v % 1 ? d.v.toFixed(1) : d.v; const s = Gfx.project(G.PV, d.x, d.y, d.z); el.style.left = (s.x + rnd(-14, 14)) + 'px'; el.style.top = s.y + 'px'; dw.appendChild(el); setTimeout(() => el.remove(), 750); } G.dmgN.length = 0; }
-    const pf = $('#perf'); if (performance.now() < perfUntil && G.PV) { const s = Gfx.project(G.PV, P.x, 1.9, P.z); pf.hidden = false; pf.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`; } else pf.hidden = true;
+    const pf = $('#perf'); if (false && performance.now() < perfUntil && G.PV) { /* (the 準 popup is gone: the metronome's flash says it) */ const s = Gfx.project(G.PV, P.x, 1.9, P.z); pf.hidden = false; pf.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`; } else pf.hidden = true;
     const cb = $('#combo'); if (G.combo && G.combo.t > 0 && G.combo.n >= 2) { cb.hidden = false; const bar = cb.querySelector('i') || cb.appendChild(document.createElement('i')); bar.style.transform = `scaleX(${clamp01(G.combo.t / 2.2)})`; } else cb.hidden = true;
     // objective: remaining enemies, then the open door
     const alive = G.E.some(e => !e.dead && e.type === 'king') ? 1 : 0, gk = G.room.waitPick ? 'pick' : G.boss ? 'boss' : G.room.door.open ? 'open' : 'e' + alive;
