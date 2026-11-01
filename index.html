@@ -821,7 +821,7 @@ void main(){
     return { t, f, w, h, db };
   }
   function free(T) { if (!T) return; gl.deleteTexture(T.t); gl.deleteFramebuffer(T.f); if (T.db) gl.deleteRenderbuffer(T.db); }
-  let MAIN = null, REFL = [], LMT = null, occTex = null, blank = null;
+  let MAIN = null, REFL = [], LMT = null, occTex = null, blank = null, rfN = 0; const WHITE3 = [1, 1, 1];
   let room = { x0: 0, z0: 0, w: 1, h: 1 };
   function init(canvas) {
     cv = canvas;
@@ -858,7 +858,7 @@ void main(){
   const lp = new Float32Array(NL * 3), lc = new Float32Array(NL * 3);
   const mir = new Float32Array(NM * 4), mirOn = new Float32Array(NM);
   function bindScene(VP, eye, t, clip, reflTex) {
-    gl.useProgram(PS.p); const u = PS.u;
+    gl.useProgram(PS.p); const u = PS.u; ucReset();
     gl.uniformMatrix4fv(u.uVP, false, VP); gl.uniform3fv(u.uEye, eye); gl.uniform3fv(u.uLP, lp); gl.uniform3fv(u.uLC, lc);
     gl.uniform4f(u.uRoom, room.x0, room.z0, room.w, room.h); gl.uniform1f(u.uT, t); gl.uniform2f(u.uRes, W, H);
     gl.uniform4fv(u.uMir, mir); gl.uniform1fv(u.uMirOn, mirOn);
@@ -866,15 +866,20 @@ void main(){
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, LMT.t); gl.uniform1i(u.uLM, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, reflTex || blank); gl.uniform1i(u.uRefl, 1);
   }
+  // per-item uniforms are only sent when they change (most items share kind / wob / alpha / crack, and many share a colour)
+  const UC = { c0: NaN, c1: NaN, c2: NaN, kind: NaN, wob: NaN, sq: NaN, al: NaN, cr: NaN, vao: null };
+  function ucReset() { UC.c0 = UC.c1 = UC.c2 = UC.kind = UC.wob = UC.sq = UC.al = UC.cr = NaN; UC.vao = null; }
   function drawItems(items) {
     const u = PS.u;
     for (const it of items) {
       const g = GEO[it.geo]; if (!g) continue;
-      gl.uniformMatrix4fv(u.uM, false, it.m); gl.uniform3fv(u.uCol, it.col || [1, 1, 1]); gl.uniform1f(u.uKind, it.kind || 1);
-      gl.uniform1f(u.uWob, it.wob || 0); gl.uniform1f(u.uSquash, it.squash || 0); gl.uniform1f(u.uAlpha, it.alpha === undefined ? 1 : it.alpha);
-      gl.uniform1f(u.uMirCrack, it.crack || 0);
+      gl.uniformMatrix4fv(u.uM, false, it.m);
+      const c = it.col || WHITE3; if (c[0] !== UC.c0 || c[1] !== UC.c1 || c[2] !== UC.c2) { gl.uniform3f(u.uCol, c[0], c[1], c[2]); UC.c0 = c[0]; UC.c1 = c[1]; UC.c2 = c[2]; }
+      const kd = it.kind || 1, wb = it.wob || 0, sq = it.squash || 0, al = it.alpha === undefined ? 1 : it.alpha, cr = it.crack || 0;
+      if (kd !== UC.kind) { gl.uniform1f(u.uKind, kd); UC.kind = kd; } if (wb !== UC.wob) { gl.uniform1f(u.uWob, wb); UC.wob = wb; } if (sq !== UC.sq) { gl.uniform1f(u.uSquash, sq); UC.sq = sq; }
+      if (al !== UC.al) { gl.uniform1f(u.uAlpha, al); UC.al = al; } if (cr !== UC.cr) { gl.uniform1f(u.uMirCrack, cr); UC.cr = cr; }
       if (it.reflTex !== undefined) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, REFL[it.reflTex].t); }
-      gl.bindVertexArray(g.vao); gl.drawArrays(gl.TRIANGLES, 0, g.n);
+      if (g.vao !== UC.vao) { gl.bindVertexArray(g.vao); UC.vao = g.vao; } gl.drawArrays(gl.TRIANGLES, 0, g.n);
       if (it.reflTex !== undefined) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, blank); }
     }
   }
@@ -900,9 +905,10 @@ void main(){
     const P = M4.persp(F.fov, W / H, 0.1, 80), V = M4.look(F.eye, F.tgt, F.up || [0, 1, 0]);
     gl.enable(gl.DEPTH_TEST);
     // mirrors: render the FUTURE into each reflection target
+    rfN++; const nVis = F.mirrors.filter((m, i) => i < NM && m.visible).length;
     F.mirrors.forEach((m, i) => {
       if (i >= NM || !m.visible) return;
-      const R = REFL[i];
+      const R = REFL[i]; if (nVis > 1 && R.fresh && (rfN + i) % 2) return; R.fresh = true; /* (two or more mirrors in view: each refreshes every other frame) */
       gl.bindFramebuffer(gl.FRAMEBUFFER, R.f); gl.viewport(0, 0, R.w, R.h);
       gl.clearColor(0.01, 0.01, 0.012, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       const VR = M4.mul(V, M4.reflect(m.n, m.p));
@@ -1965,7 +1971,7 @@ function enterRoom(i) {
   if (G.run && G.mode === 'endless' && i >= G.run.floors.length - 2) { G.run.loops = (G.run.loops || 0) + 1; G.run.floors.push(...endlessBlock(G.run.loops)); }
   if (i >= 2 && G.state === 'play' && UNLOCK.give('knight')) G.newUnlock = 'knight';
   const R = genRoom(i, G.runSeed + i * 7919);
-  G.room = R; G.E = []; G.B = []; G.S = []; G.fx = []; G.exec = null; G.lightK = 1; G.fate = null; G.boss = null; G.devourUsed = false; G.summonT = 6; G.combo = null; G.beatT = 0; G.perfN = 0; G.trails = []; G.decoy = null; G.clock = null; P0slide(); G.rollT = 0; G.rollA = 0; G.rollCd = undefined; G.rw = null;
+  G.room = R; G.slowAcc = 0; G.hsAcc = 0; G.E = []; G.B = []; G.S = []; G.fx = []; G.exec = null; G.lightK = 1; G.fate = null; G.boss = null; G.devourUsed = false; G.summonT = 6; G.combo = null; G.beatT = 0; G.perfN = 0; G.trails = []; G.decoy = null; G.clock = null; P0slide(); G.rollT = 0; G.rollA = 0; G.rollCd = undefined; G.rw = null;
   const P = G.P; [P.x, P.z] = sqC(R, Math.floor(R.cols / 2), R.rows - 1); P.vx = P.vz = 0; P.inMirror = null; P.lungeT = 0; P.jump = null; P.dash = null; P.hop = 0; P.face = -Math.PI / 2;
   if (!R.free(P.x, P.z, 0.6)) for (let k = 0; k < 40; k++) { const x = rnd(-3, 3), z = R.D / 2 - rnd(1.2, 3); if (R.free(x, z, 0.6)) { P.x = x; P.z = z; break; } }
   uploadOcc(R);
@@ -2293,7 +2299,7 @@ function hurtEnemy(e, dmg, a, src) {
   else if (!e.d.boss) { e.vx += Math.cos(a) * 6; e.vz += Math.sin(a) * 6; if (e.state === 'wind' && dmg >= 2) { e.state = 'recover'; e.st = 0.4; } }
   // impact: freeze a moment, punch the camera, make the piece reel, spray chips, show the number
   const P = G.P, perf = P.perfT > 0, big = dmg >= 6 || (perf && e.hp <= 0);
-  G.hitstop = Math.max(G.hitstop || 0, (0.035 + Math.min(dmg, 10) * 0.006 + (perf ? 0.02 : 0)) * (P.mode === 'agile' && src === 'lunge' ? 0.35 : 1)); // (敏捷's quick swings barely stop the clock, so moving stays smooth)
+  G.hitstop = Math.max(G.hitstop || 0, (0.022 + Math.min(dmg, 10) * 0.0045 + (perf ? 0.018 : 0) + (e.hp <= 0 ? 0.03 : 0)) * (P.mode === 'agile' && src === 'lunge' ? 0.35 : 1)); // (敏捷's quick swings barely stop the clock, so moving stays smooth)
   G.punch = { x: Math.cos(a) * (0.12 + Math.min(dmg, 8) * 0.025), z: Math.sin(a) * (0.12 + Math.min(dmg, 8) * 0.025), t: 0.14 };
   G.shake = Math.max(G.shake || 0, 0.1 + Math.min(dmg, 8) * 0.03); if (big) G.invert = 0.05;
   e.hitT = 0.2; e.hitA = a; P.squash = -0.3;
@@ -2309,8 +2315,8 @@ function hurtEnemy(e, dmg, a, src) {
 // A killing lunge on an enemy that was punished (mid-swing / recovering / lighting), struck from the dark,
 // while the dodge bonus is up, or the last one standing turns into a short staged finisher. The boss always gets one.
 const EXEC_KIND = { pawn: 'engulf', knight: 'engulf', bishop: 'spike', rook: 'crush', queen: 'spike', king: 'crush', boss: 'shatter', bBishop2: 'spike' };
-const EXEC_DUR = { engulf: 1.05, spike: 1.1, crush: 1.15, snuff: 1.35, shatter: 2.6, pawnStab: 1.0, knightStomp: 1.25, bishopSlash: 1.15, rookRam: 1.2, queenCrown: 2.3, kingResign: 2.5 };
-const EXEC_HIT = { engulf: 0.42, spike: 0.42, crush: 0.6, snuff: 0.78, shatter: 0.75, pawnStab: 0.4, knightStomp: 0.62, bishopSlash: 0.42, rookRam: 0.5, queenCrown: 0.55, kingResign: 0.95 };
+const EXEC_DUR = { engulf: 0.72, spike: 0.76, crush: 0.8, snuff: 0.95, shatter: 2.6, pawnStab: 0.7, knightStomp: 0.86, bishopSlash: 0.8, rookRam: 0.84, queenCrown: 1.6, kingResign: 1.8 };
+const EXEC_HIT = { engulf: 0.3, spike: 0.3, crush: 0.42, snuff: 0.55, shatter: 0.75, pawnStab: 0.28, knightStomp: 0.43, bishopSlash: 0.3, rookRam: 0.35, queenCrown: 0.4, kingResign: 0.66 };
 // the finisher follows the shape you are in when you land it
 const FORM_EXEC = { pawn: 'pawnStab', pawnR: 'pawnStab', knight: 'knightStomp', alfil: 'knightStomp', bishop: 'bishopSlash', rook: 'rookRam', queen: 'queenCrown', king: 'kingResign', king1: 'kingResign' };
 function canExec(e, src) {
@@ -2321,8 +2327,9 @@ function canExec(e, src) {
   if (src === 'lunge' && G.P.tr.beat3 && G.perfN >= 3) { G.perfN = 0; return true; }
   if (src === 'lunge' && G.P.sureExec) { G.P.sureExec = false; return true; }
   if (src !== 'lunge' || G.execCd > 0) return false;
-  const P = G.P, alive = G.E.filter(o => !o.dead && o !== e).length;
-  return alive === 0 || P.dark || P.buffT > 0 || (G.combo && G.combo.t > 0 && G.combo.n >= 2) || ['wind', 'recover', 'aim', 'light', 'strike', 'plan', 'move'].includes(e.state) || e.type === 'king' || Math.random() < (L(9) ? 0.1 : 0.25);
+  const P = G.P, alive = G.E.filter(o => !o.dead && o !== e && !o.ally).length;
+  /* (v97: only kills that mean something get a finisher — the last piece, the king, a punish during its wind-up / recovery, a kill from the dark or on the dodge bonus) */
+  return alive === 0 || e.type === 'king' || P.dark || P.buffT > 0 || ['wind', 'recover'].includes(e.state);
 }
 function startExec(e, a) {
   const P = G.P, fk = P.form ? FORM_EXEC[effKind(P.form, P.finv)] : null, kind = fk || (e.d.boss && !e.d.minor ? 'shatter' : e.d.boss ? 'spike' : 'engulf');
@@ -2331,7 +2338,7 @@ function startExec(e, a) {
   G.exec = { e, kind, big, form: P.form, finv: P.finv, t: 0, dur: EXEC_DUR[kind] * big, hit: EXEC_HIT[kind] * big, a, px: P.x - Math.cos(a) * 0.4, pz: P.z - Math.sin(a) * 0.4, ex: e.x, ez: e.z, fired: false, hold: 0, twin: P.buffT > 0, dark: P.dark, marks: {} };
   if (kind === 'rookRam') { const R = G.room; let d = 0; while (d < 3.2) { const nx = e.x + Math.cos(a) * (d + 0.3), nz = e.z + Math.sin(a) * (d + 0.3); if (blocked(R, nx, nz, 0.4) || nx < R.bx0 || nx > R.bx1 || nz < R.bz0 || nz > R.bz1) break; d += 0.3; } G.exec.wall = [e.x + Math.cos(a) * d, e.z + Math.sin(a) * d]; }
   P.lungeT = 0; P.vx = P.vz = 0; P.inv = Math.max(P.inv, G.exec.dur + 0.6);
-  G.execCd = 3.2; G.execN = (G.execN || 0) + 1; G.fate = null; G.fut = null; G.hitstop = 0;
+  G.execCd = 4.5; G.execN = (G.execN || 0) + 1; G.fate = null; G.fut = null; G.hitstop = 0;
   Snd.S.execIn(kind === 'shatter'); hook('exec', { e }); META.mark('exec', kind);
 }
 function execOnce(X, key, at) { if (X.marks[key] || X.t < at) return false; X.marks[key] = 1; return true; }
@@ -2446,7 +2453,7 @@ function hurtPlayer(dmg, src) {
   P.hp -= dmg; P.inv = 1.0; P.lastHurt = G.time; G.red = 1; Snd.S.hurt(); P.jump = null; P.dash = null; P.hop = 0; fx2Hurt(); loseForm(true);
   // getting hit has to hurt: freeze, recoil away from the hitter, flash, splatter, a red number and a cracking heart
   const src0 = nearestEnemy(P.x, P.z, 20), ka = src0 ? angTo(src0.x, src0.z, P.x, P.z) : P.face + Math.PI;
-  G.hitstop = 0.16; G.shake = 0.9; G.slowT = Math.max(G.slowT || 0, 0.22); G.crack = Math.max(G.crack || 0, 0.35); G.flash = Math.max(G.flash || 0, 0.12);
+  G.hitstop = 0.14; G.hsForce = true; G.shake = 0.9; G.slowT = Math.max(G.slowT || 0, 0.18); G.crack = Math.max(G.crack || 0, 0.35); G.flash = Math.max(G.flash || 0, 0.12);
   G.punch = { x: Math.cos(ka) * 0.55, z: Math.sin(ka) * 0.55, t: 0.14 }; P.vx = Math.cos(ka) * 11; P.vz = Math.sin(ka) * 11; move(G.room, P, Math.cos(ka) * 0.35, Math.sin(ka) * 0.35);
   P.hurtT = 0.45; P.squash = -0.7; P.hurtA = ka;
   burst(P.x, 0.4, P.z, 20, [0.05, 0.04, 0.06]);
@@ -2463,7 +2470,7 @@ function hurtPlayer(dmg, src) {
 }
 function triggerFate() {
   const P = G.P, k = 1 + (P.tr.fate || 0) * 0.5;
-  G.slowT = 0.9 * k; G.crack = 0.45; G.flash = 0.5; P.buffT = 4 * k; P.fateN++; G.fates++;
+  G.slowT = 0.55 * k; G.crack = 0.45; G.flash = 0.5; P.buffT = 4 * k; P.fateN++; G.fates++;
   Snd.S.fate(); tutDone('dodge');
   UI.fate();
   if (P.fateN % 3 === 0 && P.hp < P.maxHp) { P.hp++; UI.toast('drop', '+1'); }
@@ -2485,7 +2492,7 @@ function update(dtReal, ev) {
   const want = k => G.buf[k] !== undefined && G.time - G.buf[k] <= BUF_T;
   // time scale: fate slow-mo, gaze
   let ts = 1;
-  if (G.slowT > 0) { G.slowT -= dtReal; ts = 0.25; }
+  if (G.slowT > 0) { G.slowAcc = (G.slowAcc || 0) + dtReal; if (G.slowAcc > 3.5 && !G.boss && G.slowT < 1.2) G.slowT = 0; else { G.slowT -= dtReal; ts = 0.25; } } /* (a room can't spend more than ~3.5 s in slow motion; boss fights are exempt) */
   if (!TUT.dodge && G.fate && G.fate.live && G.state === 'play' && !P.inMirror) ts = Math.min(ts, 0.3);
   if (ev.look && G.gaze > 0 && G.state === 'play') { ts = Math.min(ts, 0.3); G.gaze = Math.max(0, G.gaze - dtReal); G.gazing = true; } else { G.gazing = false; G.gaze = Math.min(3 * (1 + (P.tr.sight || 0) * 0.5) * (P.tr.deepThink ? 2 : 1), G.gaze + dtReal * 0.4); }
   G.ts = expD(G.ts, ts, 14, dtReal);
@@ -2493,6 +2500,7 @@ function update(dtReal, ev) {
   if (G.exec) {
     G.crack = Math.max(0, G.crack - dtReal * 0.8); G.split = Math.max(0, (G.split || 0) - dtReal * (G.exec && G.exec.hold > 0 ? 0 : 1.2)); G.invert = Math.max(0, (G.invert || 0) - dtReal); G.kaleido = Math.max(0, (G.kaleido || 0) - dtReal); G.flash = Math.max(0, G.flash - dtReal * (G.exec.hold > 0 ? 0.9 : 3)); G.shake = Math.max(0, (G.shake || 0) - dtReal * 2.5);
     const X0 = G.exec; X0.real = (X0.real || 0) + dtReal;
+    if (ev.atk && X0.fired && X0.t > X0.hit + 0.12 && X0.kind !== 'shatter') { X0.t = X0.dur; X0.hold = 0; } /* attack again to skip the rest of a finisher */
     if (!isFinite(X0.t) || X0.real > X0.dur * 3 + 2) { X0.t = X0.dur; X0.hold = 0; X0.fired = true; }
     try { execStep(dtReal); } catch (err) { console.error(err); G.exec = null; G.lightK = 1; X0.e.execd = false; if (!X0.e.dead) killEnemy(X0.e, true); }
     LIGHTS = lightList();
@@ -2501,7 +2509,8 @@ function update(dtReal, ev) {
     if (!G.exec && !G.room.cleared && G.E.every(e => e.dead)) roomCleared();
     return;
   }
-  if (G.hitstop > 0) { G.hitstop -= dtReal; return; }
+  G.hsAcc = Math.max(0, (G.hsAcc || 0) - dtReal * 0.07); /* the hitstop budget refills slowly: about 7% of the time at most, with short bursts allowed */
+  if (G.hitstop > 0) { G.hsAcc += dtReal; if (G.hsAcc > 0.22 && !G.hsForce) { G.hitstop = 0; } else { G.hitstop -= dtReal; if (G.hitstop <= 0) G.hsForce = false; if (G.buf) for (const k in G.buf) G.buf[k] += dtReal; return; } } /* (and presses made during the freeze are kept) */
   const dt = dtReal * G.ts;
   G.t += dt;
   // the room clock: every piece, the music and the perfect-hit window share it
@@ -3349,6 +3358,7 @@ const UPGS = [
   { id: 'aftershock', name: '殘震', desc: '落地一拍後，落點再震一次', ic: 'quake', rar: R1, on: { land() { const P = G.P, x = P.x, z = P.z, R = G.room; setTimeout(() => { if (G.room !== R || G.state !== 'play') return; U.aoe(x, z, 1.3, 1.5, [0.9, 0.8, 0.5], 'upg'); }, (R.beat || 0.5) * 1000); } } },
   { id: 'stillShield', name: '靜心', desc: '站著不動兩拍得到一層護盾（每間房兩次）', ic: 'eye', rar: R1, on: { tick() { const P = G.P, R = G.room; if ((R.stillN || 0) >= 2 || P.shield > 0) return; if ((P.stillT || 0) > 2 * (R.beat || 0.5)) { R.stillN = (R.stillN || 0) + 1; U.shield(1); P.stillT = 0; ring(P.x, P.z, 1, [0.8, 0.85, 1.2]); } } } },
 ];
+{ const seen = new Set(); for (const u of UPGS) { if (seen.has(u.id)) console.error('duplicate upgrade id: ' + u.id); seen.add(u.id); } } // (two upgrades sharing an id silently share their effect)
 // pedestal diagrams default to a picture of the icon on a board
 for (const u of UPGS) { u.max = u.max || 1; if (!u.diag) u.diag = { p: [[2, 2, u.ic === 'invi' ? 'rook' : u.ic, u.rar === 3 ? 'gold' : u.rar === 2 ? 'silver' : '']], hint: true }; }
 
@@ -3902,7 +3912,7 @@ function tactic(id, opts = {}) {
   const P = G.P; G.tacCd = G.tacCd || {}; if ((G.tacCd[id] || 0) > G.time && !opts.force) return false; G.tacCd[id] = G.time + (opts.cd || 3);
   const isNew = META.mark('tac', id); G.tacN = (G.tacN || 0) + 1; META.addSand(isNew ? 6 : 2);
   const big = !!opts.big, mem = P.tr.tacMemory ? 1.8 : 1;
-  G.slowT = Math.max(G.slowT || 0, (big ? 1.0 : 0.4) * mem); G.flash = Math.max(G.flash || 0, big ? 0.7 : 0.25); Snd.S.bell(); if (big) Snd.S.shatter();
+  G.slowT = Math.max(G.slowT || 0, (big ? 0.6 : 0.15) * mem); G.flash = Math.max(G.flash || 0, big ? 0.7 : 0.25); Snd.S.bell(); if (big) Snd.S.shatter();
   if (P.tr.tacMemory) P.tacT = 2.2; if (P.tr.tactician && !G.tacHeal) { G.tacHeal = true; U.heal(1); } if (P.tr.evoTac) P.sureExec = true;
   MUI.tactic(TACTICS[id][0], TACTICS[id][1], isNew, big); hook('tactic', { id });
   return true;
@@ -4523,7 +4533,7 @@ function lanceSeqStep(B, dt) {
   if (S.t > 0) { if (!S.fixed && S.t > (S.kind === 'thrust' ? 0.12 : 0.18)) S.a = angTo(B.x, B.z, P.x, P.z); B.face = S.a; return; } // aim follows you until the last instant
   // strike
   if (S.kind === 'thrust') { G.fx.push({ k: 'lthrust', x: B.x, z: B.z, a: S.a, len: LANCE_REACH, life: 0.2, max: 0.2 }); Snd.S.slash(); G.shake = Math.max(G.shake, 0.35); B.lunge = 0.18;
-    if (segDist(P.x, P.z, B.x, B.z, S.a, LANCE_REACH) < 0.55 + P.r * 0.6) lanceHit(B, 'thrust');
+    if (segDist(P.x, P.z, B.x, B.z, S.a, LANCE_REACH) < 0.55 + Math.max(P.r, 0.45) * 0.6) lanceHit(B, 'thrust');
     S.k++; S.rec = S.k < S.n ? 0.2 : 0.32; // the follow-through (longer after the last of a combo)
     S.after = () => { if (B.seq !== S) return; if (S.k < S.n && !(B.rest > 0)) { if (Math.hypot(P.x - B.x, P.z - B.z) > LANCE_REACH + 1.4) { B.seq = { kind: 'jav', n: 1, k: 0, t: LW.jav, max: LW.jav, a: angTo(B.x, B.z, P.x, P.z) }; return; } S.t = S.max = LW.combo; S.fixed = false; return; } B.seq = null; B.busy = false; }; return; }
   else if (S.kind === 'sweep') { G.fx.push({ k: 'lsweep', x: B.x, z: B.z, a: S.a, life: 0.3, max: 0.3 }); Snd.S.slash(); Snd.S.slam(); G.shake = Math.max(G.shake, 0.5); if (dist(P.x, P.z, B.x, B.z) < 3.0 + P.r * 0.5) lanceHit(B, 'sweep'); S.rec = 0.35; S.after = () => { if (B.seq === S) { B.seq = null; B.busy = false; } }; return; }
@@ -4675,7 +4685,7 @@ function lasersStep(dt) {
     let tot = 0; for (let k = L.trail.length - 1; k > 0; k--) { tot += dist(L.trail[k][0], L.trail[k][1], L.trail[k - 1][0], L.trail[k - 1][1]); if (tot > L.len) { L.trail.splice(0, k - 1); break; } }
     const near = (px, pz, r) => { for (let k = 1; k < L.trail.length; k++) { const [x0, z0] = L.trail[k - 1], [x1, z1] = L.trail[k], a = Math.atan2(z1 - z0, x1 - x0), ln = Math.hypot(x1 - x0, z1 - z0); if (ln > 0.001 && segDist(px, pz, x0, z0, a, ln) < r) return true; } return false; };
     const hurtsYou = !L.friendly; // once you've sent it back it's yours: it never burns you
-    if (hurtsYou && G.state === 'play' && !P.inMirror && P.inv <= 0 && near(P.x, P.z, L.w + P.r * 0.6)) { hurtPlayer(L.dmg, 'laser'); if (L.final && B && B.fin) B.fin.missed = true; }
+    if (hurtsYou && G.state === 'play' && !P.inMirror && P.inv <= 0 && near(P.x, P.z, L.w + Math.max(P.r, 0.45) * 0.6)) { hurtPlayer(L.dmg, 'laser'); if (L.final && B && B.fin) B.fin.missed = true; }
     if (L.friendly) for (const e of G.E) { if (e.dead || e.spawnT > 0 || (L.hitT[e.id || e.seed] || 0) > G.time) continue; if (dist(L.x, L.z, e.x, e.z) < e.r + L.w + 0.2) { L.hitT[e.id || e.seed] = G.time + 0.4;
         if (L.final && e === B) { starWin(B); L.life = 0; break; } hurtEnemy(e, (G.P.tr.starMirror ? 8 : 4) * (fx2Is('fortress') || fx2Is('bulwark') ? 2 : 1), Math.atan2(L.dz, L.dx), 'upg'); } }
   }
@@ -4773,7 +4783,7 @@ function orbsStep(B, dt) {
   const r = 2.1 + Math.sin(B.orbT * 1.4) * 1.0, spin = B.orbT * 0.22;
   for (const o of B.orbs) { if (!o.alive) continue; const u = (o.u + spin) % 1, q = u * 4, side = q | 0, f = q - side, C = [[1, 0], [0, 1], [-1, 0], [0, -1]], A = C[side], Bv = C[(side + 1) % 4]; // walk the diamond's sides
     o.x = B.x + (A[0] + (Bv[0] - A[0]) * f) * r; o.z = B.z + (A[1] + (Bv[1] - A[1]) * f) * r;
-    if (G.state === 'play' && !P.inMirror && dist(o.x, o.z, P.x, P.z) < P.r + 0.3) { o.alive = false;
+    if (G.state === 'play' && !P.inMirror && dist(o.x, o.z, P.x, P.z) < Math.max(P.r, 0.45) + 0.3) { o.alive = false;
       const a = angTo(P.x, P.z, o.x, o.z), z = shieldZone(a); if (z === 'edge') shieldShatter(o.x, o.z); else if (z === 'face') { P.shieldT = 0.25; Snd.S.bell(); U.shot(o.x, o.z, angTo(o.x, o.z, B.x, B.z), 3, { sp: 13, life: 1.5, col: [1.3, 1.3, 1.8] }); } else hurtPlayer(1, 'orb'); } }
   if (B.orbT > B.orbLife) { for (const o of B.orbs) if (o.alive) { const a = angTo(B.x, B.z, o.x, o.z); G.B.push({ x: o.x, z: o.z, vx: Math.cos(a) * 4.5, vz: Math.sin(a) * 4.5, life: 3, star: true }); } B.orbs = []; Snd.S.mirrorOut(); }
 }
@@ -4806,7 +4816,7 @@ function shellsStep(dt) {
       const sp = Math.hypot(S.vx, S.vz), mx = 9; if (sp > mx) { S.vx *= mx / sp; S.vz *= mx / sp; }
       const coming = S.vx * dx + S.vz * dz > 0; // only catchable once it's falling back toward you
       S.x += S.vx * dt; S.z += S.vz * dt; S.size = Math.min(1.2, S.size + dt * 0.05);
-      if (coming && !(S.cd > 0) && d < S.size + P.r + 0.35 && G.state === 'play' && !P.inMirror) { const a = angTo(P.x, P.z, S.x, S.z);
+      if (coming && !(S.cd > 0) && d < S.size + Math.max(P.r, 0.45) + 0.35 && G.state === 'play' && !P.inMirror) { const a = angTo(P.x, P.z, S.x, S.z);
         const z = shieldZone(a); if (z === 'edge') { shieldShatter(S.x, S.z); S.st = 'gone'; }
         else if (z === 'face') { // caught: it bounces off the shield and swings out again
           // flung far back out (mostly along the shield's facing, keeping a bit of its sideways drift) so it arcs out wide and falls back
@@ -6020,9 +6030,9 @@ const Main = (() => {
   function resize() { const dpr = Math.min(window.devicePixelRatio || 1, innerWidth * innerHeight > 1.4e6 ? 1.1 : 1.4) * q; Gfx.resize(innerWidth, innerHeight, Math.max(0.4, dpr)); }
   function adapt(ms) {
     ema = ema * 0.92 + Math.min(ms, 100) * 0.08; qT += ms;
-    if (qT < 1500) return; qT = 0;
-    if (ema > 24 && q > 0.45) { q = Math.max(0.45, q * 0.82); resize(); }
-    else if (ema < 13 && q < 1) { q = Math.min(1, q * 1.12); resize(); }
+    if (qT < 1000) return; qT = 0;
+    if (ema > 20 && q > 0.45) { q = Math.max(0.45, q * 0.82); resize(); }
+    else if (ema < 12 && q < 1) { q = Math.min(1, q * 1.12); resize(); }
   }
   function frame(dtReal) {
     const ev = Inp.poll();
@@ -6062,12 +6072,14 @@ const Main = (() => {
     $('#resume').addEventListener('click', () => { paused = false; $('#pause').hidden = true; });
     $('#quit').addEventListener('click', () => { paused = false; $('#pause').hidden = true; UI.title(); });
     $('#tPause').addEventListener('click', () => { if (G.state === 'play') { paused = true; $('#pause').hidden = false; } });
+    addEventListener('blur', () => { if (G.state === 'play' && !window.__fast && !window.__noloop) { paused = true; $('#pause').hidden = false; } }); /* clicking away pauses too */
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') { paused = true; $('#pause').hidden = false; } });
     UI.title();
     last = performance.now(); requestAnimationFrame(loop);
     window.__X = { hurtPlayer: (d, s) => hurtPlayer(d, s), eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
     window.__T = {
       goto(i) { enterRoom(i); },
+      bot: dt => Bot(dt),
       sim(sec, bot) { const dt = 1 / 30; for (let i = 0; i < sec * 30; i++) { const ev = bot ? Bot(dt) : {}; if (G.state === 'play' || G.state === 'dead' || G.state === 'won') update(dt, ev); if (!$('#choose').hidden) UI._chooseKey(0); if (G.state !== 'play') break; } return { st: G.state, room: G.roomIdx, hp: G.P.hp, kills: G.kills, fates: G.fates, en: G.E.filter(e => !e.dead).length, err: window.__err || '', boss: G.boss ? Math.round(G.boss.hp) : null, tr: Object.keys(G.P.tr).join(',') }; },
     };
   }
@@ -6240,8 +6252,11 @@ const MUI = (() => {
       for (const [i, j] of m.out) s += `<circle cx="${i * C + C / 2}" cy="${j * C + C / 2}" r="${n ? 5 : 7}" fill="${col}" opacity=".9"/>`; });
     s += `<g transform="translate(${3 * C + 2} ${3 * C + 2}) scale(${(C - 4) / 32})" style="color:#e3b465">${inner(icon)}</g>`;
     return `<svg class="gboard" viewBox="0 0 ${7 * C} ${7 * C}">${s}</svg>`; }
+  // the full explanation card shows once per save; after that, just a quiet toast (no pause)
+  const guideSeen = key => { try { const o = JSON.parse(localStorage.getItem('mirror.guides') || '{}'); if (o[key]) return true; o[key] = 1; localStorage.setItem('mirror.guides', JSON.stringify(o)); } catch (e) { } return false; };
   function pieceGuide(key, base, inv, F) {
     if (window.__fast || G.state !== 'play') return; G.seenForms = G.seenForms || {}; if (G.seenForms[key]) return; G.seenForms[key] = 1;
+    if (guideSeen('p:' + key)) return;
     const el = $('#pguide') || (() => { const d = document.createElement('div'); d.id = 'pguide'; d.className = 'ov'; d.hidden = true; document.body.appendChild(d); return d; })();
     const kb = Inp.st.mode === 'kb', akey = kb ? `<kbd>${IC.mouseL}</kbd>` : '';
     let title, lines, board, icon;
@@ -6258,6 +6273,7 @@ const MUI = (() => {
   // a short card like the piece guide: an icon, a title, two or three short lines
   function infoCard(key, icon, small, title, lines, col) {
     if (window.__fast || G.state !== 'play') return; G.seenForms = G.seenForms || {}; if (G.seenForms[key]) return; G.seenForms[key] = 1;
+    if (guideSeen('i:' + key)) { if (key.startsWith('mode:')) return; UI.toast('crown', title); return; }
     const el = $('#pguide') || (() => { const d = document.createElement('div'); d.id = 'pguide'; d.className = 'ov'; d.hidden = true; document.body.appendChild(d); return d; })();
     el.innerHTML = `<div class="gcard"><div class="gh"><span style="color:${col || 'var(--gold)'}">${icon}</span><div><small>${small}</small><b>${title}</b></div></div>
       <ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul><button class="btn primary ib" id="pgOk">${IC.play}<span>知道了</span></button></div>`;
