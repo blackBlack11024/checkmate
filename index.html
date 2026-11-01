@@ -255,6 +255,7 @@ body.exec #hud, body.exec #touch .tb { opacity: 0; transition: opacity .2s; }
 #prompt .fz > .ic { width: 22px; height: 22px; } #prompt .fz .fzt .ic { width: 12px; height: 12px; } #prompt .fz .fzt { right: -6px; top: -5px; } #prompt b.q { color: var(--gold); font-size: 18px; margin-left: 2px; }
 .ped .evo { display: flex; gap: 3px; align-items: center; justify-content: center; margin-top: 6px; font-style: normal; } .ped .evo .ic { width: 16px; height: 16px; color: var(--dim); }
 .ped .evo i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--mute); } .ped .evo i.on { background: var(--gold); border-color: var(--gold); } .ped .evo i.nx { border-color: var(--gold); animation: pip 1s infinite; }
+.ped .bt { display: block; font-style: normal; font-size: 10px; letter-spacing: .2em; color: var(--mute); margin: 2px 0 1px; } .ped .bt.on { color: var(--gold); } .fam.bt { font-size: 12px; gap: 4px; }
 .ped .evo.go .ic { color: var(--gold); } .ped .evo.go { filter: drop-shadow(0 0 6px rgba(227, 180, 101, .8)); }
 @keyframes pip { 50% { background: rgba(227, 180, 101, .6); } }
 .ped.past { border-color: var(--silver) !important; } .ped .pastic .ic { width: 18px; height: 18px; color: var(--silver); } .ped.rr { opacity: .85; }
@@ -1959,9 +1960,9 @@ function startRun(mode = 'normal', opt) {
   G.state = 'play'; G.coreNext = 2; G.coreHint = false;
   UI.hud(true);
   const st = UNLOCK.get().pick; if (st && UNLOCK.has(st)) becomePiece(st);
-  const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === cy); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
+  const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === canonUpg(cy)); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
   if (mode === 'challenge' && opt !== 'bKing') { const CHP = {'bStar': ['charged', 'lance', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'spikeShield', 'prismShield', 'stomp2', 'quickGiant', 'tremor', 'starMirror', 'gravity', 'wideShield', 'starStep'], 'bLance': ['charged', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'longjump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'aftershock', 'tailWhip', 'airCombo', 'pogo', 'afterimage', 'counter', 'sight', 'riposte', 'sharpEye', 'zanshin', 'evade']}, ids = CHP[opt]; // 天樞 / 貫星: only upgrades that work in that fight (their shape, no pieces, no mirrors)
-    const picks = ids ? (() => { const pool = UPGS.filter(u => ids.includes(u.id)), out = []; while (out.length < 5 && pool.length) { const w = pool.map(u => (u.rar === 1 ? 3 : u.rar === 2 ? 2 : 1) * (u.bossOnly ? 2.5 : 1)); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); } return out; })() : UPG.roll(5, 2);
+    const picks = ids ? (() => { const pool = UPGS.filter(u => inPool(u) && ids.some(id => canonUpg(id) === u.id)), out = []; while (out.length < 5 && pool.length) { const w = pool.map(u => (u.rar === 1 ? 3 : u.rar === 2 ? 2 : 1) * (u.bossOnly ? 2.5 : 1)); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); } return out; })() : UPG.roll(5, 2);
     for (const u of picks) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
   if (META.has('startUpg') || mode === 'rush') { const R = G.room, pick = UPG.roll(3, 2); R.peds = []; const ci = Math.floor(R.cols / 2); [ci - 2, ci, ci + 2].forEach((i, k) => { if (!pick[k]) return; const [x, z] = sqC(R, clamp(i, 0, R.cols - 1), R.rows - 2); if (!gridAt(R, x, z)) R.peds.push({ x, z, t: pick[k], rise: 0, alive: true }); }); }
   if (!G.room.boss) Snd.music(0, 0.2); // (boss rush / boss challenge start in a boss room: keep its music)
@@ -2045,6 +2046,7 @@ function takePed(pd) {
 }
 function takeTrait(t) {
   const P = G.P; P.tr[t.id] = (P.tr[t.id] || 0) + 1; if (t.legacy) P.tr[t.legacy] = (P.tr[t.legacy] || 0) + 1;
+  if (t.absorb) for (const a of t.absorb) { const v = UPGS.find(x => x.id === a); P.tr[a] = (P.tr[a] || 0) + 1; if (v && v.legacy) P.tr[v.legacy] = (P.tr[v.legacy] || 0) + 1; } // a merged upgrade carries the ones it absorbed
   if (t.id === 'skin') { P.maxHp++; P.hp = Math.min(P.maxHp, P.hp + 1); }
   if (t.id === 'ward') for (const m of G.room.mirrors) { m.hp += 2; m.maxHp += 2; }
   G.choosing = false; Snd.S.pick(); checkEvo();
@@ -2090,6 +2092,7 @@ function loseForm(spit) {
   const P = G.P; fx2OnLoseForm(); if (!P.form) return;
   hook('formEnd', { type: P.form, inv: P.finv, spit });
   if (!spit && P.form2) { const f = P.form2; P.form2 = null; P.form = f.form; P.finv = f.finv; P.charges = f.charges; P.fuse = f.fuse || null; P.fvar = f.fvar || null; UI.form(); return; }
+  if (P.fuse && P.fuse.id && !P.fx2) fuseEndUp(); // an old-style fusion running out
   P.fuse = null;
   if (spit) { const a = rnd(0, TAU); dropPiece(P.form,  clamp(P.x + Math.cos(a) * 1.2, G.room.bx0 + 0.5, G.room.bx1 - 0.5), clamp(P.z + Math.sin(a) * 1.2, G.room.bz0 + 0.5, G.room.bz1 - 0.5), P.finv, P.fvar); }
   P.form = null; P.finv = false; P.fvar = null; P.charges = 0; burst(P.x, 0.6, P.z, 10, [0.6, 0.2, 0.15]); UI.form && UI.form();
@@ -2413,7 +2416,7 @@ function killEnemy(e, executed) {
   fx2Kill(e); fx2LiquidKill(e);
   if (G.room.bossKind === 'bKing' && e.d.chess && !e.d.boss && !e.ally && G.state === 'play') setTimeout(() => { if (G.room.bossKind === 'bKing') { becomePiece(e.type, e.inv); UI.toast(e.type, '吃子'); } }, 0); // real chess: take a piece and you become it
   e.dead = true; G.kills++; META.addSand(executed ? 2 : 1);
-  if (!e.d.boss || e.d.minor) G.shards = (G.shards || 0) + (e.elite ? 4 * (G.P.tr.eliteHunter ? 2 : 1) : 1) * (G.P.tr.magnet ? 2 : 1) * (G.greed ? 2 : 1);
+  if (!e.d.boss || e.d.minor) G.shards = (G.shards || 0) + (e.elite ? 4 * (G.P.tr.eliteHunter ? 2 : 1) : 1) * (G.P.tr.shardMagnet ? 2 : 1) * (G.greed ? 2 : 1);
   if (e.el_split && G.room.bx0 !== undefined) { const R = G.room, [i, j] = sqOf(R, e.x, e.z); let n = 0; for (const [a, b] of DIRS.king) { if (n >= 2) break; const x = i + a, y = j + b; if (!onBoard(R, x, y) || R.sqBlock[y * R.cols + x] || G.E.some(o => !o.dead && sqOf(R, o.x, o.z).join() === x + ',' + y)) continue; const [wx, wz] = sqC(R, x, y), ne = makeEnemy('pawn', wx, wz, (Math.random() * 999) | 0, n); ne.spawnT = 0.4; G.E.push(ne); n++; } burst(e.x, 1, e.z, 16, [0.9, 0.6, 1.1]); }
   for (const o of G.E) if (o.el_vamp && !o.dead && o !== e) { o.hp = Math.min(o.maxHp * 1.5, o.hp + 2); o.flash = 0.2; burst(o.x, 1.2, o.z, 6, [1.2, 0.1, 0.1]); }
   if (e.type === 'king' && G.P.form && effKind(G.P.form, G.P.finv) === 'knight' && smothered(e)) tactic('smother', { big: true, force: true });
@@ -2517,7 +2520,7 @@ function update(dtReal, ev) {
   if (R.beat) { const pb = Math.floor((G.beatT || 0) / R.beat); G.beatT = (G.beatT || 0) + dt; const nb = Math.floor(G.beatT / R.beat); if (nb !== pb) onBeat(nb); }
   P.perfT = Math.max(0, (P.perfT || 0) - dtReal); P.jumpCd = Math.max(0, (P.jumpCd || 0) - dt); P.kFreeT = Math.max(0, (P.kFreeT || 0) - dt); P.mirrorStrike = Math.max(0, (P.mirrorStrike || 0) - dt); if (!P.mirrorStrike) P.mirror3 = false;
   if (G.decoy) { G.decoy.t -= dt; if (G.decoy.t <= 0) G.decoy = null; }
-  if (G.trails) { for (const tr of G.trails) { tr.life -= dt; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, tr.x, tr.z) < 0.6 + e.r * 0.5 && (e.burnT || 0) < G.time) { e.burnT = G.time + 0.45; hurtEnemy(e, 1.5 * dmgMul(P), 0); } } G.trails = G.trails.filter(tr => tr.life > 0); }
+  if (G.trails) { for (const tr of G.trails) { tr.life -= dt; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, tr.x, tr.z) < 0.6 + e.r * 0.5 && (e.burnT || 0) < G.time) { e.burnT = G.time + 0.45; e.lit = G.time + 2; hurtEnemy(e, 1.5 * dmgMul(P), 0); } } G.trails = G.trails.filter(tr => tr.life > 0); }
   G.crack = Math.max(0, G.crack - dtReal * 1.2); G.split = Math.max(0, (G.split || 0) - dtReal * 1.4); G.invert = Math.max(0, (G.invert || 0) - dtReal); G.kaleido = Math.max(0, (G.kaleido || 0) - dtReal); G.flash = Math.max(0, G.flash - dtReal * 2.2); G.red = Math.max(0, G.red - dtReal * 1.5);
   G.shake = Math.max(0, (G.shake || 0) - dtReal * 2);
   LIGHTS = lightList();
@@ -2539,7 +2542,7 @@ function update(dtReal, ev) {
     P.dark = lightHere < DARK;
     const rush = P.tr.endgameRush && G.E.filter(e => !e.dead).length <= 2 ? 1.3 : 1, fz = P.tr.frenzy && G.combo && G.combo.t > 0 ? Math.min(1.5, 1 + G.combo.n * 0.08) : 1, think = P.tr.deepThink && G.gazing ? 1 / Math.max(0.3, G.ts) : 1;
     const P0x = P.x, P0z = P.z, md = modeOf();
-    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think * (1 + (P.tr.tempoUp ? P.tempoB || 0 : 0)) * ((P.newSkinT || 0) > G.time ? 1.25 : 1) * (P.tr.rat && P.hp === 1 ? 1.3 : 1) * fx2Speed();
+    const sp = (md === 'liquid' ? 1.35 : md === 'giant' && !P.tr.quickGiant ? 0.72 : 1) * 4.6 * (1 + (P.tr.flow || 0) * 0.15) * (P.dark && P.tr.shade ? 1.2 : 1) * (G.slowT > 0 ? 2.2 : 1) * rush * fz * think * (1 + (P.tr.tempoUp ? P.tempoB || 0 : 0)) * ((P.newSkinT || 0) > G.time ? 1.25 : 1) * (P.tr.rat && P.hp === 1 ? 1.3 : 1) * (P.tr.sameColor ? 1 + (P.sameC || 0) * 0.12 : 1) * fx2Speed();
     P.stillT = Math.hypot(P.vx, P.vz) < 0.4 && P.lungeT <= 0 ? (P.stillT || 0) + dt : 0;
     if (P.hopJ) { const J = P.hopJ; if (J.freeze > 0) J.freeze -= dt; else J.t += dt; const k = clamp01(J.t / J.dur); P.x = lerp(J.fx, J.tx, k); P.z = lerp(J.fz, J.tz, k); P.hop = Math.sin(k * Math.PI) * 0.9; if (k >= 1) { P.hopJ = null; P.hop = 0; fixPos(R, P); P.squash = -0.4; Snd.S.land(); P.dblUsed = false; if (P.diveNext) { P.diveNext = false; U.aoe(P.x, P.z, 1.8, 3 * dmgMul(P), [0.6, 0.5, 0.9], 'lunge'); G.shake = 0.5; Snd.S.slam(); } hook('land', { perf: J.perf }); if (J.perf && P.tr.stomp) { const rr = 1.5; for (const e of G.E) if (!e.dead && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < rr + e.r) hurtEnemy(e, 2 * dmgMul(P), angTo(P.x, P.z, e.x, e.z), 'lunge'); ring(P.x, P.z, rr, [1, 0.8, 0.4]); G.shake = 0.3; } } P.vx = (J.tx - J.fx) / J.dur * 0.3; P.vz = (J.tz - J.fz) / J.dur * 0.3; }
     else if (P.jump) { // knight leap: untouchable in the air, crushes where it lands
@@ -2615,7 +2618,7 @@ function update(dtReal, ev) {
     else if (evn.k === 'slam') { Snd.S.slam(); G.shake = evn.small ? 0.25 : 0.6; ring(evn.x, evn.z, evn.small ? 1.5 : 2.9, [0.9, 0.8, 0.7]); }
     else if (evn.k === 'slash') { Snd.S.slash(); }
     else if (evn.k === 'bolt') { Snd.S.bolt(); }
-    else if (evn.k === 'land') { Snd.S.land(); for (const pr of R.props) if (pr.alive && pr.type !== 'piece' && dist(pr.x, pr.z, evn.x, evn.z) < 0.7) { pr.alive = false; if (pr.candle) { pr.candle.lit = false; pr.candle.gone = true; } burst(pr.x, 0.5, pr.z, 12, [0.6, 0.55, 0.5]); Snd.S.hit(); rebuildGrid(R); } }
+    else if (evn.k === 'land') { if (evn.e) hook('foeLand', evn); Snd.S.land(); for (const pr of R.props) if (pr.alive && pr.type !== 'piece' && dist(pr.x, pr.z, evn.x, evn.z) < 0.7) { pr.alive = false; if (pr.candle) { pr.candle.lit = false; pr.candle.gone = true; } burst(pr.x, 0.5, pr.z, 12, [0.6, 0.55, 0.5]); Snd.S.hit(); rebuildGrid(R); } }
     else if (['bossFire', 'spawnPawns', 'rubble', 'emerge', 'blocked', 'mirHop', 'summonMirror', 'mirrorVolley', 'lanceAtk', 'rookBuild', 'smashRubble', 'pillarHit', 'rookFire', 'tiltWarn', 'tilt', 'burnLine', 'echoGhost', 'roll', 'rookWave'].includes(evn.k)) bossEvent(evn);
     else if (['swapColours', 'diagWall', 'raise', 'shardTrap', 'kaleido', 'tyrantArmy', 'phalanx', 'collapse', 'noonWarn'].includes(evn.k)) invEvent(evn);
     else if (evn.k === 'castle') { if (UNLOCK.give('rook')) G.newUnlock = 'rook'; Snd.S.mirrorIn(); G.flash = 0.25; UI.toast('rook', '入堡'); }
@@ -3403,7 +3406,7 @@ function trapsBeat() {
   for (const t of R.traps) {
     t.b--; const [x, z] = sqC(R, t.i, t.j);
     for (const e of G.E) { if (e.dead || e.spawnT > 0) continue; const [i, j] = sqOf(R, e.x, e.z); if (i !== t.i || j !== t.j) continue;
-      if (t.kind === 'slime') { U.stun(e, 1); t.b = 0; } else if (t.dmg) { hurtEnemy(e, t.dmg, 0, 'upg'); if (t.kind === 'spike') t.b = 0; } }
+      if (t.kind === 'slime') { U.stun(e, 1); t.b = 0; } else if (t.kind === 'pit') { hurtEnemy(e, e.d.boss || e.type === 'king' ? 3 : t.dmg, 0, 'upg'); U.stun(e, 1); burst(x, 0.2, z, 14, [0.3, 0.25, 0.22]); Snd.S.slam(); t.b = 0; } else if (t.dmg) { hurtEnemy(e, t.dmg, 0, 'upg'); if (t.kind === 'fire') e.lit = G.time + 2; if (t.kind === 'spike') t.b = 0; } }
     if (t.kind === 'holy') { const [pi, pj] = sqOf(R, G.P.x, G.P.z); if (pi === t.i && pj === t.j && G.beatN % 2 === 0) U.heal(1); }
   }
   R.traps = R.traps.filter(t => t.b > 0);
@@ -3687,7 +3690,7 @@ function tryFuse(type) {
   if (P.fuse) return false;
   const F = fuseOf(P.form, type); if (!F) return false;
   const isNew = META.mark('fuse', F.id);
-  P.form = F.base; P.finv = false; P.fuse = F; P.charges = Math.max(0, P.charges) + F.ch + (P.tr.charge || 0); P.squash = 0.9;
+  P.form = F.base; P.finv = false; P.fuse = F; P.charges = Math.max(0, P.charges) + F.ch + (P.tr.charge || 0) + (P.tr.furnace ? 1 : 0); P.squash = 0.9; fuseStartUp();
   G.slowT = 0.5; G.flash = 0.6; G.shake = 0.5; G.invert = 0.08; ring(P.x, P.z, 2.4, [1.2, 0.95, 0.45]); ring(P.x, P.z, 1.3, [1, 1, 1]);
   for (let k = 0; k < 40; k++) { const an = rnd(0, TAU), sp = rnd(1.5, 5); G.fx.push({ k: 'shard', x: P.x, y: rnd(0.4, 1.8), z: P.z, vx: Math.cos(an) * sp, vy: rnd(1.5, 5), vz: Math.sin(an) * sp, life: rnd(0.8, 1.6), s: rnd(0.04, 0.1), gold: k % 2 === 0 }); }
   Snd.S.swallow(); Snd.S.bell(); Snd.S.gulp();
@@ -3724,7 +3727,7 @@ function fuseLand(J) {
 
 // ---------------------------------------------------------------- evolutions (進化) and hidden combos
 const FAM = { knight: ['knight'], bishop: ['bishop'], rook: ['rook'], queen: ['queen'], king: ['king'], pawn: ['pawn'], lunge: ['lunge'], jumpI: ['jumpI'], mirror: ['mirror'], clock: ['clock'], ghost: ['ghost', 'echo'], eat: ['swallow', 'devour', 'spit'] };
-function famCount(f) { const P = G.P, ics = FAM[f] || [f]; let n = 0; for (const u of UPGS) if (ics.includes(u.ic)) n += P.tr[u.id] || 0; return n; }
+function famCount(f) { const P = G.P, ics = FAM[f] || [f]; let n = 0; for (const u of UPGS) if (ics.includes(u.ic) && !u.absorbed) n += P.tr[u.id] || 0; return n; }
 const famOfIc = ic => { for (const f in FAM) if (FAM[f].includes(ic)) return f; return null; };
 const EVOS = [
   { id: 'evoKnight', need: { knight: 3 }, ic: 'knight', name: '騎士團', desc: '騎士每次落地，兩匹影子騎士撲向附近的棋子',
@@ -3836,7 +3839,7 @@ function onPastKilled(e, eaten) {
   if (e.mirror) e.mirror.haunt = false;
 }
 // what its pedestals offer: the upgrades it carried
-function pastPicks(n) { const g = G.pastG, P = G.P; if (!g || !g.tr) return null; const ids = Object.keys(g.tr).filter(id => { const u = UPGS.find(x => x.id === id); return u && (P.tr[id] || 0) < u.max; }); const out = []; while (out.length < n && ids.length) { const id = ids.splice((Math.random() * ids.length) | 0, 1)[0]; out.push(UPGS.find(x => x.id === id)); } return out.length ? out : null; }
+function pastPicks(n) { const g = G.pastG, P = G.P; if (!g || !g.tr) return null; const ids = [...new Set(Object.keys(g.tr).map(canonUpg))].filter(id => { const u = UPGS.find(x => x.id === id); return u && inPool(u) && (P.tr[id] || 0) < u.max; }); const out = []; while (out.length < n && ids.length) { const id = ids.splice((Math.random() * ids.length) | 0, 1)[0]; out.push(UPGS.find(x => x.id === id)); } return out.length ? out : null; }
 
 // ---------------------------------------------------------------- death puzzles (殘局)
 // Turn-based: move your piece the way it moves; capture everything in N moves.
@@ -4911,8 +4914,8 @@ function fx2Trigger(type, inv, v) {
 function fx2Start(id) {
   const P = G.P, F = FX2[id], isNew = META.mark('fuse', id);
   if (P.fx2) fx2End(true);
-  P.fx2 = { id, beats: F.beats, max: F.beats, bossD: 0 };
-  if (F.base) { P.form = F.base; P.finv = false; P.fvar = null; P.fuse = F; P.charges = F.ch ? F.ch + (P.tr.charge || 0) : 99; }
+  const fb = F.beats ? Math.round(F.beats * (P.tr.furnace ? 1.5 : 1)) : F.beats; P.fx2 = { id, beats: fb, max: fb, bossD: 0 }; fuseStartUp();
+  if (F.base) { P.form = F.base; P.finv = false; P.fvar = null; P.fuse = F; P.charges = F.ch ? F.ch + (P.tr.charge || 0) + (P.tr.furnace ? 1 : 0) : 99; }
   else { if (P.form) { P.form = null; P.fuse = null; P.charges = 0; } }
   P.squash = 0.9; G.slowT = 0.5; G.flash = 0.6; G.shake = 0.6; G.invert = 0.1;
   const col = id === 'waterHorse' ? [0.4, 0.7, 1.5] : id === 'bloodBeat' || id === 'fury' || id === 'rampage' || id === 'zealot' ? [1.5, 0.3, 0.2] : [1.3, 1.0, 0.5];
@@ -4925,7 +4928,7 @@ function fx2Start(id) {
 function fx2End(quiet) {
   const P = G.P, X = P.fx2; if (!X) return; P.fx2 = null; P.bbSafe = 0;
   if (FX2[X.id].base && P.fuse && P.fuse.id === X.id) { P.fuse = null; if (!quiet) { P.form = null; P.charges = 0; } }
-  if (!quiet) { burst(P.x, 0.6, P.z, 14, [0.8, 0.7, 0.6]); Snd.S.crack(); }
+  if (!quiet) { burst(P.x, 0.6, P.z, 14, [0.8, 0.7, 0.6]); Snd.S.crack(); fuseEndUp(); }
   UI.form && UI.form();
 }
 // (when the piece is spat out or used up, the fusion goes with it)
@@ -5063,6 +5066,147 @@ function fx2Recall() {
   const far = G.puddles.reduce((b, p) => dist(p.x, p.z, P.x, P.z) > dist(b.x, b.z, P.x, P.z) ? p : b);
   const x = P.x, z = P.z; ring(x, z, 1, [0.3, 0.6, 1.4]); P.x = far.x; P.z = far.z; far.x = x; far.z = z; far.born = G.time; fixPos(G.room, P); ring(P.x, P.z, 1.2, [0.4, 0.7, 1.5]); burst(P.x, 0.3, P.z, 16, [0.3, 0.6, 1.4]); Snd.S.mirrorIn(); return true;
 }
+
+// ============================================================================
+// e3m_curate.js — the upgrade pool, curated.
+// 1. Upgrades that did the same thing are merged: the kept one takes the others' effects
+//    (taking it also grants the absorbed ids, so their hooks and flag checks keep working).
+// 2. Weak or redundant ones are cut from the pool (their code stays, so old saves still load).
+// 3. Every upgrade carries build tags (流派); offers lean toward the builds you are already on.
+// 4. New upgrades for the fusion, fire, terrain, seer and black-and-white builds.
+// ============================================================================
+{ const sm = UPGS.find(u => u.id === 'magnet' && u.name === '鏡片磁鐵'); if (sm) sm.id = 'shardMagnet'; } // (two upgrades shared the id 'magnet')
+
+const sqDark = (R, i, j) => ((i + j) % 2 === 1) !== !!R.swapped; // black square? (the board can swap colours)
+
+// ---------------------------------------------------------------- new upgrades
+UPGS.push(
+  // fusion
+  { id: 'furnace', name: '熔爐', desc: '融合多撐一半的拍數，次數制的融合多 1 次', ic: 'crown', rar: R2, flag: true },
+  { id: 'afterglow', name: '餘溫', desc: '融合結束時炸開；融合期間每殺一顆，爆炸越大', ic: 'crown', rar: R2, on: { kill() { fuseKillUp(); } } },
+  // fire
+  { id: 'ignite', name: '引火', desc: '打中燒著的棋子會炸開，燒到周圍', ic: 'candle', rar: R2, on: {
+      hit(o) { const e = o.e; if (o.src === 'upg' || !e || !(e.lit > G.time)) return; e.lit = 0; const x = e.x, z = e.z;
+        setTimeout(() => { if (G.state !== 'play') return; U.aoe(x, z, 1.7, 3, [1.3, 0.5, 0.12], 'upg'); for (const f of G.E) if (!f.dead && dist(f.x, f.z, x, z) < 1.9) f.lit = G.time + 2; burst(x, 0.5, z, 16, [1, 0.45, 0.1]); G.shake = Math.max(G.shake || 0, 0.3); Snd.S.slam(); }, 60); },
+      tick() { if ((G.emberT || 0) > G.time) return; G.emberT = G.time + 0.16; for (const e of G.E) if (!e.dead && e.lit > G.time) G.fx.push({ k: 'shard', x: e.x + rnd(-0.25, 0.25), y: rnd(0.3, 1.1), z: e.z + rnd(-0.25, 0.25), vx: 0, vy: rnd(1, 2.2), vz: 0, life: 0.5, s: 0.05, gold: true }); } } },
+  // terrain
+  { id: 'rift', name: '裂地', desc: '撲擊結束時，前方一格裂成坑四拍；棋子走上去就掉下去', ic: 'quake', rar: R1, on: {
+      lungeEnd() { const P = G.P, R = G.room; if (R.bx0 === undefined || R.boss) return; const [i, j] = sqOf(R, P.x + Math.cos(P.face) * 1.5, P.z + Math.sin(P.face) * 1.5); if (!onBoard(R, i, j) || R.sqBlock[j * R.cols + i]) return; U.trap(i, j, 4, 6, 'pit'); const [x, z] = sqC(R, i, j); burst(x, 0.1, z, 10, [0.4, 0.3, 0.25]); G.shake = Math.max(G.shake || 0, 0.2); } } },
+  // seer
+  { id: 'counterplay', name: '將計就計', desc: '準拍出手後半秒內，撲空的棋子會撞上身旁的同伴，自己暈一拍', ic: 'eye', rar: R2, on: {
+      perfect() { G.P.perfAt = G.time; },
+      foeLand(o) { const P = G.P, e = o.e; if (!e || e.dead || e.d.boss || !e.d.chess || e.mvHit || P.inMirror) return; if (G.time - (P.perfAt || -9) > 0.5 || dist(e.x, e.z, P.x, P.z) > 2.2) return;
+        const f = U.near(e.x, e.z, 2.2, e); U.stun(e, 1); ring(e.x, e.z, 1, [0.8, 0.85, 1.2]);
+        if (f && !f.d.boss) { U.zap(e.x, e.z, f.x, f.z, [1.2, 1.2, 1.5]); hurtEnemy(f, 4, angTo(e.x, e.z, f.x, f.z), 'upg'); Snd.S.slam(); } } } },
+  { id: 'gazeDecoy', name: '殘影誘餌', desc: '凝視結束時，原地留下殘影；棋子會先去打它', ic: 'eye', rar: R1, on: {
+      tick() { const P = G.P; if (G.gazing) { P.gazeHeld = (P.gazeHeld || 0) + 1 / 60; return; } if ((P.gazeHeld || 0) > 0.25 && G.state === 'play' && !P.inMirror) { G.decoy = { x: P.x, z: P.z, t: 3 }; ring(P.x, P.z, 1.1, [0.8, 0.85, 1.2]); Snd.S.mirrorOut(); } P.gazeHeld = 0; } } },
+  // black and white
+  { id: 'bwFlip', name: '黑白反轉', desc: '每兩小節棋盤黑白互換；換的那一拍，白格上的棋子暈住，黑格上的流血', ic: 'moon', rar: R2, on: {
+      beat(o) { const R = G.room; if (o.n % 8 !== 0 || R.boss || R.bx0 === undefined || G.state !== 'play') return; R.swapped = !R.swapped; R.bwOn = true; G.flash = Math.max(G.flash, 0.15); Snd.S.bell();
+        for (const e of G.E) { if (e.dead || e.spawnT > 0 || e.d.boss) continue; const [i, j] = sqOf(R, e.x, e.z); if (sqDark(R, i, j)) e.burn = Math.max(e.burn || 0, 2); else U.stun(e, 1); } } } },
+  { id: 'sameColor', name: '同色', desc: '連續走在同一種顏色的格子上會越來越快；連走三格，下一撲傷害加倍', ic: 'bishop', rar: R1, on: {
+      tick() { const P = G.P, R = G.room; if (R.bx0 === undefined) return; const [i, j] = sqOf(R, P.x, P.z), k = i + ',' + j; if (k === P.sqK) return; P.sqK = k; if (!onBoard(R, i, j)) return; const c = sqDark(R, i, j);
+        if (c === P.sqC) { P.sameC = Math.min(3, (P.sameC || 0) + 1); if (P.sameC === 3 && !P.sameBuff) { P.sameBuff = true; ring(P.x, P.z, 0.9, c ? [0.5, 0.4, 0.8] : [1.2, 1.1, 0.8]); Snd.S.bell(); } } else P.sameC = 0; P.sqC = c; },
+      hit(o) { const P = G.P; if (P.sameBuff && o.src === 'lunge' && !o.e.dead) { P.sameBuff = false; hurtEnemy(o.e, o.dmg, o.a, 'upg'); } },
+      room() { const P = G.P; P.sameC = 0; P.sameBuff = false; P.sqK = null; } } },
+);
+for (const id of ['furnace', 'afterglow', 'ignite', 'rift', 'counterplay', 'gazeDecoy', 'bwFlip', 'sameColor']) { const u = UPGS.find(x => x.id === id); u.max = 1; u.diag = { p: [[2, 2, u.ic, u.rar === 3 ? 'gold' : u.rar === 2 ? 'silver' : '']], hint: true }; }
+// black square / white square follow the board when it swaps colours
+{ const b = UPGS.find(u => u.id === 'blackSq'), w = UPGS.find(u => u.id === 'whiteSq');
+  b.on.hit = function (o) { const P = G.P, R = G.room, [i, j] = sqOf(R, P.x, P.z); if (sqDark(R, i, j) && o.src === 'lunge') o.e.burn = 3; };
+  w.on.beat = function (o) { const P = G.P, R = G.room, [i, j] = sqOf(R, P.x, P.z); if (!sqDark(R, i, j) && o.n % 4 === 2) { const e = U.near(P.x, P.z, 8); if (e) U.shot(P.x, P.z, angTo(P.x, P.z, e.x, e.z), 2.5, { sp: 14, col: [1.6, 1.6, 1.5] }); } }; }
+
+// ---------------------------------------------------------------- merges: kept id ← absorbed ids, and the new description
+const MERGE = {
+  trident: [['sweep'], '撲擊時左右各分出一道小撲，撲完再橫掃兩側'],
+  wallburst: [['pillarShot'], '撲擊撞到牆或柱子時爆炸，並朝最近的棋子彈出光彈'],
+  charged: [['runup'], '站著不動一拍，或一直移動蓄力，下一次撲擊傷害加倍'],
+  lance: [['impale'], '撲擊距離變成 1.6 倍，而且會打穿背後那一格'],
+  ricochet: [['overkill'], '撲擊打中後彈出光打下一顆；打死時多出的傷害也傳過去'],
+  ram: [['abyssPush'], '撲擊把棋子打退一格；撞到棋子兩顆都受傷，背後是坑就直接推下去'],
+  jumpCut: [['leapStun'], '跳過的棋子都會被割傷，並暈一拍'],
+  featherJump: [['longjump'], '跳躍冷卻減半、滯空更久，而且跳兩格'],
+  landPush: [['aftershock'], '落地時把前後左右的棋子震開，一拍後落點再震一次'],
+  freezeBeat: [['tuning'], '準拍打中的棋子凍住兩拍；連續 4 次準拍後，下一擊再暈兩拍'],
+  metronome: [['cymbal', 'timeBomb'], '每 8 拍自動攻擊最近的棋子；每 4 拍震傷身邊一圈；每 12 拍埋一顆定時炸彈'],
+  gluttony: [['shock'], '吞下棋子時，周圍一格的棋子受傷，場上同種的棋子全部暈一拍'],
+  mimic: [['disguise'], '變身後兩拍內棋子不攻擊你；同種的棋子把你當自己人，直到你出手'],
+  spitPiece: [['mine', 'magnet'], '吐出的棋子會飛出去砸人，吐出的物品落地變地雷；吞物品時把周圍的棋子拉過來'],
+  fork: [['neigh'], '騎士落地時，八個 L 格上的棋子受傷，周圍的棋子暈一拍'],
+  twinLight: [['bishopTrail'], '主教衝刺時反方向同時射出一道光，衝過的斜線燒兩秒'],
+  rookQuake: [['catapult'], '城堡撞牆時震出衝擊波；衝刺結束時往前丟出落石'],
+  decree: [['kingGuard'], '國王震擊範圍更大，並讓棋子全部往外退一格'],
+  pawnPromo: [['pawnStorm'], '小兵走過中線就升變，升變時召來兩名盟友小兵'],
+  shatter: [['mirrorRay'], '穿過鏡子時鏡子碎開，碎片射向周圍；出口再射一道光打最近的棋子'],
+  chain: [['frenzy'], '連殺的接續時間更長，而且連殺時越來越快'],
+  counter: [['thorns'], '被打中時，攻擊你的棋子受重傷；之後兩秒碰到你的棋子都會受傷'],
+  lastStand: [['rat'], '只剩 1 顆心時，傷害三倍、移動加快'],
+  killHeal: [['mirrorBath', 'hearth', 'ironStomach'], '每間房第一次吃子、第一次穿鏡、第一次撞翻燭台，各回 1 血；吞下沈重棋子也回 1 血'],
+  opening: [['firstStrike'], '每間房標記一顆棋子，打牠傷害三倍；每顆棋子第一次被你打中，傷害加倍'],
+  deepThink: [['sight'], '凝視的時間變成三倍，而且凝視時你不會變慢'],
+  scout: [['lone'], '每間房開始時，離你最遠的棋子暈三拍；場上只剩一顆時，牠也會嚇得暈三拍'],
+  treasure: [['soulShard', 'shardMagnet'], '每間房有一顆帶寶物的棋子；擊殺掉的鏡片 ×2，兩成機率再多 1 片'],
+  loyal: [['armyCap'], '收編的部下多跟你兩間房，部下上限 +2'],
+  raise: [['promoteAll'], '部下小兵每進一間房升成騎士；盟友小兵走到底變成皇后'],
+  drum: [['comrade'], '有盟友在場時傷害 +25%，每有一名部下再 +8%'],
+  sacrifice: [['substitute'], '要被打中時，最近的部下或盟友替你擋下'],
+  pressure: [['splash'], '液態：水彈傷害兩倍、會貫穿，落地時濺傷周圍一格'],
+  tide: [['whirl'], '液態：按 Q 收回時，分身把碰到的棋子拖過來並割傷'],
+  stomp2: [['tremor'], '巨大：壓扁傷害兩倍並暈一拍；每走四格踏地一次，震暈周圍'],
+  trample: [['drumline'], '狂暴：每拍走進有棋子的格子就踩傷踩暈；每一拍落地震傷前後左右'],
+};
+const CANON = {}; // absorbed id → kept id
+for (const id in MERGE) { const u = UPGS.find(x => x.id === id); if (!u) { console.error('merge target missing: ' + id); continue; }
+  u.absorb = MERGE[id][0]; u.desc = MERGE[id][1];
+  for (const a of u.absorb) { const v = UPGS.find(x => x.id === a); if (!v) { console.error('absorbed missing: ' + a); continue; } v.absorbed = id; CANON[a] = id; if (v.rar > u.rar) u.rar = v.rar; } }
+// ---------------------------------------------------------------- cut from the pool (weak, unreadable, or done better elsewhere)
+const CUT = new Set(['jumpShot', 'stomp', 'tempoUp', 'airRefill', 'newSkin', 'queenCrown', 'doubleStep', 'terror', 'molt', 'comboShield', 'traps', 'armyHeal', 'lastRook', 'tactician', 'spoils']);
+for (const u of UPGS) if (CUT.has(u.id)) u.cut = true;
+{ const w = UPGS.find(u => u.id === 'warReady'); if (w) w.bossOnly = true; } // a boss-fight upgrade: challenge pools only
+const canonUpg = id => CANON[id] || id;
+const inPool = u => !u.cut && !u.absorbed;
+for (const id of [...BOSS_OK]) if (CANON[id]) BOSS_OK.add(CANON[id]);
+
+// ---------------------------------------------------------------- builds (流派)
+const BUILDS = {
+  mirror: ['鏡襲', ['mirrorStrike', 'kaleido', 'mirrorRefill', 'shatter', 'decoy', 'abyss', 'mirrorJail', 'killHeal']],
+  beat: ['反拍', ['jazz', 'syncopate', 'downbeat', 'beatWave', 'resonance', 'beat3', 'overture', 'perfectDash', 'beatShield', 'heartbeat', 'metronome']],
+  blast: ['連爆', ['chainBlast', 'cascade', 'harvest', 'reverb', 'wallburst', 'digest', 'shadowJump', 'lightning', 'deathMark', 'afterglow']],
+  land: ['落地', ['bounce', 'thunder', 'landPush', 'stompOn', 'dive', 'dbljump', 'featherJump', 'jumpCut', 'swapJump']],
+  eat: ['吞食', ['fastfood', 'twoStomach', 'hybrid', 'chargeUp', 'finale', 'leftover', 'gluttony', 'regurgitate', 'mimic', 'spitPiece', 'coreHeal', 'shedSkin']],
+  fuse: ['融合', ['furnace', 'afterglow', 'twoStomach', 'hybrid', 'chargeUp', 'coreMagnet', 'shedSkin', 'fastfood']],
+  control: ['控場', ['drummer', 'freezeBeat', 'gambit', 'kingFear', 'scout', 'mirrorJail', 'slime', 'warcry', 'doubleThreat', 'zugzwang']],
+  army: ['軍團', ['allyArmy', 'raise', 'traitorHunter', 'drum', 'bugle', 'confession', 'regurgitate', 'ghostPieces', 'loyal', 'sacrifice', 'royalGuard', 'pawnPromo']],
+  kill: ['斬殺', ['cull', 'repetition', 'beat3', 'brand', 'endgameRush', 'mirrorStrike', 'opening', 'check', 'mirrorBlade']],
+  fire: ['燃燒', ['ignite', 'candleFire', 'afterimage', 'hoofprint', 'embers', 'twinLight', 'eightfold']],
+  terrain: ['地形', ['rift', 'ram', 'bulldoze', 'abyssCall', 'wallburst', 'rookQuake', 'blackhole', 'fortify', 'candleFire']],
+  seer: ['預言', ['counterplay', 'gazeDecoy', 'deepThink', 'opening', 'escape', 'undo', 'stalemate', 'endgameRush']],
+  bw: ['黑白', ['bwFlip', 'sameColor', 'blackSq', 'whiteSq', 'refract', 'twinLight', 'consecrate']],
+};
+for (const b in BUILDS) for (const id of BUILDS[b][1]) { const u = UPGS.find(x => x.id === id); if (!u) { console.error('build tag on missing upgrade: ' + id); continue; } if (!inPool(u)) console.error('build tag on pooled-out upgrade: ' + id); (u.bt = u.bt || []).push(b); }
+function buildCount(b) { const P = G.P; let n = 0; for (const id of BUILDS[b][1]) if (P.tr[id]) n++; return n; }
+// the build an upgrade on a pedestal feeds most, for its label
+function buildOf(u) { if (!u.bt) return null; let best = null, bn = -1; for (const b of u.bt) { const n = buildCount(b); if (n > bn) { bn = n; best = b; } } return { b: best, name: BUILDS[best][0], have: bn }; }
+
+// offers: the old weights, minus what's out of the pool, plus a lean toward your builds
+{ const roll0 = UPG.roll;
+  UPG.roll = function (n, minRar = 1) {
+    const P = G.P, bm = G.mode === 'rush' || G.mode === 'challenge';
+    const pool = UPGS.filter(u => inPool(u) && (P.tr[u.id] || 0) < (u.max || 1) && (u.rar >= minRar || (bm && BOSS_OK.has(u.id))) && !upgLocked(u) && (bm ? BOSS_OK.has(u.id) : !u.bossOnly) && (!u.mode || (G.modesSeen || {})[u.mode] || (u.mode === 'any' && Object.keys(G.modesSeen || {}).length))), out = [];
+    const bc = {}; for (const b in BUILDS) bc[b] = buildCount(b);
+    const wOf = u => { let w = (u.rar === 1 ? 6 : u.rar === 2 ? 3 : 1) * (P.form && u.ic === P.form ? 2 : 1); const h = evoHint(u); if (h && h.have >= 1) w *= 2.5; let m = 0; for (const b of (u.bt || [])) m = Math.max(m, bc[b]); return w * (1 + 0.9 * Math.min(m, 3)); };
+    while (out.length < n && pool.length) { const w = pool.map(wOf); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); }
+    // once you have two of a build, one offer always feeds your strongest build
+    let top = null; for (const b in bc) if (bc[b] >= 2 && (!top || bc[b] > bc[top])) top = b;
+    if (top && out.length && !out.some(u => (u.bt || []).includes(top))) { const c = pool.filter(u => (u.bt || []).includes(top)); if (c.length) out[out.length - 1] = c[(Math.random() * c.length) | 0]; }
+    return out; };
+  UPG.roll0 = roll0; }
+
+// ---------------------------------------------------------------- fusion upgrades: hooks called from the fusion code
+function fuseStartUp() { G.fuseK = 0; }
+function fuseKillUp() { const P = G.P; if (P.fx2 || P.fuse) G.fuseK = (G.fuseK || 0) + 1; }
+function fuseEndUp() { const P = G.P; if (!P.tr.afterglow || G.state !== 'play') return; const k = G.fuseK || 0, r = 2.2 + Math.min(k, 6) * 0.2, d = Math.min(14, 3 + k * 1.5);
+  U.aoe(P.x, P.z, r, d, [1.4, 0.9, 0.4], 'upg'); ring(P.x, P.z, r * 0.6, [1.2, 1.2, 1.2]); G.shake = Math.max(G.shake || 0, 0.6); G.flash = Math.max(G.flash, 0.25); Snd.S.slam(); Snd.S.bell(); G.fuseK = 0; }
 
 // ============================================================================
 // e4_view.js — turn game state into draw lists for the renderer
@@ -5399,7 +5543,8 @@ const View = (() => {
         world.push({ geo: 'plane', m: M4.trs(f.x, 0.0045 - (1 - e) * 0.25, f.z, 0, (SQ - 0.03) * (0.6 + 0.4 * e), 1, (SQ - 0.03) * (0.6 + 0.4 * e)), col: f.c, kind: 0 });
         if (k >= 1 && !f.done) { f.done = true; R.statics.push({ geo: 'plane', m: M4.trs(f.x, 0.0045, f.z, 0, SQ - 0.03, 1, SQ - 0.03), col: f.c, kind: 0, board: true, c0: f.c, cAlt: f.c }); burst(f.x, 0.1, f.z, 6, [0.5, 0.45, 0.4]); } }
       R.fills = R.fills.filter(f => !f.done); }
-    if (R.inv) { for (const it of world) if (it.board) it.col = R.swapped ? it.cAlt : it.c0;
+    if (R.inv || R.bwOn) { for (const it of world) if (it.board) it.col = R.swapped ? it.cAlt : it.c0; }
+    if (R.inv) {
       if (R.flipT > 0) { const ang = Math.PI * ss(clamp01(R.flipT / 1.8)), cz = (R.bz0 + R.bz1) / 2, F = M4.mul(M4.mul(M4.trs(0, 0, cz), RX(ang)), M4.trs(0, 0, -cz));
         for (let k = 0; k < world.length; k++) { const it = world[k]; if (it.board || (it.geo === 'plane' && it.m[13] < 0.02 && Math.abs(it.m[14] - cz) < 7)) world[k] = Object.assign({}, it, { m: M4.mul(F, it.m) }); } } }
     const present = [], future = [], ghosts = [], decals = []; ghostsRef = ghosts;
@@ -5501,8 +5646,9 @@ const View = (() => {
     if (G.allies) for (const a of G.allies) { const i0 = present.length; pieceItems(a.type, a.x, a.hop || 0, a.z, a.face, 0.72, a.ghost ? [0.85, 0.9, 1] : COL.slime, a.ghost ? SIL : 3, a.ghost ? ghosts : present, null, a.inv);
       if (!a.ghost) { const fx = Math.cos(a.face), fz = Math.sin(a.face), hy = (PH[a.type] || 1.4) * 0.5 + (a.hop || 0); for (const sd of [-1, 1]) present.push({ geo: 'sphere', m: M4.trs(a.x + fx * 0.2 - fz * sd * 0.09, hy, a.z + fz * 0.2 + fx * sd * 0.09, 0, 0.05, 0.065, 0.05), col: [0.6, 0.9, 1.4], kind: 5 }); } }
     if (R.traps) for (const tr of R.traps) { const [x, z] = sqC(R, tr.i, tr.j), k = 0.6 + 0.4 * Math.sin(G.time * 6 + tr.i);
-      const col = tr.kind === 'fire' ? [0.9 * k, 0.38 * k, 0.1 * k] : tr.kind === 'holy' ? [0.8 * k, 0.75 * k, 0.4 * k] : tr.kind === 'slime' ? [0.22 * k, 0.15 * k, 0.32 * k] : [0.6 * k, 0.12 * k, 0.12 * k];
+      const col = tr.kind === 'pit' ? [0.55 * k, 0.24 * k, 0.08 * k] : tr.kind === 'fire' ? [0.9 * k, 0.38 * k, 0.1 * k] : tr.kind === 'holy' ? [0.8 * k, 0.75 * k, 0.4 * k] : tr.kind === 'slime' ? [0.22 * k, 0.15 * k, 0.32 * k] : [0.6 * k, 0.12 * k, 0.12 * k];
       decals.push({ geo: tr.kind === 'spike' ? 'ringT' : 'plane', m: tr.kind === 'spike' ? M4.trs(x, 0.034, z, 0, 0.55, 1, 0.55) : M4.trs(x, 0.033, z, 0, SQ * 0.8, 1, SQ * 0.8), col, kind: DECAL, alpha: 1 });
+      if (tr.kind === 'pit') { const g = Math.min(1, (tr.b || 0) / 2 + 0.4); world.push({ geo: 'plane', m: M4.trs(x, 0.007, z, 0, SQ * 0.78 * g, 1, SQ * 0.78 * g), col: [0.006, 0.005, 0.008], kind: 0 }); }
       if (tr.kind === 'spike') for (let n = 0; n < 4; n++) world.push({ geo: 'box', m: M4.trs(x + (n % 2 - 0.5) * 0.4, 0.08, z + ((n >> 1) - 0.5) * 0.4, 0.785, 0.06, 0.16, 0.06), col: [0.55, 0.52, 0.5], kind: 2 }); }
     for (const f of G.fx) {
       if (f.k === 'bomb') { const k = 1 - f.life / f.max, p = 0.6 + 0.4 * Math.sin(G.time * (f.mine ? 6 : 20)); decals.push({ geo: 'ringT', m: M4.trs(f.x, 0.04, f.z, 0, f.r * (f.mine ? 0.5 : 0.3 + k * 0.7), 1, f.r * (f.mine ? 0.5 : 0.3 + k * 0.7)), col: [1 * p, 0.35 * p, 0.2 * p], kind: DECAL, alpha: 1 });
@@ -5926,7 +6072,7 @@ const UI = (() => {
   function map(on) { const m = $('#map'); if (!on || G.state !== 'play') { if (!m.hidden) m.hidden = true; return; }
     const P = G.P, k = G.roomIdx + '|' + Object.keys(P.tr).length + '|' + (G.army || []).length + '|' + (G.shards || 0);
     if (m._k !== k) { m._k = k;
-      const ups = Object.keys(P.tr).map(id => UPGS.find(u => u.id === id) || EVOS.find(v => v.id === id)).filter(Boolean);
+      const ups = Object.keys(P.tr).map(id => UPGS.find(u => u.id === id) || EVOS.find(v => v.id === id)).filter(u => u && !u.absorbed);
       const fams = Object.keys(FAM).map(f => { const v = EVOS.find(x => !x.hidden && x.need[f]); if (!v) return ''; const have = famCount(f), need = v.need[f], done = !!P.tr[v.id]; return `<span class="fam ${done ? 'done' : ''}" title="${v.name}">${IC[FAM[f][0]]}${Array.from({ length: need }, (_, n) => `<i class="${n < have || done ? 'on' : ''}"></i>`).join('')}</span>`; }).join('');
       m.innerHTML = `<div class="mwrap"><div><h3>路線</h3>${dots(G.roomIdx)}</div>
         <div><h3>增益　${ups.length}</h3><div class="ups">${ups.length ? ups.map(u => `<div class="up r${u.rar || 3} ${u.need ? 'evo' : ''}">${IC[u.ic] || ''}<span>${u.name}</span>${(P.tr[u.id] || 0) > 1 ? `<small>×${P.tr[u.id]}</small>` : ''}</div>`).join('') : '<span class="ar">—</span>'}</div></div>
@@ -6076,7 +6222,7 @@ const Main = (() => {
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') { paused = true; $('#pause').hidden = false; } });
     UI.title();
     last = performance.now(); requestAnimationFrame(loop);
-    window.__X = { hurtPlayer: (d, s) => hurtPlayer(d, s), eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
+    window.__X = { hurtPlayer: (d, s) => hurtPlayer(d, s), eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI, UPG, BUILDS, buildCount, buildOf, fuseEndUp }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
     window.__T = {
       goto(i) { enterRoom(i); },
       bot: dt => Bot(dt),
