@@ -2,7 +2,12 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070605">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="將死之前">
 <style>[hidden]{display:none!important}</style>
 <title>將死之前</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -170,37 +175,6 @@ body.exec #hud, body.exec #touch .tb { opacity: 0; transition: opacity .2s; }
 .panel { border: 1px solid var(--line); background: rgba(18,14,10,.9); padding: 18px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .panel .pic { display: flex; align-items: center; gap: 6px; min-height: 52px; } .panel .pic .ic { width: 44px; height: 44px; }
 .panel b { font-size: 17px; } .panel .n { color: var(--mute); font-size: 13px; }
-#coach { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px; color: var(--gold); padding: 5px 10px; border-radius: 22px; background: rgba(7,6,5,.72); border: 1px solid rgba(227,180,101,.5); animation: bob .5s ease-in-out infinite alternate; white-space: nowrap; }
-#coach .ic { width: 30px; height: 30px; } #coach .ar { color: var(--gold); }
-#fatecard { display: flex; justify-content: center; align-items: center; gap: 6px; } #fatecard .ic { width: 1.1em; height: 1.1em; color: var(--blood); }
-#buff { display: flex; align-items: center; gap: 2px; color: var(--blood); font-weight: 900; font-size: 18px; } #buff .ic { animation: none; width: 26px; height: 26px; }
-#combo { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); top: 34%; text-align: right; color: var(--ink); text-shadow: 0 2px 0 var(--blood), 0 0 18px rgba(200,64,46,.5); line-height: 1; }
-#combo small { display: block; font-size: 16px; color: var(--dim); text-shadow: none; } #combo b { font-size: clamp(44px, 7vw, 72px); font-weight: 900; }
-#combo.pop b { animation: comboA .35s cubic-bezier(.2,1.6,.4,1); } @keyframes comboA { from { transform: scale(1.7); } to { transform: scale(1); } }
-#combo i { display: block; height: 3px; background: var(--blood); margin-top: 6px; transform-origin: right; }
-@media (pointer: coarse) { #combo { top: 22%; } }
-#startPick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.sp { appearance: none; background: rgba(14,11,8,.7); border: 1px solid var(--line); width: 58px; min-height: 58px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--ink); }
-.sp .ic { width: 30px; height: 30px; } .sp.on { border-color: var(--gold); color: var(--gold); } .sp.lock { opacity: .4; cursor: default; } .sp small { font-size: 9px; color: var(--dim); line-height: 1.2; }
-.unl { display: flex; align-items: center; gap: 8px; color: var(--gold); font-size: 18px; } .unl .ic { width: 40px; height: 40px; }
-#perf { position: absolute; left: 0; top: 0; color: var(--gold); font-weight: 900; font-size: 22px; text-shadow: 0 1px 6px #000, 0 0 12px rgba(227,180,101,.6); white-space: nowrap; }
-#perf small { font-size: 14px; margin-left: 2px; } #perf.pop { animation: perfA .42s ease-out; } @keyframes perfA { from { margin-top: 8px; opacity: .3; } 30% { opacity: 1; } to { margin-top: -14px; } }
-.invi { display: inline-flex; transform: rotate(180deg); color: var(--silver); }
-#peds { position: absolute; inset: 0; pointer-events: none; }
-.ped { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 92px; padding: 6px 6px 7px; background: rgba(10,8,6,.82); border: 1px solid rgba(227,180,101,.35); text-align: center; transition: width .15s, opacity .15s; opacity: .72; }
-.ped b { font-size: 14px; color: var(--gold); } .ped span { display: none; font-size: 12px; color: var(--ink); line-height: 1.35; }
-.ped.near { width: 148px; opacity: 1; border-color: var(--gold); z-index: 2; } .ped.near span { display: block; }
-.diag { width: 62px; height: 56px; } .ped.near .diag { width: 110px; height: 100px; }
-.diag .dl { stroke-dasharray: 60; stroke-dashoffset: 60; animation: dlA 1.6s ease-in-out infinite; } .diag .d2 { animation-delay: .6s; }
-.diag .dr { transform-box: fill-box; transform-origin: center; animation: drA 1.6s ease-out infinite; } .diag .db { animation: dbA 1s ease-in-out infinite; }
-@keyframes dlA { 0% { stroke-dashoffset: 60; } 60%, 100% { stroke-dashoffset: 0; } } @keyframes drA { 0% { transform: scale(.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } } @keyframes dbA { 50% { opacity: .2; } }
-#dmgs { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-#dmgs i { position: absolute; font-style: normal; font-weight: 900; font-size: 18px; color: var(--ink); text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,.8); transform: translate(-50%, -50%); animation: dmgA .75s cubic-bezier(.2,.8,.3,1) forwards; }
-#dmgs i.crit { font-size: 28px; color: var(--gold); text-shadow: 0 2px 0 #3a1a0a, 0 0 14px rgba(227,180,101,.7); }
-@keyframes dmgA { 0% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; } 25% { transform: translate(-50%, -90%) scale(1); } 100% { transform: translate(-50%, -190%) scale(.9); opacity: 0; } }
-.ped.r2 { border-color: rgba(201,214,232,.6); } .ped.r2 b { color: var(--silver); }
-.ped.r3 { border-color: var(--gold); box-shadow: 0 0 18px rgba(227,180,101,.35); background: linear-gradient(rgba(40,26,10,.92), rgba(10,8,6,.9)); } .ped.r3 b { color: #ffd98a; }
-#held .fm2 { opacity: .55; } #held .fm2 .ic { width: 22px; height: 22px; }
 @media (max-width: 760px) { .panels { grid-template-columns: repeat(2, minmax(0, 170px)); } .panel .pic .ic { width: 36px; height: 36px; } }
 #coach { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px; color: var(--gold); padding: 5px 10px; border-radius: 22px; background: rgba(7,6,5,.72); border: 1px solid rgba(227,180,101,.5); animation: bob .5s ease-in-out infinite alternate; white-space: nowrap; }
 #coach .ic { width: 30px; height: 30px; } #coach .ar { color: var(--gold); }
@@ -486,6 +460,86 @@ em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: n
 #held .x2 .xbar { flex: 1; min-width: 50px; height: 4px; border-radius: 2px; background: rgba(239, 230, 214, .14); overflow: hidden; } #held .x2 .xbar i { display: block; height: 100%; background: var(--gold); transition: width .2s; }
 #held .x2.low { animation: x2low .5s ease-in-out infinite alternate; } #held .x2.low .xbar i { background: var(--blood); }
 @keyframes x2low { from { border-color: rgba(200, 64, 46, .3); } to { border-color: rgba(200, 64, 46, 1); } }
+
+/* settings: volume, quality, full screen; and the run you left */
+#contBtn { border-color: var(--gold); color: var(--gold); }
+.setbox { display: flex; flex-direction: column; gap: 8px; min-width: 260px; }
+.setbox .vl { display: grid; grid-template-columns: 4.5em 1fr 2.2em; align-items: center; gap: 10px; font-size: 14px; color: var(--dim); }
+.setbox .vl b { font: 600 14px/1 var(--f-en); color: var(--ink); text-align: right; }
+.setbox input[type=range] { accent-color: var(--gold); width: 100%; min-width: 0; height: 22px; margin: 0; cursor: pointer; }
+.setbox .qrow { display: grid; grid-template-columns: 4.5em repeat(3, 1fr); gap: 6px; align-items: center; font-size: 14px; color: var(--dim); }
+.setbox .qrow .btn { min-height: 34px; padding: 4px 6px; border-radius: 8px; font-size: 14px; } .setbox .qrow .btn.on { border-color: var(--gold); color: var(--gold); }
+.setbox > .btn { min-height: 38px; border-radius: 8px; justify-content: center; font-size: 14px; }
+#setPanel.cpanel { display: block; } #setPanel.cpanel[hidden] { display: none; }
+.ppanel .setbox { border-top: 1px solid var(--line); padding-top: 12px; }
+@media (max-height: 520px) { #setPanel.cpanel { left: max(12px, env(safe-area-inset-left, 0px)); right: auto; max-width: calc(100vw - 340px); padding: 12px 16px; z-index: 3; } .ppanel .setbox { padding-top: 6px; gap: 4px; } .setbox .qrow .btn, .setbox > .btn { min-height: 30px; } }
+
+/* ---- phone: landscape, full screen. Controls are keyed on body.touchui, layouts on a short viewport. ---- */
+body { -webkit-touch-callout: none; }
+.ov { touch-action: pan-y; justify-content: safe center; -webkit-overflow-scrolling: touch; }
+#rotate { display: none; position: fixed; inset: 0; z-index: 60; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; gap: 18px; font-size: 18px; color: var(--ink); text-align: center; padding: 24px; }
+#rotate svg { width: 84px; height: 84px; color: var(--gold); animation: rotA 2s ease-in-out infinite; }
+@keyframes rotA { 0%, 25% { transform: rotate(0); } 60%, 100% { transform: rotate(90deg); } }
+@media (orientation: portrait) { body.touchui #rotate { display: flex; } }
+#fsTip { font-size: 12px; color: var(--dim); line-height: 1.5; }
+body.touchui { --st: max(8px, env(safe-area-inset-top, 0px)); --sr: max(12px, env(safe-area-inset-right, 0px)); --sb: max(10px, env(safe-area-inset-bottom, 0px)); --sl: max(12px, env(safe-area-inset-left, 0px)); }
+body.touchui #touch:not([hidden]) { display: block; }
+body.touchui #abar, body.touchui .maphint { display: none; }
+/* state in the corners, out from under the thumbs */
+body.touchui .tl { top: var(--st); left: var(--sl); flex-direction: row; align-items: center; gap: 8px; }
+body.touchui #hp { padding: 5px 8px; gap: 3px; } body.touchui #hp i { width: 13px; height: 16px; }
+body.touchui .bl { left: var(--sl); top: calc(var(--st) + 38px); bottom: auto; }
+body.touchui #held { padding: 4px 8px; gap: 8px; } body.touchui #held .fm > .ic { width: 32px; height: 32px; } body.touchui #held .sub .ic { width: 20px; height: 20px; } body.touchui #held .sub kbd { display: none; }
+body.touchui #held .x2 { top: calc(100% + 6px); bottom: auto; }
+body.touchui .tc { top: var(--st); gap: 4px; } body.touchui #bossbar { width: min(320px, 38vw); } body.touchui #bossbar b { font-size: 13px; margin-bottom: 3px; }
+body.touchui .tr { top: var(--st); right: calc(var(--sr) + 144px); }
+body.touchui .br { top: calc(var(--st) + 52px); bottom: auto; right: var(--sr); }
+body.touchui #combo b { font-size: 44px; }
+body.touchui #metro { bottom: calc(var(--sb) + 8px); width: min(280px, 34vw); } body.touchui #metro .trk { width: auto; margin: 0; }
+body.touchui #hint { bottom: calc(var(--sb) + 40px); max-width: 44vw; padding: 6px 12px; } body.touchui #hint .ic { width: 28px; height: 28px; } body.touchui #hint b { font-size: 14px; white-space: normal; }
+body.touchui #toast { top: 18%; }
+body.touchui .ped.near { width: 150px; } body.touchui .ped.near .diag { width: 80px; height: 72px; }
+/* the two thumbs */
+body.touchui .tb { -webkit-touch-callout: none; overflow: hidden; }
+body.touchui .tb::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: conic-gradient(rgba(0, 0, 0, .6) calc(var(--cd, 0) * 360deg), transparent 0); }
+body.touchui .tb.hot { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px rgba(227, 180, 101, .5); } body.touchui .tb.dim { opacity: .5; }
+body.touchui #tAtk { width: 84px; height: 84px; right: calc(var(--sr) + 2px); bottom: calc(var(--sb) + 4px); }
+body.touchui #tAct { width: 66px; height: 66px; right: calc(var(--sr) + 96px); bottom: var(--sb); }
+body.touchui #tJump { width: 62px; height: 62px; right: calc(var(--sr) + 84px); bottom: calc(var(--sb) + 76px); }
+body.touchui #tLook { width: 54px; height: 54px; right: calc(var(--sr) + 8px); bottom: calc(var(--sb) + 98px); }
+body.touchui #tEat { width: 54px; height: 54px; right: calc(var(--sr) + 172px); bottom: var(--sb); }
+body.touchui #tSwap { width: 50px; height: 50px; right: calc(var(--sr) + 156px); bottom: calc(var(--sb) + 64px); }
+body.touchui #tSel { width: 44px; height: 44px; right: calc(var(--sr) + 66px); bottom: calc(var(--sb) + 146px); font-size: 18px; color: var(--gold); border-color: var(--gold); }
+body.touchui #tPause, body.touchui #tMap, body.touchui #tFull { width: 40px; height: 40px; top: var(--st); bottom: auto; }
+body.touchui #tPause { right: var(--sr); } body.touchui #tMap { right: calc(var(--sr) + 46px); } body.touchui #tFull { right: calc(var(--sr) + 92px); }
+/* the stick floats to wherever the left thumb lands; at rest it shows where that is */
+body.touchui #stick { left: calc(var(--sl) + 84px); top: calc(100% - var(--sb) - 84px); opacity: .4; }
+body.touchui #stick.on { opacity: 1; }
+body.chessmode #stick, body.chessmode #tAtk, body.chessmode #tAct, body.chessmode #tJump, body.chessmode #tLook, body.chessmode #tEat, body.chessmode #tSwap, body.chessmode #tSel { display: none; }
+/* a phone held sideways is short: everything that was a tall column becomes two */
+@media (max-height: 520px) {
+  #title { background: radial-gradient(ellipse at 40% 50%, rgba(5, 4, 3, .62), rgba(5, 4, 3, .9)); padding: max(8px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); align-items: stretch; }
+  .tpanel { display: grid; width: 100%; max-width: 760px; margin: auto; grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); grid-template-rows: auto auto auto 1fr; gap: 8px 24px; align-items: start; }
+  .tpanel .logo { margin: 0; grid-column: 1; grid-row: 1; align-self: end; } .logo h1 { font-size: clamp(44px, 8vw, 64px) !important; } .logo .sub { font-size: 11px; letter-spacing: .4em; margin-top: 6px; }
+  .pickh { grid-column: 1; grid-row: 2; margin-top: 8px; } #startPick { grid-column: 1; grid-row: 3; flex-wrap: nowrap; } .sp { flex: 0 1 58px; min-width: 0; } #bestline, #fsTip { grid-column: 1; }
+  .menu { grid-column: 2; grid-row: 1 / 5; width: auto; gap: 5px; }
+  .menu .btn { min-height: 37px; padding-top: 4px; padding-bottom: 4px; font-size: 14px; } .menu .btn.primary { min-height: 44px; font-size: 16px; } #modeRow .md { padding: 3px 2px; font-size: 11px; } .menu .btn .ic { width: 18px; height: 18px; } .menu .optrow .btn { min-height: 34px !important; padding: 2px 8px !important; font-size: 12px; } .optrow .btn span { font-size: 12px; } #hardBtn small { font-size: 10px; }
+  .menu #layerPick { padding: 2px 6px; } #layerPick .lb { width: 28px; height: 28px; }
+  #ctrl.cpanel { left: max(12px, env(safe-area-inset-left, 0px)); right: auto; top: 50%; padding: 12px 16px; gap: 3px 12px; min-width: 0; max-width: calc(100vw - 340px); font-size: 13px; z-index: 3; } .cpanel h3 { display: none; } .cpanel .dd small { display: none; } .cpanel .kk .ic, .cpanel .dd .ic { width: 20px; height: 20px; }
+  .ov { gap: 8px; padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+  .ov h2 { font-size: 22px; }
+  .cards { display: flex; align-items: stretch; justify-content: center; width: 100%; max-width: 860px; gap: 10px; margin: 0; } .card { flex: 1 1 0; min-width: 0; min-height: 0; padding: 12px 10px; gap: 6px; } .card .big .ic { width: 38px; height: 38px; } .card b { font-size: 17px; } .card span { font-size: 13px; line-height: 1.5; } .card:hover, .card:focus-visible { transform: none; }
+  .panels { grid-template-columns: repeat(3, minmax(0, 210px)); gap: 6px; } .panel { padding: 6px 6px 8px; gap: 3px; } .panel .pic { min-height: 30px; } .panel .pic .ic { width: 30px; height: 30px; } .panel b { font-size: 14px; } .panel .n { font-size: 12px; line-height: 1.4; }
+  #introGo { min-height: 38px; padding: 4px 26px; }
+  .gcard { width: min(660px, 94vw); padding: 12px 18px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: center; } .gcard .gh { grid-column: 2; } .gcard .gboard { grid-column: 1; grid-row: 1 / 4; width: min(160px, 56vh); height: min(160px, 56vh); } .gcard ul, .gcard .btn { grid-column: 2; } .gcard .gh > .ic, .gcard .gh .invi .ic, .gcard .gh .fz > .ic { width: 36px; height: 36px; } .gcard .gh b { font-size: 22px; } .gcard ul { gap: 3px; font-size: 13px; } .gcard ul li { line-height: 1.5; } .gcard .btn { min-height: 38px; padding: 4px 18px; }
+  .ppanel { min-width: 0; width: min(560px, 92vw); padding: 12px 16px; gap: 6px; border-radius: 12px; } .ppanel h2 { font-size: 20px; margin: 0; } .pmenu { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .pmenu .btn { min-height: 42px !important; padding: 6px 14px; } .pmenu #resume { grid-column: 1 / -1; } .pmenu .optrow { grid-column: 1 / -1; }
+  #map { overflow: hidden; } #map .mwrap { box-sizing: border-box; padding: 10px 14px; gap: 8px; } #map .rt { flex-wrap: wrap; } #map h3 { margin-bottom: 4px; font-size: 11px; } #map .rt .n { width: 24px; height: 24px; } #map .rt .n .ic { width: 16px; height: 16px; } #map .rt .ln { width: 6px; } #map .ups { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 3px; } #map .up { padding: 2px 6px; font-size: 12px; } #map .up .ic { width: 16px; height: 16px; }
+  #codex { padding: 10px 14px; } .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+  .pzwrap { width: auto; gap: 6px; max-width: 94vw; } .pzb { width: auto; height: calc(100dvh - 104px); min-height: 200px; max-width: 94vw; } .pzrule { font-size: 12px; }
+  .bpwrap { gap: 6px; } .bp { padding: 6px 3px; } .bp .pa .ic { width: 28px; height: 28px; } .bp b { font-size: 13px; }
+  .stats { margin: 4px 0; }
+  #roomcard { top: 24%; } #fatecard { top: 34%; } #revcard { top: 8%; padding: 8px 16px; } #revcard b { font-size: 20px; } #taccard b { font-size: 34px; } #taccard.big b { font-size: 48px; }
+}
 </style>
 <canvas id="cv" aria-label="遊戲畫面"></canvas>
 <div id="hud" hidden>
@@ -518,8 +572,14 @@ em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: n
   <button class="tb" id="tAct" data-b="act" aria-label="吞下或進入鏡子"></button>
   <button class="tb" id="tLook" data-b="look" aria-label="凝視"></button>
   <button class="tb" id="tJump" data-b="jump" aria-label="跳"></button>
+  <button class="tb" id="tEat" data-b="eat" aria-label="吐或衝刺" hidden></button>
+  <button class="tb" id="tSwap" data-b="swap" aria-label="換形" hidden></button>
+  <button class="tb" id="tSel" data-b="sel" aria-label="切換目標" hidden>⇅</button>
   <button class="tb" id="tPause" aria-label="暫停"></button>
+  <button class="tb" id="tMap" aria-label="路線圖"></button>
+  <button class="tb" id="tFull" aria-label="全螢幕" hidden><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </div>
+<div id="rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18.5h2"/></svg><div>請把手機轉成橫向</div></div>
 <div id="roomcard"></div>
 <div id="fatecard"></div>
 <div id="fade"></div>
@@ -534,6 +594,7 @@ em.nm { font-style: normal; color: var(--gold); font-weight: 600; white-space: n
     <div class="pickh"><span>開局棋子</span></div>
     <div id="startPick"></div>
     <div id="bestline"></div>
+    <div id="fsTip" hidden>iPhone 全螢幕：分享 → 加入主畫面，再從主畫面開啟</div>
   </div>
   <div class="cpanel" id="ctrl" hidden></div>
 </div>
@@ -559,7 +620,7 @@ const wrapA = a => { a %= TAU; if (a > Math.PI) a -= TAU; if (a < -Math.PI) a +=
 const expD = (a, b, k, dt) => b + (a - b) * Math.exp(-k * dt);
 const rnd = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
 const pick = a => a[(Math.random() * a.length) | 0];
-const $ = s => document.querySelector(s);
+const $ = (() => { const C = new Map(), plain = /^#[\w-]+$/; return s => { if (!plain.test(s)) return document.querySelector(s); const e = C.get(s); if (e && e.isConnected) return e; const n = document.querySelector(s); if (n) C.set(s, n); return n; }; })(); // the HUD asks for the same ids every frame
 const $$ = s => Array.from(document.querySelectorAll(s));
 class RNG {
   constructor(s) { this.s = (s >>> 0) || 1; }
@@ -822,7 +883,7 @@ void main(){
     return { t, f, w, h, db };
   }
   function free(T) { if (!T) return; gl.deleteTexture(T.t); gl.deleteFramebuffer(T.f); if (T.db) gl.deleteRenderbuffer(T.db); }
-  let MAIN = null, REFL = [], LMT = null, occTex = null, blank = null, rfN = 0; const WHITE3 = [1, 1, 1];
+  let MAIN = null, REFL = [], LMT = null, occTex = null, blank = null, rfN = 0, lite = false; const WHITE3 = [1, 1, 1];
   let room = { x0: 0, z0: 0, w: 1, h: 1 };
   function init(canvas) {
     cv = canvas;
@@ -909,7 +970,7 @@ void main(){
     rfN++; const nVis = F.mirrors.filter((m, i) => i < NM && m.visible).length;
     F.mirrors.forEach((m, i) => {
       if (i >= NM || !m.visible) return;
-      const R = REFL[i]; if (nVis > 1 && R.fresh && (rfN + i) % 2) return; R.fresh = true; /* (two or more mirrors in view: each refreshes every other frame) */
+      const R = REFL[i]; if ((nVis > 1 || lite) && R.fresh && (rfN + i) % 2) return; R.fresh = true; /* (two or more mirrors in view, or low quality: each refreshes every other frame) */
       gl.bindFramebuffer(gl.FRAMEBUFFER, R.f); gl.viewport(0, 0, R.w, R.h);
       gl.clearColor(0.01, 0.01, 0.012, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       const VR = M4.mul(V, M4.reflect(m.n, m.p));
@@ -974,7 +1035,7 @@ void main(){
     if (!det) return null; det = 1 / det;
     return inv.map(v => v * det);
   }
-  return { init, resize, setOcc, render, project, unproject, get W() { return W; }, get H() { return H; } };
+  return { init, resize, setOcc, render, project, unproject, get W() { return W; }, get H() { return H; }, set lite(v) { lite = !!v; } };
 })();
 
 // ============================================================================
@@ -1272,9 +1333,11 @@ const Inp = (() => {
   const keys = new Set(), pressed = new Set();
   const st = { mx: 0, my: 0, mode: 'kb', mouseX: 0, mouseY: 0, mouseDown: false, aim: null };
   const touch = { id: null, ox: 0, oy: 0, x: 0, y: 0, on: false };
-  const btn = { atk: false, act: false, look: false, jump: false, eat: false };
-  const edge = { atk: false, act: false, pause: false, jump: false, eat: false };
-  let stickEl, knobEl;
+  const btn = { atk: false, act: false, look: false, jump: false, eat: false, swap: false, sel: false };
+  const edge = { atk: false, act: false, pause: false, jump: false, eat: false, swap: false, sel: false, tap: false, tapLong: false };
+  let stickEl, knobEl, tapAt = 0;
+  const isChess = () => document.body.classList.contains('chessmode');
+  const touchUI = () => { st.mode = 'touch'; document.body.classList.add('touchui'); };
   function init(canvas) {
     addEventListener('keydown', e => { if (!keys.has(e.code)) pressed.add(e.code); keys.add(e.code); st.mode = 'kb'; if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault(); });
     addEventListener('keyup', e => keys.delete(e.code));
@@ -1284,15 +1347,19 @@ const Inp = (() => {
     addEventListener('mouseup', e => { if (e.button === 0) st.mouseDown = false; });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('wheel', e => { wheelAcc += Math.sign(e.deltaY); e.preventDefault(); }, { passive: false });
-    try { if (matchMedia('(pointer: coarse)').matches) st.mode = 'touch'; } catch (e) { }
+    try { if (matchMedia('(pointer: coarse)').matches || /[?&]touch\b/.test(location.search)) touchUI(); } catch (e) { }
+    addEventListener('touchstart', touchUI, { capture: true, passive: true });
+    document.addEventListener('gesturestart', e => e.preventDefault());
     stickEl = $('#stick'); knobEl = $('#stick i');
     const R = 56;
     canvas.addEventListener('touchstart', e => {
       st.mode = 'touch';
-      for (const t of e.changedTouches) { if (touch.id !== null) break; touch.id = t.identifier; touch.ox = t.clientX; touch.oy = t.clientY; touch.on = true; touch.x = touch.y = 0; stickEl.style.left = t.clientX + 'px'; stickEl.style.top = t.clientY + 'px'; stickEl.classList.add('on'); knobEl.style.transform = ''; }
+      if (isChess()) { const t = e.changedTouches[0]; st.mouseX = t.clientX; st.mouseY = t.clientY; tapAt = performance.now(); e.preventDefault(); return; } // the board is played by tapping squares
+      for (const t of e.changedTouches) { if (t.clientX > innerWidth * 0.55) { edge.atk = true; continue; } if (touch.id !== null) continue; touch.id = t.identifier; touch.ox = t.clientX; touch.oy = t.clientY; touch.on = true; touch.x = touch.y = 0; stickEl.style.left = t.clientX + 'px'; stickEl.style.top = t.clientY + 'px'; stickEl.classList.add('on'); knobEl.style.transform = ''; }
       e.preventDefault();
     }, { passive: false });
     canvas.addEventListener('touchmove', e => {
+      if (isChess()) { const t = e.changedTouches[0]; st.mouseX = t.clientX; st.mouseY = t.clientY; e.preventDefault(); return; }
       for (const t of e.changedTouches) if (t.identifier === touch.id) {
         let dx = t.clientX - touch.ox, dy = t.clientY - touch.oy; const d = Math.hypot(dx, dy);
         if (d > R * 1.5) { touch.ox = t.clientX - dx / d * R * 1.5; touch.oy = t.clientY - dy / d * R * 1.5; stickEl.style.left = touch.ox + 'px'; stickEl.style.top = touch.oy + 'px'; dx = t.clientX - touch.ox; dy = t.clientY - touch.oy; }
@@ -1300,10 +1367,11 @@ const Inp = (() => {
       }
       e.preventDefault();
     }, { passive: false });
-    const end = e => { for (const t of e.changedTouches) if (t.identifier === touch.id) { touch.id = null; touch.on = false; touch.x = touch.y = 0; stickEl.classList.remove('on'); } };
+    const end = e => { if (isChess() && e.type === 'touchend' && touch.id === null) { edge.tap = true; edge.tapLong = performance.now() - tapAt > 400; }
+      for (const t of e.changedTouches) if (t.identifier === touch.id) { touch.id = null; touch.on = false; touch.x = touch.y = 0; stickEl.classList.remove('on'); stickEl.style.left = stickEl.style.top = ''; knobEl.style.transform = ''; } };
     canvas.addEventListener('touchend', end); canvas.addEventListener('touchcancel', end);
     for (const b of $$('.tb')) {
-      const k = b.dataset.b;
+      const k = b.dataset.b; if (!k) continue; // pause, map, full screen are plain clicks
       b.addEventListener('touchstart', e => { e.preventDefault(); st.mode = 'touch'; btn[k] = true; edge[k] = true; b.classList.add('down'); }, { passive: false });
       const up = e => { e.preventDefault(); btn[k] = false; b.classList.remove('down'); };
       b.addEventListener('touchend', up); b.addEventListener('touchcancel', up);
@@ -1321,15 +1389,15 @@ const Inp = (() => {
       eat: pressed.has('Mouse2') || pressed.has('KeyK'),
       act: pressed.has('KeyE') || pressed.has('KeyF'),
       swap: pressed.has('KeyQ'),
-      map: keys.has('Tab'),
+      map: keys.has('Tab') || st.mapOn,
       pause: pressed.has('Escape') || pressed.has('KeyP'),
       look: keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyL'),
       wheel: wheelAcc, n1: pressed.has('Digit1'), n2: pressed.has('Digit2'), n3: pressed.has('Digit3'), n4: pressed.has('Digit4'),
     };
     if (touch.on) { mx = touch.x; my = touch.y; if (Math.hypot(mx, my) < 0.15) mx = my = 0; }
-    if (edge.atk) ev.atk = true; if (edge.act) { ev.act = true; ev.eat = true; } if (edge.pause) ev.pause = true; if (edge.jump) ev.jump = true;
+    if (edge.atk) ev.atk = true; if (edge.act) ev.act = true; if (edge.eat) ev.eat = true; if (edge.swap) ev.swap = true; if (edge.sel) ev.wheel = 1; if (edge.pause) ev.pause = true; if (edge.jump) ev.jump = true; if (edge.tap) { ev.tap = true; ev.tapLong = edge.tapLong; }
     if (btn.look) ev.look = true;
-    edge.atk = edge.act = edge.pause = edge.jump = false;
+    edge.atk = edge.act = edge.pause = edge.jump = edge.eat = edge.swap = edge.sel = edge.tap = false;
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (const p of pads || []) {
       if (!p) continue;
@@ -1383,7 +1451,7 @@ const TRAITS = [
   { id: 'devour', name: '吞噬', desc: '每間房第一次吃子回 1 血', ic: 'devour', max: 1, diag: { p: [[1, 2, 'swallow'], [3, 2, 'drop', 'red']] } },
   { id: 'chain', name: '長連', desc: '連殺的接續時間更長', ic: 'lunge', max: 2, diag: { p: [[0, 2, 'lunge'], [2, 2, 'pawn', 'red'], [4, 2, 'pawn', 'red']], l: [[[0, 2], [4, 2], 'b']] } },
 ];
-const OPT = (() => { let o = { shake: 1, flash: 1 }; try { Object.assign(o, JSON.parse(localStorage.getItem('mirror.opt') || '{}')); } catch (e) { } return o; })();
+const OPT = (() => { let o = { shake: 1, flash: 1, q: 'auto', vol: null }; try { Object.assign(o, JSON.parse(localStorage.getItem('mirror.opt') || '{}')); } catch (e) { } return o; })();
 function saveOpt() { try { localStorage.setItem('mirror.opt', JSON.stringify(OPT)); } catch (e) { } }
 const TUT = (() => { try { return JSON.parse(localStorage.getItem('mirror.tut') || '{}'); } catch (e) { return {}; } })();
 function tutDone(k) { if (TUT[k]) return; TUT[k] = 1; try { localStorage.setItem('mirror.tut', JSON.stringify(TUT)); } catch (e) { } }
@@ -1959,6 +2027,8 @@ function startRun(mode = 'normal', opt) {
   enterRoom(0);
   G.state = 'play'; G.coreNext = 2; G.coreHint = false;
   UI.hud(true);
+  if (G.resuming) return; // resumeRun puts back everything below from the save
+  RUNSAVE.clear();
   const st = UNLOCK.get().pick; if (st && UNLOCK.has(st)) becomePiece(st);
   const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === canonUpg(cy)); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
   if (mode === 'challenge' && opt !== 'bKing') { const CHP = {'bStar': ['charged', 'lance', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'spikeShield', 'prismShield', 'stomp2', 'quickGiant', 'tremor', 'starMirror', 'gravity', 'wideShield', 'starStep'], 'bLance': ['charged', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'longjump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'aftershock', 'tailWhip', 'airCombo', 'pogo', 'afterimage', 'counter', 'sight', 'riposte', 'sharpEye', 'zanshin', 'evade']}, ids = CHP[opt]; // 天樞 / 貫星: only upgrades that work in that fight (their shape, no pieces, no mirrors)
@@ -1966,6 +2036,15 @@ function startRun(mode = 'normal', opt) {
     for (const u of picks) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
   if (META.has('startUpg') || mode === 'rush') { const R = G.room, pick = UPG.roll(3, 2); R.peds = []; const ci = Math.floor(R.cols / 2); [ci - 2, ci, ci + 2].forEach((i, k) => { if (!pick[k]) return; const [x, z] = sqC(R, clamp(i, 0, R.cols - 1), R.rows - 2); if (!gridAt(R, x, z)) R.peds.push({ x, z, t: pick[k], rise: 0, alive: true }); }); }
   if (!G.room.boss) Snd.music(0, 0.2); // (boss rush / boss challenge start in a boss room: keep its music)
+}
+function resumeRun() {
+  const o = RUNSAVE.get(); if (!o) return false;
+  G.resuming = true; try { startRun(o.mode, o.run.opt); } finally { G.resuming = false; }
+  for (const k of RUNSAVE.G) if (k in o) G[k] = o[k];
+  G.P = Object.assign(makePlayer(), o.P, { inMirror: null, slide: null, jump: null, dash: null, adash: null, hopJ: null, tail: null, hitList: [], vx: 0, vz: 0 });
+  G.snaps = []; enterRoom(o.roomIdx); G.state = 'play'; UI.hud(true); UI.form && UI.form();
+  if (!G.room.boss) Snd.music(0, 0.2);
+  return true;
 }
 function enterRoom(i) {
   G.roomIdx = i;
@@ -2009,7 +2088,7 @@ function roomCleared() {
   if (R.special) { Snd.S.door(); return; }
   Snd.S.door();
   META.addSand(R.boss ? 15 : R.elite ? 8 : 3); if (R.boss) G.shards = (G.shards || 0) + 12;
-  if (R.final) { META.addSand(40); { const o = META.get(); o.best = o.best || {}; const key = G.mode === 'challenge' ? 'c_' + G.run.opt : G.mode; if (G.mode !== 'normal') { G.modeTime = G.time; if (!o.best[key] || G.time < o.best[key]) { o.best[key] = G.time; G.modeRecord = true; } META.set(o); } if (G.mode === 'normal' && (G.layer || 0) >= (o.layerMax || 0) && (o.layerMax || 0) < 20) { o.layerMax = (G.layer || 0) + 1; o.layerSel = o.layerMax; META.set(o); G.newLayer = o.layerMax; } } if (UNLOCK.give('queen')) G.newUnlock = 'queen'; G.state = 'won'; setTimeout(() => UI.end(true), 1400); return; }
+  if (R.final) { META.addSand(40); { const o = META.get(); o.best = o.best || {}; const key = G.mode === 'challenge' ? 'c_' + G.run.opt : G.mode; if (G.mode !== 'normal') { G.modeTime = G.time; if (!o.best[key] || G.time < o.best[key]) { o.best[key] = G.time; G.modeRecord = true; } META.set(o); } if (G.mode === 'normal' && (G.layer || 0) >= (o.layerMax || 0) && (o.layerMax || 0) < 20) { o.layerMax = (G.layer || 0) + 1; o.layerSel = o.layerMax; META.set(o); G.newLayer = o.layerMax; } } if (UNLOCK.give('queen')) G.newUnlock = 'queen'; G.state = 'won'; RUNSAVE.clear(); setTimeout(() => UI.end(true), 1400); return; }
   if (R.boss) { const hh = L(12) ? 1 : 2; G.P.hp = Math.min(G.P.maxHp, G.P.hp + hh); UI.toast('drop', '+' + hh); Snd.music(0, 0.2); UI.boss(false); }
   // three pedestals rise from the board; swallow one to take it
   const nP = Math.max(2, (META.has('ped4') ? 4 : 3) - (L(14) ? 1 : 0) + (R.elite && G.P.tr.eliteHunter ? 1 : 0)), past = R.pastE && R.pastE.dead ? pastPicks(nP) : null;
@@ -2466,7 +2545,7 @@ function hurtPlayer(dmg, src) {
   UI.hurt && UI.hurt();
   hook('hurtAfter', { dmg });
   if (P.hp <= 0 && !window.__noMeta) { try { const n = Object.keys(P.tr).filter(id => UPGS.some(u => u.id === id)).length; if (n >= 1 && G.roomIdx >= 1) { META.saveGhost({ room: G.roomIdx, tr: Object.fromEntries(Object.entries(P.tr).filter(([id]) => UPGS.some(u => u.id === id))), form: ['knight', 'bishop', 'rook', 'queen', 'king'].includes(P.form) ? P.form : null }); G.ghostSaved = true; } const pz = makePuzzle(src); if (pz) { savePuzzle(pz); G.newPuz = pz; } } catch (err) { console.error(err); } }
-  if (P.hp <= 0) { P.hp = 0; G.state = 'dead'; Snd.S.death(); Snd.music(null, 0);
+  if (P.hp <= 0) { P.hp = 0; G.state = 'dead'; RUNSAVE.clear(); Snd.S.death(); Snd.music(null, 0);
     const B = G.boss, ko = B && !B.dead && (B.type === 'bLance' || B.type === 'bStar') && !P.inMirror ? bossKOStart(B) : 0; // 貫星 / 天樞 finish you off themselves
     if (ko) G.bossKO.after = () => setTimeout(() => UI.end(false), 700); else setTimeout(() => UI.end(false), 1600); } // (the end screen waits for the finishing move)
   return true;
@@ -2662,7 +2741,7 @@ function fxStep(dtReal) {
 function nextRoom(dest) {
   Snd.S.door();
   const nf = G.run && G.run.floors[G.roomIdx + 1]; if (nf && nf.t === 'choice') G.run.floors[G.roomIdx + 1] = { t: dest || 'room', rn: nf.rn, chosen: true };
-  if (window.__fast) enterRoom(G.roomIdx + 1); else UI.fade(() => enterRoom(G.roomIdx + 1));
+  const go = () => { enterRoom(G.roomIdx + 1); RUNSAVE.save(); }; if (window.__fast) go(); else UI.fade(go);
   G.room.door.open = false; if (G.room.door2) G.room.door2.open = false;
 }
 
@@ -3781,6 +3860,14 @@ const UNL = [
   { at: 1100, id: 'bossLegend', ic: 'crown', name: 'Boss 必掉傳說' },
   { at: 1400, id: 'hp2', ic: 'heartup', name: '+1 血' },
 ];
+// the run in progress: saved on every new room, gone when the run ends or a new one starts
+const RUNSAVE = {
+  key: 'mirror.run',
+  G: ['run', 'runSeed', 'mode', 'layer', 'hard', 'army', 'shards', 'greed', 'dimRun', 'kills', 'fates', 'time', 'execN', 'bestCombo', 'seenForms', 'sandRun', 'rerolls', 'pastDone', 'pastG', 'pastRoom', 'ghostSaved', 'sand0', 'modesSeen', 'hintShown', 'coreNext', 'fuseK', 'tacN'],
+  save() { if (!G.run || G.mode === 'challenge' || G.state !== 'play') return; try { const o = { v: 1, roomIdx: G.roomIdx, P: G.P }; for (const k of this.G) o[k] = G[k]; localStorage.setItem(this.key, JSON.stringify(o)); } catch (e) { } },
+  get() { try { const o = JSON.parse(localStorage.getItem(this.key) || 'null'); return o && o.v === 1 && o.run ? o : null; } catch (e) { return null; } },
+  clear() { try { localStorage.removeItem(this.key); } catch (e) { } },
+};
 const META = {
   key: 'mirror.meta',
   get() { try { const o = JSON.parse(localStorage.getItem(this.key) || '{}'); o.sand = o.sand || 0; o.codex = o.codex || {}; o.puz = o.puz || []; return o; } catch (e) { return { sand: 0, codex: {}, puz: [] }; } },
@@ -4214,6 +4301,7 @@ function chessFrame(dt, ev) {
       C.spit = []; if (P.form) for (const [a, b] of DIRS.queen) for (let n = 1; n < 12; n++) { const x = ps[0] + a * n, y = ps[1] + b * n; if (!onBoard(R, x, y) || R.sqBlock[y * R.cols + x] === 1 || R.sqBlock[y * R.cols + x] === 2) break;
         const o = bd.get(sqKey(x, y)); if (o) { C.spit.push({ i: x, j: y, o }); break; } } }
     if (G.PV) { const w = Gfx.unproject(G.PV, Inp.st.mouseX, Inp.st.mouseY); C.hover = w ? sqOf(R, w.x, w.z) : null; } if (window.__chessPick) C.hover = window.__chessPick;
+    if (ev.tap && C.hover) { const at = q => q.i === C.hover[0] && q.j === C.hover[1], mv = C.legal.some(at), sp = C.spit && C.spit.some(at); if (sp && (!mv || ev.tapLong)) ev.eat = true; else ev.atk = true; } // touch: tap moves, a purple ring spits (hold it where both are possible)
     if (ev.eat && C.hover && C.spit) { const sp = C.spit.find(q => q.i === C.hover[0] && q.j === C.hover[1]); if (!sp) { Snd.S.crack(); return; }
       const type = P.form, inv = P.finv; P.form = null; P.finv = false; P.charges = 0; UI.form && UI.form(); Snd.S.swallow(); C.legal = []; C.spit = []; C.legalFor = null;
       const shot = { x: P.x, z: P.z }, [tx, tz] = sqC(R, sp.i, sp.j); C.shot = { o: shot, type, inv }; C.anim = { who: shot, fx: P.x, fz: P.z, tx, tz, t: 0, dur: 0.12 + Math.hypot(tx - P.x, tz - P.z) * 0.03, onEnd: () => {
@@ -5884,6 +5972,7 @@ const IC = (() => {
 // ============================================================================
 // e5_ui.js — DOM interface + main loop
 // ============================================================================
+const touchText = s => typeof s !== 'string' ? s : s.replace(/右鍵紫圈：吐子/g, '點紫圈：吐子').replace(/右鍵：衝刺/g, '衝刺鍵：衝刺').replace(/空中 Space/g, '空中按跳').replace(/空白鍵/g, '跳躍鍵').replace(/按 ?E/g, '按互動鍵').replace(/^E /, '').replace(/按 ?Q/g, '按換形鍵').replace(/Q (收回|瞬間)/g, '換形鍵$1');
 const UI = (() => {
     const ROOM_NAMES = ['門廳', '畫廊', '長廊', '書房', '舞廳', '溫室'];
   const floorName = i => { const f = floorOf(i); return f.t === 'boss' ? BOSS[f.kind].name : ROOMT[f.t] && f.t !== 'room' ? ROOMT[f.t][1] : ROOM_NAMES[f.rn] || '棋盤'; };
@@ -5901,8 +5990,8 @@ const UI = (() => {
     if (G.boss) { $('#bossbar i').style.transform = `scaleX(${G.boss.type === 'bKing' && !G.room.chess ? clamp01((G.boss.lives || 0) / 3) : clamp01(G.boss.hp / G.boss.maxHp)})`; }
     // prompt
     const pr = $('#prompt');
-    let txt = '', at = null, ic = '';
-    if (G.state === 'play' && !P.inMirror && !G.choosing) { const { L, q } = interactPick(); // E: what you would use; with several in reach the wheel picks
+    let txt = '', at = null, ic = ''; G.inL = 0;
+    if (G.state === 'play' && !P.inMirror && !G.choosing) { const { L, q } = interactPick(); G.inL = L.length; // E: what you would use; with several in reach the wheel picks
       if (q) { txt = q.k === 'mirror' ? 'enter' : q.k === 'ped' ? 'ped' : q.k === 'puz' ? 'pz' : 'eat'; at = [q.k === 'mirror' ? (q.sd === 'b' ? q.o.bx : q.o.cx) : q.x, q.k === 'ped' ? 1.9 : 1.3, q.k === 'mirror' ? (q.sd === 'b' ? q.o.bz : q.o.cz) : q.z];
         ic = (q.k === 'mirror' ? IC.enter : q.k === 'puz' ? IC.board : IC.swallow + '<span class="pi">' + (q.k === 'piece' ? pic(q.o.piece, q.o.inv) : IC[q.ic] || '') + '</span>') + `<small class="iname">${q.name}</small>` + (L.length > 1 ? `<small class="isel">⇅ ${G.isel + 1}/${L.length}</small>` : '');
         if (q.k === 'piece' && P.form && !P.fuse) { const F = fuseOf(P.form, q.o.piece); if (F) ic += `<i class="ar">=</i>${META.seen('fuse', F.id) ? MUI.fz(F.base, F.top) : '<b class="q">?</b>'}`; } }
@@ -5921,7 +6010,12 @@ const UI = (() => {
       ab('#sAct', txt === 'enter' ? IC.enter : txt === 'ped' ? IC.crown : txt === 'pz' ? IC.board : IC.swallow, !!txt, !txt);
       metroStep(); }
     const ak = txt === 'enter' ? 'enter' : 'swallow'; const ta = $('#tAct'); if (ta.dataset.k !== ak) { ta.dataset.k = ak; ta.innerHTML = IC[ak]; }
-    const bk = P.held ? 'spit' : 'lunge'; const tb = $('#tAtk'); if (tb.dataset.k !== bk) { tb.dataset.k = bk; tb.innerHTML = IC[bk]; }
+    const fk2 = P.form ? effKind(P.form, P.finv) : null, bk = P.form && fk2 !== 'pawn' && fk2 !== 'pawnR' ? P.form : 'lunge'; const tb = $('#tAtk'); if (tb.dataset.k !== bk) { tb.dataset.k = bk; tb.innerHTML = IC[bk]; }
+    if (document.body.classList.contains('touchui')) { const te = $('#tEat'), ek = P.mode === 'agile' ? 'speed' : 'spit';
+      te.hidden = !(P.held || P.mode === 'agile'); if (te.dataset.k !== ek) { te.dataset.k = ek; te.innerHTML = IC[ek]; }
+      $('#tSwap').hidden = !(P.form2 || P.mode === 'liquid'); $('#tSel').hidden = !(G.inL > 1);
+      ta.classList.toggle('hot', !!txt); ta.classList.toggle('dim', !txt); tb.classList.toggle('hot', P.perfT > 0); $('#tLook').classList.toggle('hot', !!G.gazing);
+      tb.style.setProperty('--cd', clamp01(Math.max(0, P.atkCd) / 0.4)); $('#tJump').style.setProperty('--cd', clamp01(Math.max(0, P.jumpCd || 0) / 0.42)); $('#tLook').style.setProperty('--cd', 1 - clamp01(G.gaze / 3)); }
     // first few red ghosts get a pointer so the player learns what they mean
     document.body.classList.toggle('exec', !!G.exec);
     // damage numbers float up from the struck piece
@@ -6008,6 +6102,7 @@ const UI = (() => {
   }
   function toast(ic, b) { const t = $('#toast'); t.innerHTML = `${IC[ic] || ''}<b>${b}</b>`; t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
   function roomCard(i) {
+    if (G.state === 'title' && !$('#title').hidden) return; // the title tableau borrows room 0: no room card or hints over the menu
     const MOD = { knights: ['knight', '騎士之夜'], bishops: ['bishop', '主教之晨'], rooks: ['rook', '城堡之圍'], race: ['pawn', '升變賽跑'], dark: ['moon', '黑暗棋盤'], endgame: ['queen', '殘局'], mirrorhall: ['mirror', '鏡廳'], rampage: ['skull', '暴走之夜'], ironwall: ['shield', '鐵壁'], ironfire: ['quake', '鐵與火'] }[G.room.mod];
     const BK = G.room.bossKind, bic = BK ? `<div class="bossic">${BK === 'bReflect' ? IC.ghost : IC[BOSS[BK].body]}</div>` : '';
     const c = $('#roomcard'); c.innerHTML = `${bic}<b>${floorName(i)}</b>${MOD ? `<div class="mod">${IC[MOD[0]]}<span>${MOD[1]}</span></div>` : ''}<div class="dots">${dots(i)}</div>`; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
@@ -6036,7 +6131,7 @@ const UI = (() => {
   function combo(n) { const c = $('#combo'); c.querySelector('b').textContent = n; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
   function intro(after) {
     const o = $('#intro'), ar = '<i class="ar">→</i>';
-    const P = (pic, b, n) => `<div class="panel"><div class="pic">${pic}</div><b>${b}</b><span class="n">${n}</span></div>`;
+    const P = (pic, b, n) => `<div class="panel"><div class="pic">${pic}</div><b>${Inp.st.mode === 'touch' ? touchText(b) : b}</b><span class="n">${n}</span></div>`;
     o.innerHTML = `<div class="panels">
       ${P(`<span class="red">${IC.king}</span>${ar}<span class="gold">${IC.door}</span>`, '吃掉國王', '就能過關')}
       ${P(`${IC.redsq}${ar}${IC.speed}`, '紅格要躲', '棋子下一拍會落在那')}
@@ -6062,6 +6157,7 @@ const UI = (() => {
     $('#start').innerHTML = IC.play + `<span>${md === 'normal' ? '開始' : md === 'challenge' ? '選擇 Boss' : '開始 ' + MODES[md][1]}</span>`; }
   function controlsHTML() {
     const r = (keys, ic, t, sub) => `<div class="kk">${keys}</div><div class="dd">${ic}<span>${t}</span>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    if (document.body.classList.contains('touchui')) return `<h3>操作</h3>` + r('左手', IC.speed, '左半邊滑動：移動') + r(IC.lunge, IC.lunge, '攻擊，自動瞄準最近的棋子') + r(IC.swallow, IC.swallow, '吞棋子、互動、進鏡子') + r(IC.jumpI, IC.jumpI, '跳，空中不會被打') + r(IC.eye, IC.eye, '按住凝視：時間變慢、看見未來') + r(IC.mapI, IC.mapI, '路線圖') + r(IC.pause, IC.pause, '暫停');
     return `<h3>操作</h3>` + r(IC.key('W') + IC.key('A') + IC.key('S') + IC.key('D'), IC.speed, '移動') + r(IC.mouse, IC.eye, '瞄準')
       + r(IC.mouseL, IC.lunge, '攻擊', '變成棋子時用它的走法') + r(IC.mouseR, IC.spit, '吐', '把嘴裡的道具吐出去；敏捷型態是衝刺')
       + r(IC.key('Space'), IC.jumpI, '跳', '空中不會被打') + r(IC.key('Shift'), IC.eye, '凝視', '按住：時間變慢、看見未來')
@@ -6113,6 +6209,7 @@ const UI = (() => {
   let pendingSnap = null;
   function showSnap() { const f = $('#snapfx'); f.innerHTML = `<img src="${pendingSnap}" alt="">`; pendingSnap = null; f.classList.remove('show'); void f.offsetWidth; f.classList.add('show'); }
   function end(won) {
+    RUNSAVE.clear();
     G.bestCombo = G.bestCombo || 0;
     const e = $('#end');
     const best = +(localStorage_get('mirror.best') || 0);
@@ -6146,10 +6243,12 @@ const UI = (() => {
       return `<button class="sp ${own ? '' : 'lock'} ${on ? 'on' : ''}" data-k="${k}" ${own ? '' : 'disabled'} title="${own ? '' : UNLOCK.rules[k]}">${k === 'none' ? IC.lunge : IC[k]}${own ? '' : `<small>${UNLOCK.rules[k]}</small>`}</button>`; }).join('');
     sp.onclick = ev => { const b = ev.target.closest('[data-k]'); if (!b || b.disabled) return; const o = UNLOCK.get(); o.pick = b.dataset.k === 'none' ? '' : b.dataset.k; UNLOCK.set(o); title(); };
     $('#ctrl').innerHTML = controlsHTML(); modeRow();
+    { const sv = RUNSAVE.get(); let c = $('#contBtn'); if (!c) { c = document.createElement('button'); c.id = 'contBtn'; c.className = 'btn ib'; $('#tmenu').insertBefore(c, $('#start')); c.addEventListener('click', () => { Snd.init(); $('#title').hidden = true; if (!resumeRun()) title(); }); }
+      c.hidden = !sv; if (sv) c.innerHTML = IC.play + `<span>繼續　第 ${sv.roomIdx + 1} 間${sv.mode !== 'normal' && MODES[sv.mode] ? '・' + MODES[sv.mode][1] : ''}</span>`; }
     if (!$('#ctrlBtn')) { const mk = (id, html) => { const b = document.createElement('button'); b.id = id; b.className = 'btn ib'; b.innerHTML = html; $('#tmenu').appendChild(b); return b; };
       const hb = mk('hardBtn', ''); const paintH = () => { const h = !!META.get().hard; hb.innerHTML = IC.skull + `<span class="hl">難度　${h ? '困難' : '普通'}${h ? '<small>血量 ×2.5・鏡砂 ×1.5</small>' : ''}</span>`; hb.classList.toggle('hard', h); };
       hb.addEventListener('click', () => { const o = META.get(); o.hard = !o.hard; META.set(o); paintH(); Snd.S.ui(); if (o.hard) Snd.S.warn(); }); paintH();
-      mk('ctrlBtn', IC.mouse + '<span>操作</span>').addEventListener('click', () => { const c = $('#ctrl'); c.hidden = !c.hidden; Snd.S.ui(); });
+      mk('ctrlBtn', (document.body.classList.contains('touchui') ? IC.help : IC.mouse) + '<span>操作</span>').addEventListener('click', () => { const c = $('#ctrl'); c.hidden = !c.hidden; Snd.S.ui(); }); $('#ctrl').addEventListener('click', () => { $('#ctrl').hidden = true; });
       const bs = mk('tShake', ''), bf = mk('tFlash', ''); { const r2 = document.createElement('div'); r2.className = 'optrow'; bs.before(r2); r2.append(bs, bf); } const paint = () => { bs.innerHTML = IC.quake + `<span>震動　${['關', '弱', '強'][OPT.shake >= 1 ? 2 : OPT.shake > 0 ? 1 : 0]}</span>`; bf.innerHTML = IC.eye + `<span>閃光　${OPT.flash ? '強' : '弱'}</span>`; };
       bs.addEventListener('click', () => { OPT.shake = OPT.shake >= 1 ? 0.5 : OPT.shake > 0 ? 0 : 1; saveOpt(); paint(); Snd.S.ui(); }); bf.addEventListener('click', () => { OPT.flash = OPT.flash ? 0 : 1; saveOpt(); paint(); Snd.S.ui(); }); paint(); }
     // title scene: a quiet room
@@ -6173,8 +6272,10 @@ const Main = (() => {
   let last = 0, paused = false;
   // render scale adapts to the machine: slow GPUs get fewer pixels instead of a stuttering game
   let q = 1, ema = 16, qT = 0;
-  function resize() { const dpr = Math.min(window.devicePixelRatio || 1, innerWidth * innerHeight > 1.4e6 ? 1.1 : 1.4) * q; Gfx.resize(innerWidth, innerHeight, Math.max(0.4, dpr)); }
+  function resize() { Gfx.lite = OPT.q === 'low' || (OPT.q !== 'high' && q < 0.7); const dpr = Math.min(window.devicePixelRatio || 1, innerWidth * innerHeight > 1.4e6 ? 1.1 : 1.4) * q; Gfx.resize(innerWidth, innerHeight, Math.max(0.4, dpr)); }
+  function applyQ() { if (OPT.q === 'high') q = 1; else if (OPT.q === 'low') q = 0.6; resize(); }
   function adapt(ms) {
+    if (OPT.q === 'high' || OPT.q === 'low') return; // a fixed choice: no automatic scaling
     ema = ema * 0.92 + Math.min(ms, 100) * 0.08; qT += ms;
     if (qT < 1000) return; qT = 0;
     if (ema > 20 && q > 0.45) { q = Math.max(0.45, q * 0.82); resize(); }
@@ -6184,7 +6285,7 @@ const Main = (() => {
     const ev = Inp.poll();
     if (!$('#choose').hidden) { if (ev.n1) UI._chooseKey(0); if (ev.n2) UI._chooseKey(1); if (ev.n3) UI._chooseKey(2); }
     if (ev.pause && G.state === 'play') { paused = !paused; $('#pause').hidden = !paused; }
-    if (!paused) UI.map(!!ev.map && G.state === 'play');
+    if (G.state !== 'play') Inp.st.mapOn = false; if (!paused) UI.map(!!ev.map && G.state === 'play');
     if (!$('#choose').hidden && ev.n4) UI._chooseKey(3);
     if (!paused && !window.__modal) {
       if (G.state === 'play' || G.state === 'dead' || G.state === 'won') update(dtReal, ev);
@@ -6203,9 +6304,23 @@ const Main = (() => {
     cv = $('#cv');
     Inp.init(cv);
     addEventListener('resize', resize); resize();
+    cv.addEventListener('webglcontextlost', e => e.preventDefault()); cv.addEventListener('webglcontextrestored', () => location.reload()); // phones drop the GPU context in the background
+    const touchy = () => document.body.classList.contains('touchui');
+    if (touchy()) { for (const u of UPGS) u.desc = touchText(u.desc); for (const k in FUSE_DESC) FUSE_DESC[k] = touchText(FUSE_DESC[k]); for (const k in SMODES) { const D = SMODES[k]; D.desc = touchText(D.desc); if (D.lines) D.lines = D.lines.map(touchText); } }
+    // full screen and landscape need a user gesture: the first tap takes them, and so does the first tap after the browser drops out of full screen
+    const FS = (() => { const de = document.documentElement, rq = de.requestFullscreen || de.webkitRequestFullscreen, fsEl = () => document.fullscreenElement || document.webkitFullscreenElement, ex = document.exitFullscreen || document.webkitExitFullscreen; let wantFs = true;
+      const lock = () => { try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => { }); } catch (e) { } };
+      const enter = () => { try { if (rq && !fsEl()) { const p = rq.call(de, { navigationUI: 'hide' }); if (p && p.then) p.then(lock, () => { }); else lock(); } } catch (e) { } };
+      const auto = e => { if (touchy() && wantFs && !fsEl() && !(e.target.closest && e.target.closest('#tFull'))) enter(); };
+      addEventListener('touchend', auto, { capture: true, passive: true }); addEventListener('click', auto, true);
+      $('#tFull').hidden = !rq; $('#tFull').addEventListener('click', () => FS.toggle());
+      addEventListener('fullscreenchange', resize); addEventListener('webkitfullscreenchange', resize);
+      $('#fsTip').hidden = !(touchy() && !rq && !navigator.standalone);
+      return { ok: !!rq, on: () => !!fsEl(), toggle: () => { if (fsEl()) { wantFs = false; ex.call(document); } else { wantFs = true; enter(); } } }; })();
+    addEventListener('resize', () => { if (touchy() && innerHeight > innerWidth && G.state === 'play') { paused = true; $('#pause').hidden = false; } }); // turned upright: wait
     const unlock = () => { const was = Snd.ok; Snd.init(); if (!was && G.state === 'title') Snd.music('title'); };
     addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
-    $('#tPause').innerHTML = IC.pause; $('#tJump').innerHTML = IC.jumpI; $('#tLook').innerHTML = IC.eye; $('#resume').innerHTML = IC.play + '<span>繼續</span>'; $('#quit').innerHTML = IC.door + '<span>回標題</span>'; $('#pMap').innerHTML = IC.mapI + '<span>路線與增益</span>'; $('#sAtk .k').innerHTML = IC.mouseL; $('#sEat .k').innerHTML = IC.mouseR; $('.maphint .mi').innerHTML = IC.mapI;
+    $('#tSwap').innerHTML = IC.again; $('#tMap').innerHTML = IC.mapI; $('#tMap').addEventListener('click', () => { Inp.st.mapOn = !Inp.st.mapOn; }); $('#tPause').innerHTML = IC.pause; $('#tJump').innerHTML = IC.jumpI; $('#tLook').innerHTML = IC.eye; $('#resume').innerHTML = IC.play + '<span>繼續</span>'; $('#quit').innerHTML = IC.door + '<span>回標題</span>'; $('#pMap').innerHTML = IC.mapI + '<span>路線與增益</span>'; $('#sAtk .k').innerHTML = IC.mouseL; $('#sEat .k').innerHTML = IC.mouseR; $('.maphint .mi').innerHTML = IC.mapI;
     $('#buff').innerHTML = IC.lunge + '×2'; $('#fatecard').innerHTML = IC.lunge + '×2'; $('.playi').innerHTML = IC.play;
     $('#start').addEventListener('click', () => { Snd.init(); UI.startSelected(); });
     { const row = $('#pause .row'), mk = (id, lbl) => { const b = document.createElement('button'); b.className = 'btn ib opt'; b.id = id; b.setAttribute('aria-label', lbl); row.appendChild(b); return b; };
@@ -6214,6 +6329,19 @@ const Main = (() => {
       bs.addEventListener('click', () => { OPT.shake = OPT.shake >= 1 ? 0.5 : OPT.shake > 0 ? 0 : 1; saveOpt(); paint(); G.shake = 0.8; });
       bf.addEventListener('click', () => { OPT.flash = OPT.flash ? 0 : 1; saveOpt(); paint(); });
       paint(); }
+    OPT.vol = Object.assign({ ...Snd.vol }, OPT.vol || {}); for (const k in OPT.vol) Snd.setVol(k, OPT.vol[k]); applyQ();
+    const setBoxes = [], QN = { auto: '自動', high: '高', low: '低' };
+    const setBox = () => { const d = document.createElement('div'); d.className = 'setbox';
+      const paint = () => { const v = OPT.vol;
+        d.innerHTML = [['master', '總音量'], ['music', '音樂'], ['sfx', '音效']].map(([k, n]) => `<label class="vl"><span>${n}</span><input type="range" min="0" max="100" step="5" value="${Math.round(v[k] * 100)}" data-v="${k}" aria-label="${n}"><b>${Math.round(v[k] * 100)}</b></label>`).join('')
+          + `<div class="qrow"><span>畫質</span>${Object.keys(QN).map(k => `<button class="btn ${(OPT.q || 'auto') === k ? 'on' : ''}" data-q="${k}">${QN[k]}</button>`).join('')}</div>`
+          + (FS.ok ? `<button class="btn ib" data-fs="1">${FS.on() ? '離開全螢幕' : '全螢幕'}</button>` : ''); };
+      d.addEventListener('input', e => { const k = e.target.dataset.v; if (!k) return; OPT.vol[k] = e.target.value / 100; Snd.setVol(k, OPT.vol[k]); e.target.nextElementSibling.textContent = e.target.value; saveOpt(); });
+      d.addEventListener('change', e => { if (e.target.dataset.v) Snd.S.ui(); });
+      d.addEventListener('click', e => { const qb = e.target.closest('[data-q]'); if (qb) { OPT.q = qb.dataset.q; saveOpt(); applyQ(); setBoxes.forEach(b => b.paint()); Snd.S.ui(); } if (e.target.closest('[data-fs]')) FS.toggle(); });
+      d.paint = paint; paint(); setBoxes.push(d); return d; };
+    $('#pause .ppanel').appendChild(setBox());
+    addEventListener('fullscreenchange', () => setBoxes.forEach(b => b.paint())); addEventListener('webkitfullscreenchange', () => setBoxes.forEach(b => b.paint()));
     $('#helpBtn').innerHTML = IC.help + '<span>操作說明</span>'; $('#pMap').addEventListener('click', () => { $('#pause').hidden = true; UI.map(true); const off = () => { UI.map(false); $('#pause').hidden = false; removeEventListener('keydown', off); removeEventListener('pointerdown', off); }; setTimeout(() => { addEventListener('keydown', off); addEventListener('pointerdown', off); }, 100); }); $('#helpBtn').addEventListener('click', () => { $('#pause').hidden = true; UI.intro(() => { $('#pause').hidden = false; }); });
     $('#resume').addEventListener('click', () => { paused = false; $('#pause').hidden = true; });
     $('#quit').addEventListener('click', () => { paused = false; $('#pause').hidden = true; UI.title(); });
@@ -6221,6 +6349,9 @@ const Main = (() => {
     addEventListener('blur', () => { if (G.state === 'play' && !window.__fast && !window.__noloop) { paused = true; $('#pause').hidden = false; } }); /* clicking away pauses too */
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') { paused = true; $('#pause').hidden = false; } });
     UI.title();
+    { const sp = document.createElement('div'); sp.id = 'setPanel'; sp.className = 'cpanel'; sp.hidden = true; sp.appendChild(setBox()); $('#title').appendChild(sp);
+      const b = document.createElement('button'); b.id = 'setBtn'; b.className = 'btn ib'; b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>設定</span>';
+      $('#ctrlBtn').after(b); b.addEventListener('click', () => { sp.hidden = !sp.hidden; if (!sp.hidden) $('#ctrl').hidden = true; Snd.S.ui(); }); $('#ctrlBtn').addEventListener('click', () => { sp.hidden = true; }); }
     last = performance.now(); requestAnimationFrame(loop);
     window.__X = { hurtPlayer: (d, s) => hurtPlayer(d, s), eb: l => endlessBlock(l), build: () => View.build(), predict: () => predict(), bossPresent: d => { bossPresent(d); invPresent(d); }, update: (d, e) => update(d, e), stun: (e, b) => U.stun(e, b), hurtEnemy, makePuzzle, pzSolve, META, tryFuse, checkEvo, MUI, UPG, BUILDS, buildCount, buildOf, fuseEndUp }; window.__G = G; window.__M = { hurtPlayer, frame, startRun, takeTrait, UI, startExec, ENEMY, gridAt, Inp, UPGS, becomePiece, makeEnemy: typeof makeEnemy !== "undefined" ? makeEnemy : null };
     window.__T = {
