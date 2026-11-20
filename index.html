@@ -424,6 +424,8 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 @keyframes vhi { to { box-shadow: 0 0 14px rgba(170, 90, 255, .7); } }
 #veilbar.hit { animation: vhit .3s ease-out; } @keyframes vhit { 30% { transform: translateX(-50%) scale(1.08); } }
 #veilbar.root .vs { border-color: #ff8fd0; } #veilbar.root .vi .ic { color: #ff8fd0; }
+#vhitfx { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; box-shadow: inset 0 0 160px 40px rgba(110, 40, 210, var(--vk, .6)); }
+#vhitfx.on { animation: vhitfx .55s ease-out; } @keyframes vhitfx { 0% { opacity: 1; } 100% { opacity: 0; } }
 body.veilOn #hint { bottom: calc(max(20px, env(safe-area-inset-bottom, 0px)) + 160px); }
 #mcv .hd b { color: #d9d2ff; font-variant-numeric: tabular-nums; }
 #pguide { z-index: 33; background: rgba(5, 4, 3, .6); }
@@ -1168,6 +1170,33 @@ const Snd = (() => {
       if (b === 4 || b === 12 || (L >= 2 && b % 2 === 1)) I.glass(t, b % 4 === 0 ? 0.8 : 0.35);
       if (L >= 1 && (b === 0 || b === 10)) I.kick(t, 0.45);
       if (L >= 2 && b % 4 === 2) I.bass(t, deg(this.root - 12, this.sc, c), sd * 1.6, 420, 0.5); } },
+    // 玻璃國王 / 幻影國王: bright and quick — a glass arpeggio running in sixteenths, a bouncing octave bass, a broken beat of
+    // clinks; when he bursts into the phantom it all turns over: the key drops a half step, swells pull backwards, a fuzzed lead
+    glassk: { root: 54, sc: 'dor', prog: [0, 3, 5, 4, 0, 3, 6, 4], barBeats: 4, play(s, t, sd, L, bar, c) {
+      const b = s % 16, sh = L >= 3, key = this.root - (sh ? 1 : 0), sc = sh ? 'phry' : this.sc;
+      const arp = [0, 4, 7, 9, 11, 9, 7, 4], up = bar % 2 ? 12 : 0;
+      I.chime(t, deg(key + 12 + up, sc, c + arp[(b + bar * 3) % 8]), b % 4 === 0 ? 0.5 : 0.28, 0.35);
+      if (b % 2 === 0) I.bass(t, deg(key - 12, sc, c) + (b % 4 === 2 ? 12 : 0), sd * 1.5, 520 + L * 90, 0.75, 'square');
+      const kp = G16('x.....x...x..x..'), sn = G16('....x.......x...');
+      if (kp[b] === 'x') I.kick(t, 0.85); if (sn[b] === 'x') I.snare(t, 0.6); if (b % 2 === 1) I.glass(t, 0.3 + (b === 15 ? 0.3 : 0));
+      if (b === 0) { I.sub(t, deg(key - 24, sc, c), sd * 16, 0.45); I.strings(t, deg(key, sc, c + 2), sd * 16, 0.3, 0.6); }
+      if (L >= 2) { if (b % 2 === 0) I.hat(t, 0.28); const mel = [[0, 7, 3], [3, 9, 1], [4, 11, 4], [10, 9, 2], [12, 7, 4]]; if (bar % 2 === 0) for (const [at, n, len] of mel) if (b === at) I.box(t, deg(key + 24, sc, c + n), 0.9);
+        if (bar % 2 === 1 && b === 8) I.bell(t, deg(key + 12, sc, c + 4), 0.6, 1.4); }
+      if (sh) { if (b === 8) I.swell(t, deg(key + 12, sc, c + 4), sd * 8, 0.8); if (b % 4 === 0) I.lead(t, deg(key + 12, sc, c + [7, 4, 9, 6][b / 4]), sd * 3, 0.55, deg(key + 12, sc, c + [7, 4, 9, 6][b / 4]) - 2);
+        if (b === 4 || b === 12) I.clap(t, 0.6); if (b === 0 && bar % 2 === 0) I.crash(t, 0.4); if (b >= 12) I.hat(t + sd * 0.5, 0.25); } } },
+    // 暗夜騎士: epic — harmonic minor at a gallop: toms and timpani under a sawing string ostinato, a choir in the dark;
+    // the theme comes in on brass, and the last phase adds distorted chugs, double-time and the full choir an octave up.
+    night: { root: 45, sc: 'harm', prog: [0, 5, 3, 4, 0, 5, 1, 4], barBeats: 4, play(s, t, sd, L, bar, c) {
+      const b = s % 16, gal = G16('x.xx x.xx x.xx x.xx'), key = this.root + (L >= 3 ? 1 : 0);
+      if (gal[b] === 'x') { I.tom(t, b % 4 === 0 ? 70 : 98, b % 4 === 0 ? 0.9 : 0.45); I.bass(t, deg(key - 12, this.sc, c), sd * 0.9, 380 + L * 120, 0.7); } // the gallop
+      if (b === 0) { I.timp(t, midi2(deg(key - 24, this.sc, c)), 0.8); I.choir(t, deg(key - 12, this.sc, c + 2), sd * 16, 0.55 + L * 0.1); I.sub(t, deg(key - 24, this.sc, c), sd * 16, 0.6); I.strings(t, deg(key - 12, this.sc, c), sd * 16, 0.5, 0.4); }
+      if (b === 0 || b === 8 || (L >= 2 && b === 10)) I.kick(t, 0.9); if (b === 4 || b === 12) I.snare(t, 0.55 + L * 0.1);
+      if (b === 12 && bar % 4 === 3) I.timp(t, midi2(deg(key - 24, this.sc, 4)), 0.7);
+      const theme = bar % 2 === 0 ? [[0, 0, 4], [4, 4, 2], [6, 3, 2], [8, 4, 6], [14, 7, 2]] : [[0, 6, 4], [4, 4, 4], [8, 2, 4], [12, 1, 4]];
+      if (L >= 2) { for (const [at, n, len] of theme) if (b === at) I.brass(t, deg(key, this.sc, n + (bar % 8 >= 4 ? 2 : 0)), sd * len * 0.95, 0.85); if (b % 2 === 1) I.hat(t, 0.25); if (b === 0 && bar % 4 === 0) I.crash(t, 0.35); }
+      else if (b % 8 === 0) I.bell(t, deg(key + 12, this.sc, c + (b ? 4 : 0)), 0.5, 2);
+      if (L >= 3) { if (gal[b] === 'x') I.chug(t, deg(key - 12, this.sc, c), sd * 0.8, 0.8); if (b === 0) I.choir(t, deg(key, this.sc, c + 4), sd * 16, 0.9); I.hat(t, b % 4 === 0 ? 0.4 : 0.18);
+        for (const [at, n, len] of theme) if (b === at) I.strings(t, deg(key + 12, this.sc, n + 2), sd * len, 0.5, 0.03); if (b >= 13) I.snare(t + sd * 0.5, 0.2 + (b - 13) * 0.12); } } },
     knight: { root: 50, sc: 'harm', prog: [0, 0, 5, 4], barBeats: 4, play(s, t, sd, L, bar, c) { // gallop
       const b = s % 16, gal = G16('x..x x..x x..x x.xx');
       if (gal[b] === 'x') I.tom(t, b % 4 === 0 ? 82 : 110, b % 4 === 0 ? 1 : 0.6);
@@ -1287,7 +1316,7 @@ const Snd = (() => {
       Mu.track = name; Mu.on = true;
       if (name === 'title') { if (!Mu.titleT) { let n = 0; Mu.titleT = setInterval(() => { if (Mu.track === 'title') playBeat(n++, 0.75); }, 750); } }
     }
-    if (tension !== undefined) { Mu.tension = tension; if (!/^(room|title|mirror)$/.test(Mu.track)) Mu.L = Math.max(Mu.L, 1); else Mu.L = tension > 0.75 ? 2 : tension > 0.45 ? 1 : 0; }
+    if (tension !== undefined) { Mu.tension = tension; if (!/^(room|title|mirror)$/.test(Mu.track)) Mu.L = Math.max(/^(glassk|night)$/.test(Mu.track) ? 1 : Mu.L, 1); else Mu.L = tension > 0.75 ? 2 : tension > 0.45 ? 1 : 0; }
   }
   function phase(p) { Mu.phase = p; Mu.L = Math.min(3, p + 0); }
   function accent(n) { // a perfect hit lands on the music
@@ -5460,7 +5489,7 @@ BOSS_CORE.bWall = 'liquid';
 //  · clearing the layer you are on clears the stage; one reward per stage, better the deeper you clear it
 //  · 玻璃棋 (glass): breaks on any touch, barely moves, fires slow 影障 fog; its 遺言 is the phantom bursting out
 //  · 幻影棋 (shade): sinks into shadow (only the hand can reach it), surfaces behind you with its own moves
-//  · 影障: a bar of six; full costs 2 HP and roots you, then clears
+//  · 影障: a bar of 100 (fades 5 a second); full costs 2 HP and roots you, then clears
 //  · 玻璃核 (stage 2+): a hit shatters you into the phantom hand (grab / throw / 震倒棋盤) instead of costing HP
 // ============================================================================
 SMODES.glass = { lines: ['被打：碎成影手', '影手 左鍵：抓／丟', '影手 右鍵：震倒棋盤', 'E 吞玻璃棋・右鍵吐'], name: '玻璃', col: [0.42, 0.47, 0.62], glow: [0.75, 0.82, 1.2], ic: 'mirror', desc: '被打不扣血而是碎成影手；影手穿牆、能抓能丟、能震倒棋盤' };
@@ -5525,7 +5554,7 @@ function mcMk(type, x, z, v, o) { const e = makeEnemy(type, x, z, (Math.random()
 function mcEnter(R) {
   const P = G.P; if (!R.mc) { if (R.idx === G.mcEntry && !R.boss && G.state === 'play') R.mcEntryAt = G.time + (window.__fast ? 2 : rnd(6, 15)); return; }
   if (R.boss && !G.mc) G.mc = { k: 0, depth: 0, rewarded: true, falling: false, wait: {}, waitFog: {}, drops: [], chains: {}, followers: [], waveN: 3 }; if (R.boss) G.mcRun = true;
-  const mc = G.mc, B = mcB(); Snd.music('mirror', R.boss ? 0.9 : 0.35); R.door.dest = undefined;
+  const mc = G.mc, B = mcB(); if (R.boss) { Snd.music(R.bossKind === 'bNight' ? 'night' : R.bossKind === 'bMirror' ? 'glassk' : 'mirror', 0.9); Snd.phase(1); G.musL = 1; } else Snd.music('mirror', 0.35); R.door.dest = undefined;
   for (const e of G.E) { if (e.var === 'shade') e.sh = { st: 'up', b: 2 + ((Math.random() * 3) | 0) }; if (e.var) mcMark(e.var); }
   if (mc.falling) { mc.falling = false; mc.going = false;
     const [i, j] = mcNear(R, mc.landSq[0], mc.landSq[1], (a, b) => onBoard(R, a, b) && !R.sqBlock[b * R.cols + a] && !gridAt(R, ...sqC(R, a, b)) && !mcOcc(R, a, b)); [P.x, P.z] = sqC(R, i, j); G.cam.x = P.x; G.cam.z = P.z;
@@ -5567,13 +5596,54 @@ function mcSlam(x, z) { const P = G.P, big = P.tr.mcDrop ? 1 : 0, ks = P.tr.keyS
     hurtEnemy(e, Math.max(4, e.maxHp * 0.45) * (big ? 2 : 1) + ks * 3, angTo(x, z, e.x, e.z), 'upg'); if (!e.dead) U.stun(e, 2); }
   ring(x, z, r, [0.75, 0.8, 1.2]); ring(x, z, r * 0.6, [1.2, 1.2, 1.4]); burst(x, 0.3, z, 30, [0.6, 0.65, 0.9]); G.shake = Math.max(G.shake || 0, 0.8); G.hitstop = Math.max(G.hitstop || 0, 0.06); Snd.S.slam(); Snd.S.crack(); }
 // ---------------------------------------------------------------- 影障
+// rooted: shadow hands burst up out of the board and grab you, chains pin you down, a rune ring counts the time out
+function mcRootStart(d) { const P = G.P; P.vRoot = { t0: G.time, d, x: P.x, z: P.z, broke: false };
+  for (let k = 0; k < 26; k++) { const an = rnd(0, TAU), sp = rnd(1, 4); G.fx.push({ k: 'chip', x: P.x + Math.cos(an) * 0.6, y: 0.05, z: P.z + Math.sin(an) * 0.6, vx: Math.cos(an) * sp * 0.3, vy: rnd(2, 5), vz: Math.sin(an) * sp * 0.3, life: rnd(0.4, 0.9), s: rnd(0.05, 0.11), col: [0.12, 0.04, 0.22], r0: 0 }); }
+  Snd.S.crunch(); Snd.S.slam(); G.hitstop = Math.max(G.hitstop || 0, 0.1); }
+function mcRootTick() { const P = G.P, V = P.vRoot; if (!V || V.broke) return; if (G.time - V.t0 >= V.d || P.rootT <= 0) { V.broke = true; V.bt = G.time;
+  for (let k = 0; k < 30; k++) { const an = rnd(0, TAU), sp = rnd(2, 6); G.fx.push({ k: 'chip', x: P.x, y: rnd(0.2, 0.8), z: P.z, vx: Math.cos(an) * sp, vy: rnd(1, 4), vz: Math.sin(an) * sp, life: rnd(0.5, 1), s: rnd(0.05, 0.1), col: k % 3 ? [0.35, 0.15, 0.6] : [0.8, 0.7, 1.2], r0: rnd(0, 6) }); }
+  ring(P.x, P.z, 1.3, [0.7, 0.4, 1.3]); Snd.S.shatter(); P.squash = 0.5; } }
+// struck by the shadow: an ink splash under you, tendrils that latch on and pull back, the slime flickers dark
+function mcHitDraw(decals, present, t) { const P = G.P, H = P.vHit, D = 8; if (!H) return; const el = G.time - H.t; if (el > 0.6) { P.vHit = null; return; } const k = el / 0.6, f = 1 - k;
+  decals.push({ geo: 'disc', m: M4.trs(P.x, 0.032, P.z, H.a, 0.5 + k * 0.9, 1, 0.42 + k * 0.7), col: [0.16 * f, 0.03 * f, 0.28 * f], kind: D, alpha: 1 });
+  decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 0.4 + k * 1.8, 1, 0.4 + k * 1.8), col: [0.7 * f, 0.3 * f, 1.3 * f], kind: D, alpha: 1 });
+  const nT = 4 + H.n * 2, reach = el < 0.12 ? el / 0.12 : Math.max(0, 1 - (el - 0.12) / 0.4);
+  for (let n = 0; n < nT; n++) { const a = H.a + n / nT * TAU + Math.sin(n * 3.1) * 0.3, len = (0.7 + (n % 3) * 0.25) * reach;
+    for (let m = 0; m < 5; m++) { const q = (m + 0.5) / 5, r = 0.25 + q * len, w = Math.sin(t * 25 + n + m) * 0.06 * q; decals.push({ geo: 'sphere', m: M4.trs(P.x + Math.cos(a + w) * r, 0.25 + Math.sin(q * Math.PI) * 0.35 * reach, P.z + Math.sin(a + w) * r, 0, 0.09 * (1 - q * 0.6), 0.09 * (1 - q * 0.6), 0.09 * (1 - q * 0.6)), col: [0.3 * f, 0.08 * f, 0.55 * f], kind: D, alpha: 1 }); } }
+  if (el < 0.15) present.push({ geo: 'sphere', m: M4.trs(P.x, 0.45, P.z, 0, 0.62, 0.5, 0.62), col: [0.06, 0.02, 0.1], kind: 9 }); }
+function mcRootDraw(world, decals, present, t) { const P = G.P, V = P.vRoot, D = 8; if (!V) return; const el = G.time - V.t0;
+  if (V.broke) { if (G.time - V.bt > 0.35) { P.vRoot = null; return; } const k = (G.time - V.bt) / 0.35; decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.05, P.z, 0, 1 + k * 1.6, 1, 1 + k * 1.6), col: [0.5 * (1 - k), 0.25 * (1 - k), 0.9 * (1 - k)], kind: D, alpha: 1 }); return; }
+  const rise = clamp01(el / 0.18), left = 1 - el / V.d, px = P.x, pz = P.z, py = 0.35 + (P.mcY || 0);
+  // the rune ring on the floor, and a second ring closing in as the time runs out
+  decals.push({ geo: 'ringT', m: M4.trs(px, 0.04, pz, t * 1.5, 1.25, 1, 1.25), col: [0.45, 0.15, 0.85], kind: D, alpha: 1 });
+  decals.push({ geo: 'ringT', m: M4.trs(px, 0.045, pz, -t * 2, 0.35 + 0.85 * left, 1, 0.35 + 0.85 * left), col: [0.9, 0.55, 1.4], kind: D, alpha: 1 });
+  for (let n = 0; n < 8; n++) { const a = n / 8 * TAU + t * 1.5; decals.push({ geo: 'plane', m: M4.trs(px + Math.cos(a) * 1.25, 0.046, pz + Math.sin(a) * 1.25, -a, 0.22, 1, 0.06), col: [0.7, 0.35, 1.2], kind: D, alpha: 1 }); }
+  decals.push({ geo: 'disc', m: M4.trs(px, 0.03, pz, 0, 1.1, 1, 1.1), col: [0.1, 0.02, 0.2], kind: D, alpha: 1 });
+  // five shadow hands come up and close their fingers on you
+  for (let n = 0; n < 5; n++) { const a = n / 5 * TAU + 0.3, r = 0.62, bx = px + Math.cos(a) * r, bz = pz + Math.sin(a) * r, tilt = 0.55 * rise, h = 0.7 * rise, grip = clamp01((el - 0.12) / 0.15), shake = Math.sin(t * 40 + n) * 0.015;
+    const tx = bx - Math.cos(a) * Math.sin(tilt) * h, tz = bz - Math.sin(a) * Math.sin(tilt) * h, ty = -0.05 + Math.cos(tilt) * h;
+    present.push({ geo: 'box', m: M4.trs((bx + tx) / 2 + shake, ty / 2, (bz + tz) / 2, -a, 0.11, Math.max(0.02, h), 0.11), col: [0.05, 0.02, 0.08], kind: 9 });
+    for (let f = -1; f <= 1; f++) { const fa = a + f * 0.45, cx = tx - Math.cos(fa) * 0.12 * grip, cz = tz - Math.sin(fa) * 0.12 * grip;
+      present.push({ geo: 'box', m: M4.trs(cx, ty + 0.08 - grip * 0.05, cz, -fa, 0.05, 0.2, 0.05), col: [0.05, 0.02, 0.08], kind: 9 });
+      present.push({ geo: 'sphere', m: M4.trs(cx - Math.cos(fa) * 0.05, ty - 0.02 - grip * 0.08, cz - Math.sin(fa) * 0.05, 0, 0.035, 0.035, 0.035), col: [1.0, 0.5, 1.6], kind: 5 }); }
+    decals.push({ geo: 'sphere', m: M4.trs((bx + tx) / 2, ty / 2, (bz + tz) / 2, 0, 0.2, Math.max(0.05, h * 0.6), 0.2), col: [0.25, 0.08, 0.45], kind: D, alpha: 1 });
+    for (let m = 0; m < 3; m++) { const q = (t * 1.2 + m / 3 + n * 0.21) % 1; decals.push({ geo: 'sphere', m: M4.trs(bx + Math.cos(n + m) * 0.1, q * 0.9, bz + Math.sin(n + m) * 0.1, 0, 0.12 * (1 - q), 0.12 * (1 - q), 0.12 * (1 - q)), col: [0.18, 0.05, 0.3], kind: D, alpha: 1 }); } }
+  // four chains from the floor to you, taut and trembling
+  for (let n = 0; n < 4; n++) { const a = n / 4 * TAU + 0.785, ax = px + Math.cos(a) * 1.25, az = pz + Math.sin(a) * 1.25, L = 9, tr = Math.sin(t * 30 + n * 2) * 0.02;
+    for (let m = 0; m < L; m++) { const k = (m + 0.5) / L * rise, x = lerp(ax, px, k), z = lerp(az, pz, k), y = lerp(0.03, py, k) + tr, rot = m % 2 ? 0 : 1.57;
+      present.push({ geo: 'box', m: M4.trs(x, y, z, -a + rot * 0.3, 0.2, m % 2 ? 0.07 : 0.14, m % 2 ? 0.14 : 0.07), col: m % 3 === 1 ? [0.75, 0.35, 1.3] : [0.6, 0.56, 0.75], kind: m % 3 === 1 ? 5 : 2 }); }
+    present.push({ geo: 'sphere', m: M4.trs(ax, 0.05, az, 0, 0.09, 0.05, 0.09), col: [0.9, 0.45, 1.5], kind: 5 }); }
+  if (el < 0.25) { const k = el / 0.25; decals.push({ geo: 'ringT', m: M4.trs(px, 0.05, pz, 0, 0.3 + k * 2.2, 1, 0.3 + k * 2.2), col: [0.8 * (1 - k), 0.4 * (1 - k), 1.4 * (1 - k)], kind: D, alpha: 1 }); } }
+const VEIL_MAX = 100, VEIL_K = 100 / 6; /* 影障: 100 layers; callers speak in the old sixths */
 function mcVeil(n, chain) { const P = G.P; if (!n || G.mcAnim || P.inv > 0 || P.mcInvT > G.time || G.state !== 'play') return;
   if (chain && G.mc) { const u = G.mc.chains[chain] || 0; n = Math.min(n, 3 - u); if (n <= 0) return; G.mc.chains[chain] = u + n; }
-  P.veil = (P.veil || 0) + n; P.veilT = G.time; P.vdc = 0; mcMark('veil');
-  burst(P.x, 0.8, P.z, 8 + n * 4, [0.22, 0.08, 0.38]); ring(P.x, P.z, 0.9, [0.5, 0.2, 0.9]); Snd.S.crack(); G.shake = Math.max(G.shake || 0, 0.2);
-  if (P.tr.mcReverse) { const e = U.near(P.x, P.z, 6); if (e) { U.zap(P.x, P.z, e.x, e.z, [0.7, 0.4, 1.3]); hurtEnemy(e, 1.5 * n, angTo(P.x, P.z, e.x, e.z), 'upg'); } }
-  if (P.veil >= 6 && P.tr.mcVeilBurst) { P.veil = 0; P.rootT = 2.5; U.aoe(P.x, P.z, 3, 6 * dmgMul(P), [0.5, 0.2, 0.95], 'upg'); for (const e of G.E) if (!e.dead && !e.ally && dist(e.x, e.z, P.x, P.z) < 3.2) U.stun(e, 2); for (let k = 0; k < 3; k++) ring(P.x, P.z, 1 + k * 0.9, [0.6, 0.25, 1.1]); G.shake = Math.max(G.shake || 0, 0.9); Snd.S.slam(); Snd.S.mirrorOut(); P.inv = Math.max(P.inv, 2.5); return; }
-  if (P.veil >= 6) { P.veil = 0; P.rootT = 1.5; G.flash = Math.max(G.flash, 0.4); G.invert = 0.12; for (let k = 0; k < 3; k++) ring(P.x, P.z, 0.8 + k * 0.6, [0.4, 0.1, 0.7]);
+  const n0 = n; n *= VEIL_K; P.veil = Math.min(VEIL_MAX, (P.veil || 0) + n); P.veilT = G.time; P.vdc = 0; mcMark('veil');
+  burst(P.x, 0.8, P.z, 8 + n0 * 4, [0.22, 0.08, 0.38]); ring(P.x, P.z, 0.9, [0.5, 0.2, 0.9]); Snd.S.crack(); G.shake = Math.max(G.shake || 0, 0.2 + n0 * 0.08);
+  P.vHit = { t: G.time, n: n0, a: rnd(0, TAU) }; P.squash = -0.35; G.hitstop = Math.max(G.hitstop || 0, 0.03 + n0 * 0.01);
+  try { let o = document.getElementById('vhitfx'); if (!o) { o = document.createElement('div'); o.id = 'vhitfx'; document.body.appendChild(o); } o.classList.remove('on'); void o.offsetWidth; o.style.setProperty('--vk', Math.min(1, 0.45 + n0 * 0.2).toFixed(2)); o.classList.add('on'); } catch (e) { }
+  if (P.tr.mcReverse) { const e = U.near(P.x, P.z, 6); if (e) { U.zap(P.x, P.z, e.x, e.z, [0.7, 0.4, 1.3]); hurtEnemy(e, 1.5 * n0, angTo(P.x, P.z, e.x, e.z), 'upg'); } }
+  if (P.veil >= VEIL_MAX - 0.01 && P.tr.mcVeilBurst) { P.veil = 0; P.rootT = 2.5; mcRootStart(2.5); U.aoe(P.x, P.z, 3, 6 * dmgMul(P), [0.5, 0.2, 0.95], 'upg'); for (const e of G.E) if (!e.dead && !e.ally && dist(e.x, e.z, P.x, P.z) < 3.2) U.stun(e, 2); for (let k = 0; k < 3; k++) ring(P.x, P.z, 1 + k * 0.9, [0.6, 0.25, 1.1]); G.shake = Math.max(G.shake || 0, 0.9); Snd.S.slam(); Snd.S.mirrorOut(); P.inv = Math.max(P.inv, 2.5); return; }
+  if (P.veil >= VEIL_MAX - 0.01) { P.veil = 0; P.rootT = 1.5; mcRootStart(1.5); G.flash = Math.max(G.flash, 0.4); G.invert = 0.12; for (let k = 0; k < 3; k++) ring(P.x, P.z, 0.8 + k * 0.6, [0.4, 0.1, 0.7]);
     hurtPlayer(2, 'veil'); P.inv = Math.max(P.inv, 2.5); } }
 function mcHitP(evn) { const f = evn.from, b = evn.bolt;
   if (evn.magic) { mcVeil(evn.veil || 2, null); return true; }
@@ -5670,7 +5740,7 @@ function mcGrabOne(skip) { const P = G.P; let best = null, bd = 1.6; if (!skip) 
   for (const e of G.E) { if (e === skip || e.dead || e.ally || (e.d.boss && !(e.type === 'bMirror' && e.form === 'shade')) || e.held || (e.spawnT > 0 && !e.sunk)) continue; const big = e.d.boss ? 1.0 : 0; const d = dist(P.x, P.z, e.x, e.z) - big; if (d < bd) { bd = d; best = e; } }
   if (best) { const e = best; if (e.d.boss) { e.mv = null; e.hz = []; G.hitstop = Math.max(G.hitstop || 0, 0.1); G.shake = Math.max(G.shake || 0, 0.6); mcMark('mk_grab'); } if (e.sunk) { burst(e.x, 0.4, e.z, 16, [0.05, 0.02, 0.1]); mcMark('tear'); }
     e.held = true; e.sunk = false; e.spawnT = 99; e.mv = null; e.plan = null; e.ph = 0; e.state = 'idle'; return { e }; }
-  const b = G.B.find(b => !b.dead && b.fog && dist(P.x, P.z, b.x, b.z) < 1.4); if (b) { b.dead = true; if (P.tr.mcInhale) P.veil = Math.max(0, (P.veil || 0) - 1); return { fog: true }; }
+  const b = G.B.find(b => !b.dead && b.fog && dist(P.x, P.z, b.x, b.z) < 1.4); if (b) { b.dead = true; if (P.tr.mcInhale) P.veil = Math.max(0, (P.veil || 0) - VEIL_K); return { fog: true }; }
   return null; }
 function mcHandClick() { const P = G.P, h = P.hand, a = aimAngle(); P.face = a; P.atkCd = 0.22;
   if (h.held || h.held2) { const both = h.held && h.held2, sp = 15; [['held', both ? -0.2 : 0], ['held2', both ? 0.2 : 0]].forEach(([k, da]) => { const H = h[k]; if (!H) return; const aa = a + da, T = { x: P.x + Math.cos(aa) * 0.5, z: P.z + Math.sin(aa) * 0.5, vx: Math.cos(aa) * sp, vz: Math.sin(aa) * sp, life: 0.9, a: aa, hit: [] }; if (H.e) T.e = H.e; else if (H.sword) { T.sword = true; T.from = H.from; T.life = 0.8; } else if (H.wrist) return; else T.fog = true; mcS().thrown.push(T); h[k] = null; });
@@ -5695,7 +5765,6 @@ function mcInteract(out) { const P = G.P; if (modeOf() !== 'glass' || P.mouthR |
   for (const e of G.E) { if (e.dead || e.ally || e.d.boss || e.held || e.spawnT > 0 || !(e.var === 'glass' || e.var === 'shade')) continue; const d = dist(P.x, P.z, e.x, e.z) - e.r; if (d > 1.0) continue; out.push({ k: 'glassE', o: e, x: e.x, z: e.z, ic: e.type, name: (GUIDE_NAME[e.type] || e.type), d }); } }
 // ---------------------------------------------------------------- per beat
 function mcBeat() { const R = G.room, P = G.P, B = mcB(); if (!G.mcRun && !P.hand) return;
-  if ((P.veil || 0) > 0) { const fast = P.tr.mcInhale, since = (G.time - (P.veilT || 0)) / B; if (since >= (fast ? 1 : 2) - 0.01) { P.vdc = (P.vdc || 0) + 1; if (P.vdc >= (fast ? 1 : 2)) { P.vdc = 0; P.veil--; } } }
   if (!R.mc) return;
   mcThemeBeat(R, B);
   const nFog = G.B.filter(b => !b.dead && b.fog).length;
@@ -5752,7 +5821,8 @@ function mcTick(dt) { const R = G.room, P = G.P, B = mcB();
       Snd.S.mirrorOut(); Snd.S.bell(); UI.toast('mirror', '鏡城'); } else R.mcEntryAt = G.time + 2; }
   if (R.mcEntry && G.state === 'play' && mcGround(P)) { const [i, j] = mcPsq(); if (R.mcEntry.has(MCK(i, j))) { mcStart(); return; } }
   if (!R.mc) return;
-  const S = mcS(), mc = G.mc; mcTearTick(); mkFrame(dt); nkFrame(dt);
+  mcRootTick(); if ((P.veil || 0) > 0) P.veil = Math.max(0, P.veil - (P.tr.mcInhale ? 8 : 5) * dt); /* 影障 fades 5 layers a second */
+  const S = mcS(), mc = G.mc; mcTearTick(); mkFrame(dt); nkFrame(dt); if (R.boss && G.boss && !G.boss.dead) { const B2 = G.boss, want = B2.type === 'bMirror' ? (B2.form === 'shade' || B2.form === 'break' ? 3 : B2.seg >= 1 ? 2 : 1) : B2.type === 'bNight' ? (B2.lastPh || 1) : 0; if (want && want !== G.musL) { G.musL = want; Snd.phase(want); } }
   for (const b of G.B) if (!b.dead && b.fog) { b.trT = (b.trT || 0) - dt; if (b.trT <= 0) { b.trT = 0.035; (b.tr = b.tr || []).unshift([b.x, b.z]); if (b.tr.length > 7) b.tr.pop(); } }
   // floor mirrors: you fall, pushed pieces fall, fog falls
   if (G.state === 'play' && !R.mc.bottom && mcGround(P) && !(P.mcGrace > G.time) && P.lungeT <= 0 && !P.dash) { /* (a dash skims over a mirror) */ const [i, j] = mcPsq(); if (mcFM(R, i, j)) { mcFall(); return; } }
@@ -5842,7 +5912,7 @@ const MC_UPGS = [
   { id: 'mcQuake', name: '餘震', desc: '震倒棋盤後一拍，再震一次', ic: 'quake', rar: 2 },
   { id: 'mcReverse', name: '逆影', desc: '每吃到一點影障，就打最近的棋子一下', ic: 'mirror', rar: 2 },
   { id: 'mcInhale', name: '吸霧', desc: '影障退得更快；影手抓霧彈能消一點影障', ic: 'drop', rar: 1 },
-  { id: 'mcVeilWalk', name: '影中行', desc: '影障三格以上：移動更快，撲擊傷害 +50%', ic: 'speed', rar: 2 },
+  { id: 'mcVeilWalk', name: '影中行', desc: '影障過半：移動更快，撲擊傷害 +50%', ic: 'speed', rar: 2 },
   { id: 'mcSee', name: '看穿', desc: '看得清沉下的幻影；霧彈變慢', ic: 'eye', rar: 1 },
   { id: 'mcArmor', name: '碎甲', desc: '玻璃棋碎掉時，旁邊的棋子三秒內受到的傷害加倍', ic: 'shard', rar: 2 },
   { id: 'mcChain', name: '連碎', desc: '玻璃棋碎掉時，旁邊的玻璃棋也跟著碎', ic: 'shard', rar: 3 },
@@ -5855,8 +5925,8 @@ const MC_UPGS = [
   { id: 'keySink', name: '墜落者', desc: '追你的棋子都在半空碎掉；墜擊範圍變大，每有一個鏡城增益，傷害 +3', ic: 'crown', rar: 3, key: true },
 ];
 for (const u of MC_UPGS) { u.max = 1; u.mcOnly = true; u.stage = 2; u.diag = { p: [[2, 2, u.ic, u.rar === 3 ? 'gold' : 'silver']], hint: true }; UPGS.push(u); }
-function mcDmgK(src) { const P = G.P, R = G.room; return (P.tr.mcVeilWalk && (P.veil || 0) >= 3 && src === 'lunge' ? 1.5 : 1) * (P.tr.mcAbyss && R && R.mc ? 1 + 0.12 * R.mc.depth : 1); }
-function mcSpeedK() { const P = G.P; return P.tr.mcVeilWalk && (P.veil || 0) >= 3 ? 1.25 : P.hand ? 1.2 : P.mcSunkT > G.time ? 1.4 : 1; }
+function mcDmgK(src) { const P = G.P, R = G.room; return (P.tr.mcVeilWalk && (P.veil || 0) >= 50 && src === 'lunge' ? 1.5 : 1) * (P.tr.mcAbyss && R && R.mc ? 1 + 0.12 * R.mc.depth : 1); }
+function mcSpeedK() { const P = G.P; return P.tr.mcVeilWalk && (P.veil || 0) >= 50 ? 1.25 : P.hand ? 1.2 : P.mcSunkT > G.time ? 1.4 : 1; }
 // 撕影: a lunge drags a sunk phantom out of the shadow
 function mcTearTick() { const P = G.P; if (!P.tr.mcTear || !(P.lungeT > 0)) return; for (const e of G.E) if (!e.dead && e.sunk && dist(e.x, e.z, P.x, P.z) < 0.9) { e.sh.tx = e.x; e.sh.tz = e.z; mcSurface(e); e.plan = null; e.ph = 0; U.stun(e, 2); hurtEnemy(e, 3 * dmgMul(P), P.face, 'upg'); } }
 // ---------------------------------------------------------------- codex page
@@ -5915,8 +5985,8 @@ function mcDraw(world, decals, present, t, pieceItems) {
     else if (h.held && h.held.sword) mkSword(present, P.x + ca * 0.35, y - 0.2, P.z + sa * 0.35, [ca * 0.3, -1, sa * 0.3], NK_SLOW, 0.8);
     else if (h.held && !h.held.wrist) present.push({ geo: 'sphere', m: M4.trs(P.x + ca * 0.35, y - 0.35, P.z + sa * 0.35, t * 3, 0.22, 0.22, 0.22), col: [0.05, 0.02, 0.09], kind: 9 }); }
   if (P.mouthR && !P.hand && !P.inMirror) pieceItems(P.mouthR.type, P.x, 0.12, P.z, t, 0.32, P.mouthR.shade ? [0.04, 0.02, 0.07] : [0.75, 0.8, 1.1], 5, present, null, false);
-  if ((P.veil || 0) >= 3 && !P.inMirror) { const k = (P.veil / 6) * (0.7 + 0.3 * Math.sin(t * 10)); decals.push({ geo: 'disc', m: M4.trs(P.x, 0.026, P.z, 0, 0.9, 1, 0.9), col: [0.18 * k, 0.05 * k, 0.32 * k], kind: D, alpha: 1 }); }
-  if (P.rootT > 0) for (let n = 0; n < 6; n++) { const a = n / 6 * TAU + t; present.push({ geo: 'box', m: M4.trs(P.x + Math.cos(a) * 0.5, 0.2, P.z + Math.sin(a) * 0.5, -a, 0.08, 0.5, 0.08), col: [0.08, 0.03, 0.12], kind: 9 }); }
+  if ((P.veil || 0) >= 50 && !P.inMirror) { const k = (P.veil / VEIL_MAX) * (0.7 + 0.3 * Math.sin(t * 10)); decals.push({ geo: 'disc', m: M4.trs(P.x, 0.026, P.z, 0, 0.9, 1, 0.9), col: [0.18 * k, 0.05 * k, 0.32 * k], kind: D, alpha: 1 }); }
+  mcRootDraw(world, decals, present, t); mcHitDraw(decals, present, t);
   if (G.mcAnim && G.mcAnim.ph === 'sink') { const A = G.mcAnim, k = clamp01(A.t / A.T); for (let n = 0; n < 3; n++) { const q = (k * 1.6 + n / 3) % 1, r = 0.2 + q * 1.1; decals.push({ geo: 'ringT', m: M4.trs(A.cx, 0.04, A.cz, 0, r, 1, r), col: [1.1 * (1 - q), 1.15 * (1 - q), 1.5 * (1 - q)], kind: D, alpha: 1 }); } decals.push({ geo: 'disc', m: M4.trs(A.cx, 0.035, A.cz, 0, 0.5 * (1 - k) + 0.1, 1, 0.5 * (1 - k) + 0.1), col: [0.5, 0.55, 0.8], kind: D, alpha: 1 }); }
   if (G.mcAnim && G.mcAnim.ph === 'drop') { const k = clamp01(G.mcAnim.t / G.mcAnim.T); decals.push({ geo: 'disc', m: M4.trs(P.x, 0.035, P.z, 0, 0.15 + 0.5 * k, 1, 0.15 + 0.5 * k), col: [0.02, 0.02, 0.05], kind: D, alpha: 1 }); for (let n = 0; n < 4; n++) { const y = P.mcY + 0.6 + n * 0.7; present.push({ geo: 'box', m: M4.trs(P.x + Math.cos(n * 2.1) * 0.35, y, P.z + Math.sin(n * 2.1) * 0.35, 0, 0.02, 0.5, 0.02), col: [0.6, 0.65, 1.0], kind: 5 }); } }
   if (P.mcSunkT > G.time) decals.push({ geo: 'disc', m: M4.trs(P.x, 0.03, P.z, 0, 0.6, 1, 0.5), col: [0.06, 0.02, 0.1], kind: D, alpha: 1 });
@@ -5948,10 +6018,10 @@ function mcHud() { const P = G.P, R = G.room; if (!P || !R) return;
   // 影障: a bar at the bottom middle of the screen
   let vb = document.querySelector('#veilbar'); const von = !!((R.mc || (P.veil || 0) > 0) && G.state === 'play');
   if (!vb && von) { vb = document.createElement('div'); vb.id = 'veilbar'; vb.innerHTML = `<span class="vi">${IC.drop}</span><div class="vs"><b class="tr"></b><b class="fl"></b></div>`; document.body.appendChild(vb); }
-  if (vb) { const v = P.veil || 0, k = [von, v, P.rootT > 0].join('|'); document.body.classList.toggle('veilOn', von);
-    if (vb.dataset.k !== k) { const old = +(vb.dataset.v || 0); vb.dataset.k = k; vb.dataset.v = v; vb.hidden = !von; vb.classList.toggle('hi', v >= 4); vb.classList.toggle('root', P.rootT > 0);
-      vb.style.setProperty('--v', (v / 6).toFixed(3));
-      if (v > old) { vb.classList.remove('hit'); void vb.offsetWidth; vb.classList.add('hit'); } } }
+  if (vb) { const v = Math.round(P.veil || 0), k = [von, v, P.rootT > 0].join('|'); document.body.classList.toggle('veilOn', von);
+    if (vb.dataset.k !== k) { const old = +(vb.dataset.v || 0); vb.dataset.k = k; vb.dataset.v = v; vb.hidden = !von; vb.classList.toggle('hi', v >= 66); vb.classList.toggle('root', P.rootT > 0);
+      vb.style.setProperty('--v', (v / VEIL_MAX).toFixed(3));
+      if (v > old + 3) { vb.classList.remove('hit'); void vb.offsetWidth; vb.classList.add('hit'); } } }
   // layers and the hand: a small pill under the shards
   let el = document.querySelector('#mcv'); const on = !!(R.mc || P.hand || P.mouthR);
   if (!el) { if (!on) return; el = document.createElement('div'); el.id = 'mcv'; const sh = document.querySelector('#shards') || document.querySelector('#hp'); sh.after(el); }
