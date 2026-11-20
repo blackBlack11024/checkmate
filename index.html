@@ -413,6 +413,7 @@ body.lowhp #hud::before { content: ''; position: absolute; inset: 0; pointer-eve
 #mcv span { display: inline-flex; align-items: center; gap: 3px; } #mcv .ic { width: 15px; height: 15px; color: #b9b2ff; }
 #mcv .ly i { width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: rgba(200, 210, 240, .12); border: 1px solid rgba(200, 210, 240, .35); }
 #mcv .ly i.past { background: rgba(200, 210, 240, .45); } #mcv .ly i.cur { background: #dfe6ff; box-shadow: 0 0 8px #aab8ff; }
+#bossbar.shade i { background: linear-gradient(90deg, #2a0b4e, #8a4ee8) !important; } #bossbar.shade b { color: #c9b4ff; }
 #veilbar { position: absolute; left: 50%; bottom: 134px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; pointer-events: none; z-index: 6; }
 #veilbar .vi .ic { width: 18px; height: 18px; color: #b9b2ff; filter: drop-shadow(0 0 4px rgba(140, 90, 255, .6)); }
 #veilbar .vs { position: relative; width: min(300px, 32vw); height: 10px; border-radius: 999px; overflow: hidden; background: rgba(10, 8, 22, .72); border: 1px solid rgba(170, 160, 255, .35); box-shadow: 0 0 0 1px rgba(0, 0, 0, .4); }
@@ -1562,7 +1563,7 @@ function genRoom(idx, seed) {
   if (mod !== 'dark') { const cz = (R.bz0 + R.bz1) / 2 + 0.6; R.candles.push({ x: 0, z: cz, h: 3.4, stand: false, sconce: true, life: 999, max: 999, lit: true });
   }
   // swallowable props
-  const nP = BK === 'bLance' || BK === 'bStar' || BK === 'bWall' ? 0 : boss ? rng.int(1, 2) : mod === 'rampage' ? rng.int(4, 5) : rng.int(2, 4); // (暴走之夜: more pillars to hide behind)
+  const nP = BK === 'bLance' || BK === 'bStar' || BK === 'bWall' || BK === 'bMirror' || BK === 'bNight' ? 0 : boss ? rng.int(1, 2) : mod === 'rampage' ? rng.int(4, 5) : rng.int(2, 4); // (暴走之夜: more pillars to hide behind)
   for (let k = 0; k < nP; k++) {
     const pos = placeSq(2, rows - 2); if (!pos) continue;
     const type = rng.pick(['vase', 'vase', 'urn', 'chair']);
@@ -1609,12 +1610,12 @@ function genRoom(idx, seed) {
     const cand = R.spawnList.filter(q => q.type !== 'king'); for (let k = 0; k < nPh && cand.length; k++) cand.splice(rng.int(0, cand.length - 1), 1)[0].phantom = true;
   } else { // boss rooms
     const ci = Math.floor(cols / 2), at = (i, j) => { const [x, z] = ctr(i, j); return { x, z }; };
-    const sp = { bKnight: [ci, 1], bPawn: [ci, 0], bBishop: [ci % 2 ? ci - 1 : ci, 1], bRook: [ci, 1], bQueen: [ci, 1], bKing: [ci, 0], bLance: [ci, 1], bStar: [ci, 1], bWall: [ci, 3], bReflect: [ci, 3], iKnight: [ci, 2], iBishop: [ci, 3], iRook: [ci, 2], iPawn: [ci, 0], iQueen: [ci, 2], iKing: [ci, 1] }[BK];
+    const sp = { bNight: [ci, 1], bKnight: [ci, 1], bPawn: [ci, 0], bBishop: [ci % 2 ? ci - 1 : ci, 1], bRook: [ci, 1], bQueen: [ci, 1], bKing: [ci, 0], bLance: [ci, 1], bStar: [ci, 1], bWall: [ci, 3], bMirror: [ci, 2], bReflect: [ci, 3], iKnight: [ci, 2], iBishop: [ci, 3], iRook: [ci, 2], iPawn: [ci, 0], iQueen: [ci, 2], iKing: [ci, 1] }[BK];
     R.spawnList = [Object.assign({ type: BK }, at(sp[0], sp[1]))];
     if (BK === 'bPawn') for (const i of [1, 3, 5, 7]) if (i !== ci) R.spawnList.push(Object.assign({ type: 'pawn' }, at(i, 1)));
     if (BK === 'bKnight') R.spawnList.push(Object.assign({ type: 'pawn' }, at(1, 2)), Object.assign({ type: 'pawn' }, at(cols - 2, 2)));
   }
-  if (FL.t === 'mc') mcGen(R, rng, FL); /* 鏡城 (e3o) */
+  if (FL.t === 'mc' || FL.mc || BK === 'bMirror' || BK === 'bNight') mcGen(R, rng, FL); /* 鏡城 (e3o) */
   // occupancy for light (walls + pillars + tables; props are short and don't cast big shadows except chairs/urns)
   return R;
 }
@@ -1999,6 +2000,7 @@ function startRun(mode = 'normal', opt) {
   const st = UNLOCK.get().pick; if (st === 'glass' && UNLOCK.has('glass') && mode === 'normal') setMode('glass', true); else if (st && st !== 'glass' && UNLOCK.has(st)) becomePiece(st);
   const cy = META.carry(); if (cy) { const u = UPGS.find(x => x.id === canonUpg(cy)); if (u) { takeTrait(u); setTimeout(() => UI.toast(u.ic, u.name), 900); } }
   if (mode === 'challenge' && opt !== 'bKing') { const CHP = {'bStar': ['charged', 'lance', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'spikeShield', 'prismShield', 'stomp2', 'quickGiant', 'tremor', 'starMirror', 'gravity', 'wideShield', 'starStep'], 'bLance': ['charged', 'echoLunge', 'brand', 'kingslayer', 'might', 'skin', 'undo', 'stalemate', 'molt', 'adrenaline', 'stillShield', 'warReady', 'thunder', 'dbljump', 'featherJump', 'longjump', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'syncopate', 'cymbal', 'timeBomb', 'runup', 'firstStrike', 'jumpShot', 'aftershock', 'tailWhip', 'airCombo', 'pogo', 'afterimage', 'counter', 'sight', 'riposte', 'sharpEye', 'zanshin', 'evade'],
+      'bNight': ['mcDrop', 'mcGrip', 'mcHurl', 'mcTear', 'mcTwin', 'skin', 'undo'], 'bMirror': ['mcDrop', 'mcGrip', 'mcHurl', 'mcTear', 'mcQuake', 'mcReverse', 'mcInhale', 'mcVeilWalk', 'mcSee', 'mcEcho', 'skin', 'undo', 'adrenaline', 'heartbeat', 'metronome'],
       'bWall': ['pressure', 'tide', 'liqDecoy', 'skin', 'undo', 'stalemate', 'adrenaline', 'stillShield', 'heartbeat', 'beatShield', 'metronome', 'downbeat', 'beatWave', 'thunder', 'dbljump', 'featherJump', 'landPush', 'bounce', 'counter', 'deepThink', 'gazeDecoy', 'lastStand', 'carapace', 'might', 'kingslayer', 'brand', 'coreHeal', 'breather', 'refresh', 'escape']}, ids = CHP[opt]; // 天樞 / 貫星: only upgrades that work in that fight (their shape, no pieces, no mirrors)
     const picks = ids ? (() => { const pool = UPGS.filter(u => inPool(u) && ids.some(id => canonUpg(id) === u.id)), out = []; while (out.length < 5 && pool.length) { const w = pool.map(u => (u.rar === 1 ? 3 : u.rar === 2 ? 2 : 1) * (u.bossOnly ? 2.5 : 1)); let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0; while (r > w[k]) { r -= w[k]; k++; } out.push(pool.splice(k, 1)[0]); } return out; })() : UPG.roll(5, 2);
     for (const u of picks) takeTrait(u); setTimeout(() => UI.toast('crown', '×5'), 600); }
@@ -2019,7 +2021,7 @@ function enterRoom(i) {
   G.hintShown = G.hintShown || {}; for (const v of ['berserk', 'heavy']) if (!G.hintShown['v_' + v] && G.E.some(e => e.var === v)) { G.hintShown['v_' + v] = 1; setTimeout(() => { if (G.room === R) UI.hint(v === 'berserk' ? `<span class="red">${IC.skull}</span><b>狂暴：不停衝</b>` : `<span class="silver">${IC.shield}</span><b>沈重：一擊兩血</b>`); }, 2200); }
   G.puddles = [];
   G.lasers = []; G.laserWarn = []; G.shells = []; G.bossKO = null;
-  const FORCE = { bKing: 'chess', bLance: 'agile', bStar: 'giant', bWall: 'liquid' }, fm = FORCE[R.bossKind];
+  const FORCE = { bKing: 'chess', bLance: 'agile', bStar: 'giant', bWall: 'liquid', bMirror: 'glass', bNight: 'glass' }, fm = FORCE[R.bossKind];
   if (G.P && G.P.forcedMode && !fm) { G.P.forcedMode = false; setMode(G.P.prevMode || 'normal', true); }
   if (G.P && fm === 'chess') { if (!G.P.forcedMode) G.P.prevMode = G.P.mode; G.P.forcedMode = true; setMode(fm, true); }
   else if (G.P && fm && modeOf() !== fm) setMode(fm); // 天樞 / 貫星: the fight always starts in its shape (and you keep it afterwards)
@@ -2333,6 +2335,8 @@ function damageMirror(m, n, quiet) {
 }
 function hurtEnemy(e, dmg, a, src) {
   if (e.dead || e.spawnT > 0 || e.execd) return;
+  if (e.type === 'bNight') { const d2 = nkGate(e, dmg, src); if (d2 === null) { e.flash = 0.06; return; } dmg = d2; }
+  if (e.type === 'bMirror') { const d2 = mkGate(e, dmg, src); if (d2 === null) { e.flash = 0.06; return; } dmg = d2; } /* 玻璃國王 / 幻影國王 */
   if (e.var === 'glass' && dmg > 0 && !e.d.boss) { mcShatter(e, a, src); return; } /* 鏡城: glass breaks on any touch */
   dmg *= mcDmgK(src);
   if (e.type === 'bKnightC') { // a clone: the blow lands on the knight itself
@@ -2366,8 +2370,8 @@ function hurtEnemy(e, dmg, a, src) {
 // A killing lunge on an enemy that was punished (mid-swing / recovering / lighting), struck from the dark,
 // while the dodge bonus is up, or the last one standing turns into a short staged finisher. The boss always gets one.
 const EXEC_KIND = { pawn: 'engulf', knight: 'engulf', bishop: 'spike', rook: 'crush', queen: 'spike', king: 'crush', boss: 'shatter', bBishop2: 'spike' };
-const EXEC_DUR = { engulf: 0.72, spike: 0.76, crush: 0.8, snuff: 0.95, shatter: 2.6, pawnStab: 0.7, knightStomp: 0.86, bishopSlash: 0.8, rookRam: 0.84, queenCrown: 1.3, kingResign: 1.8 };
-const EXEC_HIT = { engulf: 0.3, spike: 0.3, crush: 0.42, snuff: 0.55, shatter: 0.75, pawnStab: 0.28, knightStomp: 0.43, bishopSlash: 0.3, rookRam: 0.35, queenCrown: 0.4, kingResign: 0.66 };
+const EXEC_DUR = { handCrush: 1.1, engulf: 0.72, spike: 0.76, crush: 0.8, snuff: 0.95, shatter: 2.6, pawnStab: 0.7, knightStomp: 0.86, bishopSlash: 0.8, rookRam: 0.84, queenCrown: 1.3, kingResign: 1.8 };
+const EXEC_HIT = { handCrush: 0.58, engulf: 0.3, spike: 0.3, crush: 0.42, snuff: 0.55, shatter: 0.75, pawnStab: 0.28, knightStomp: 0.43, bishopSlash: 0.3, rookRam: 0.35, queenCrown: 0.4, kingResign: 0.66 };
 // the finisher follows the shape you are in when you land it
 const FORM_EXEC = { pawn: 'pawnStab', pawnR: 'pawnStab', knight: 'knightStomp', alfil: 'knightStomp', bishop: 'bishopSlash', rook: 'rookRam', queen: 'queenCrown', king: 'kingResign', king1: 'kingResign' };
 function canExec(e, src) {
@@ -2384,7 +2388,7 @@ function canExec(e, src) {
   return alive === 0 || e.type === 'king' || P.dark || P.buffT > 0 || ['wind', 'recover'].includes(e.state);
 }
 function startExec(e, a) {
-  const P = G.P, fk = P.form ? FORM_EXEC[effKind(P.form, P.finv)] : null, kind = fk || (e.d.boss && !e.d.minor ? 'shatter' : e.d.boss ? 'spike' : 'engulf');
+  const P = G.P, fk = P.form ? FORM_EXEC[effKind(P.form, P.finv)] : null, kind = fk || (e.d.boss && !e.d.minor ? 'shatter' : e.d.boss ? 'spike' : modeOf() === 'glass' ? 'handCrush' : 'engulf');
   e.execd = true; e.hp = 0; e.vx = e.vz = 0;
   const big = e.d.boss && !e.d.minor && kind !== 'shatter' ? 1.35 : 1;
   G.exec = { e, kind, big, form: P.form, finv: P.finv, t: 0, dur: EXEC_DUR[kind] * big, hit: EXEC_HIT[kind] * big, a, px: P.x - Math.cos(a) * 0.4, pz: P.z - Math.sin(a) * 0.4, ex: e.x, ez: e.z, fired: false, hold: 0, twin: P.buffT > 0, dark: P.dark, marks: {}, _why: G._ew || 'other' }; G._ew = null;
@@ -2402,13 +2406,15 @@ function execStep(dt) {
   // lead-ins
   if (X.kind === 'snuff') { if (execOnce(X, 'grab', 0.22)) Snd.S.swallow(); G.lightK = X.t < 0.4 ? 1 - (X.t - 0.22) / 0.18 * 0.95 : X.fired ? Math.min(1, 0.05 + (X.t - X.hit - 0.15) * 2.2) : 0.05; G.lightK = clamp(G.lightK, 0.05, 1); }
   if (X.kind === 'crush' && execOnce(X, 'jump', 0.05)) Snd.S.spit();
+  if (X.kind === 'handCrush') { if (execOnce(X, 'brk', 0.02)) { Snd.S.shatter(); burst(X.px, 0.5, X.pz, 16, [0.75, 0.82, 1.15]); } if (execOnce(X, 'grip', 0.42)) Snd.S.swallow(); }
   if (X.kind === 'spike' && execOnce(X, 'creep', 0.12)) Snd.S.swallow();
   if (X.kind === 'shatter') { if (X.t < X.hit) G.shake = Math.max(G.shake || 0, X.t / X.hit * 0.35); if (execOnce(X, 'in', 0.3)) Snd.S.swallow(); }
   if (!X.fired && X.t >= X.hit) {
     X.fired = true; X.hold = X.kind === 'shatter' ? 0.32 : X.kind === 'kingResign' ? 0.45 : 0.2; X.t = X.hit;
     G.snapReq = true; X.flashNext = true; Snd.S.shutter();
     const ex = X.ex, ez = X.ez;
-    if (X.kind === 'engulf') { Snd.S.gulp(); burst(ex, 0.6, ez, 26, [0.04, 0.03, 0.05]); G.shake = 0.3; }
+    if (X.kind === 'handCrush') mcExecFire(X);
+    else if (X.kind === 'engulf') { Snd.S.gulp(); burst(ex, 0.6, ez, 26, [0.04, 0.03, 0.05]); G.shake = 0.3; }
     else if (X.kind === 'pawnStab') { Snd.S.spike(); Snd.S.slash(); G.shake = 0.35; burst(ex, 1.0, ez, 20, e.d.col); }
     else if (X.kind === 'knightStomp') { Snd.S.slam(); Snd.S.crunch(); G.shake = 0.8; ring(ex, ez, 2.4, [0.9, 0.8, 0.6]); burst(ex, 0.3, ez, 30, [0.45, 0.3, 0.18]); }
     else if (X.kind === 'bishopSlash') { Snd.S.slash(); Snd.S.bell(); G.split = 1; G.shake = 0.3; }
@@ -2768,7 +2774,7 @@ function moveAlong(e, W, path, jump) { // travel the attacked line as far as it 
 function fireHaz(e, W, h) {
   const P = W.P, R = W.R;
   if (h.tag === 'jav') { e.noLance = true; addHaz(e, h.sqs.slice().reverse(), 3, 'beam', 1, 'javBack'); } else if (h.tag === 'javBack') e.noLance = false; // the thrown lance flies back
-  let hit = false; if (!P.hidden && h.dmg > 0 && !(h.tag === 'land' && P.air)) { const hh = pHitSqs(R, P, h.sqs); if (hh) { hit = hh === 'main' || !hh.id; W.events.push(hitSrc(hh, { k: 'hitP', dmg: h.dmg, x: P.x, z: P.z, src: e.type, parry: h.tag === 'thrust' ? e : null, from: e })); } }
+  let hit = false; if (!P.hidden && h.dmg > 0 && !(h.tag === 'land' && P.air)) { const hh = pHitSqs(R, P, h.sqs); if (hh) { hit = hh === 'main' || !hh.id; W.events.push(hitSrc(hh, { k: 'hitP', dmg: h.dmg, x: P.x, z: P.z, src: e.type, parry: h.tag === 'thrust' ? e : null, from: e, magic: h.magic, veil: h.veil })); } }
   W.events.push({ k: 'bossFire', e, h });
   if (h.tag === 'over' || h.tag === 'glow') e.hot = 2;
   if (h.tag === 'glow' && !W.fut) W.events.push({ k: 'burnLine', sqs: h.sqs });
@@ -3043,7 +3049,7 @@ function bossPresent(dt) {
   if (R.bossKind === 'bReflect') { HIST.push({ t: G.t, x: P.x, z: P.z, face: P.face, hop: P.hop || 0, form: P.form, finv: P.finv, a: P.lungeT > 0 || !!P.dash || (P.jump && P.jump.t / P.jump.dur > 0.8) }); while (HIST.length > 2 && HIST[0].t < G.t - 5) HIST.shift(); }
   if (B.dead) return;
   // phase changes: the music opens up
-  if (B.type !== 'bKing') { const ph = bossPhase(B); if (ph !== B.lastPh) { if (B.lastPh) { G.flash = 0.5; G.shake = 0.6; Snd.S.bell(); UI.toast(BOSS[R.bossKind] ? BOSS[R.bossKind].body : 'king', ph === 2 ? 'Ⅱ' : 'Ⅲ'); } B.lastPh = ph; Snd.phase(ph); } }
+  if (B.type !== 'bKing' && B.type !== 'bMirror' && B.type !== 'bNight') { const ph = bossPhase(B); if (ph !== B.lastPh) { if (B.lastPh) { G.flash = 0.5; G.shake = 0.6; Snd.S.bell(); UI.toast(BOSS[R.bossKind] ? BOSS[R.bossKind].body : 'king', ph === 2 ? 'Ⅱ' : 'Ⅲ'); } B.lastPh = ph; Snd.phase(ph); } }
   // 黑駒 splits: one solid clone in phase 2, four in phase 3 — they share its life
   if (B.type === 'bKnight') { const ph = bossPhase(B), want = ph >= 3 ? 4 : ph >= 2 ? 1 : 0, cl = G.E.filter(o => !o.dead && o.type === 'bKnightC');
     for (const c of cl) { c.hp = B.hp; c.maxHp = B.maxHp; }
@@ -3087,6 +3093,8 @@ function bossInit(e) {
   if (e.type === 'bLance') lanceInit(e);
   if (e.type === 'bStar') starInit(e);
   if (e.type === 'bWall') wallInit(e);
+  if (e.type === 'bMirror') mkInit(e);
+  if (e.type === 'bNight') nkInit(e);
 }
 function kingArmy(B) { // his army: random pieces on random squares in his half of the board, more each time he gets back up
   const R = G.room, P = G.P, lives = B.lives || 3, n = 4 + (3 - lives), pool = ['pawn', 'pawn', 'knight', 'bishop', 'rook'].concat(lives <= 1 ? ['queen'] : []);
@@ -3131,6 +3139,8 @@ function bossHurt(e, dmg, a) {
 // boss room events from the shared world step
 function bossEvent(evn) {
   const R = G.room, P = G.P;
+  if (evn.k === 'bossFire' && evn.e && evn.e.type === 'bMirror') mkFire(evn.e, evn.h);
+  if (evn.k === 'bossFire' && evn.e && evn.e.type === 'bNight') nkFire(evn.e, evn.h);
   if (evn.k === 'bossFire' && evn.h.kind === 'slide') { invEvent({ k: 'slideFire', h: evn.h }); return; }
   if (evn.k === 'bossFire' && (evn.h.tag === 'jav' || evn.h.tag === 'javBack') && evn.h.sqs.length) { const h = evn.h, a = h.sqs[0], b = h.sqs[h.sqs.length - 1], [x0, z0] = sqC(R, a[0], a[1]), [x1, z1] = sqC(R, b[0], b[1]); G.fx.push({ k: 'javelin', x0: h.tag === 'jav' ? evn.e.x : x0, z0: h.tag === 'jav' ? evn.e.z : z0, x1: h.tag === 'jav' ? x1 : evn.e.x, z1: h.tag === 'jav' ? z1 : evn.e.z, life: 0.35, max: 0.35 }); Snd.S.lunge(); }
   if (evn.k === 'bossFire') { const h = evn.h; if (h.lines) { /* drawn as a laser beam instead (轟星城堡) */ } else if (h.kind === 'beam' || h.kind === 'flood') { Snd.S.slash(); G.shake = Math.max(G.shake || 0, 0.25); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.3, max: 0.3, flood: h.kind === 'flood', tint: h.tint }); } else if (h.dmg) { Snd.S.slam(); G.fx.push({ k: 'zap', sqs: h.sqs, life: 0.25, max: 0.25 }); } }
@@ -5461,7 +5471,8 @@ const MC_THEME = { hall: '碎鏡廳', drift: '漂移鏡廊', sink: '沉沒層', 
 function mcFloors(n) { n = n || 4; const f = [], bag = [];
   const theme = k => { if (k === 0) return 'hall'; if (!bag.length) bag.push(...['drift', 'sink', 'fog', 'tide'].sort(() => Math.random() - 0.5)); return bag.pop(); };
   for (let k = 0; k < n; k++) { const late = k >= n / 2; f.push({ t: 'mc', rn: n > 4 && k === 0 ? 3 : late ? 5 : 4, k, layers: late ? 5 : 4, theme: theme(k) }); }
-  f.push({ t: 'mc', rn: 5, k: n, final: true, layers: 1 }); return f; }
+  f.splice(Math.floor(n / 2), 0, { t: 'boss', kind: 'bNight', mc: true, rn: 5, k: Math.floor(n / 2), act: 2, layers: 1, mid: true });
+  f.push({ t: 'boss', kind: 'bMirror', mc: true, rn: 5, k: n, final: true, act: 3, layers: 1 }); return f; }
 function mcS() { const R = G.room; return R.mcs || (R.mcs = { piles: [], jumpers: [], prisms: [], towers: [], rays: [], thrown: [], ripples: [], drops: [] }); }
 function mcAt(d, fn) { (G.mcq = G.mcq || []).push({ at: G.time + d, fn }); }
 function mcMark(id) { try { META.mark('mc', id); } catch (e) { } }
@@ -5477,7 +5488,7 @@ const mcOnSq = (x, z, i, j) => { const q = sqOf(G.room, x, z); return q[0] === i
 const mcGround = P => !P.hopJ && !P.jump && !P.hand && !P.inMirror && !(P.mcSunkT > G.time);
 // ---------------------------------------------------------------- room generation (called by genRoom for an 'mc' floor)
 function mcGen(R, rng, FL) {
-  const mc = G.mc || {}, d = FL.final ? 0 : (mc.depth || 0), Lr = FL.layers || 4, bottom = !!FL.final || d >= Lr - 1;
+  const isBoss = FL.t === 'boss', mc = G.mc || {}, d = FL.final || isBoss ? 0 : (mc.depth || 0), Lr = FL.layers || 4, bottom = !!FL.final || isBoss || d >= Lr - 1;
   R.mc = { k: FL.k || 0, depth: d, layers: Lr, bottom, final: !!FL.final, fm: new Set(), temp: {}, theme: FL.theme || 'hall', groups: [], sinkRow: -1, tb: 0 };
   // cold silver and indigo
   const lightSq = [0.6, 0.64, 0.77], darkSq = [0.06, 0.065, 0.14]; R.sqCols = [lightSq, darkSq];
@@ -5492,7 +5503,7 @@ function mcGen(R, rng, FL) {
       if (sq.some(([i, j]) => !onBoard(R, i, j) || R.sqBlock[j * R.cols + i] || cheb(i, j, land[0], land[1]) <= 1 || [...R.mc.fm].some(k => { const [a, b] = k.split(',').map(Number); return cheb(a, b, i, j) <= 1; }))) continue;
       for (const [i, j] of sq) { R.mc.fm.add(MCK(i, j)); R.sqBlock[j * R.cols + i] = 6; } R.mc.groups.push({ sqs: sq, d: rng.pick(DIRS.rook) }); g++; } }
   // the army: fewer pieces than above ground, many of them glass or shade
-  R.spawnList = []; if (FL.final) return;
+  if (FL.final || isBoss) return; R.spawnList = [];
   const used = new Set([MCK(land[0], land[1])]), put = (t, j0, j1, v) => { for (let k = 0; k < 50; k++) { const i = rng.int(0, R.cols - 1), j = rng.int(j0, j1), key = MCK(i, j); if (used.has(key) || R.sqBlock[j * R.cols + i]) continue; const [x, z] = sqC(R, i, j); if (gridAt(R, x, z)) continue; used.add(key); R.spawnList.push({ type: t, x, z, var: v || null, inv: false }); return true; } return false; };
   const k = FL.k || 0, th = FL.theme || 'hall', n = 3 + Math.min(d, 2) + (k >= 2 ? 1 : 0) + (bottom ? 1 : 0) + (th === 'fog' ? 1 : 0), pool = [['pawn', 3], ['knight', 2], ['bishop', 2], ['rook', 2]].concat(k >= 1 || d >= 2 ? [['queen', 0.7]] : []);
   const gP = th === 'fog' ? 0.65 : th === 'tide' ? 0.22 : 0.4 + 0.05 * d, sP = th === 'tide' ? 0.45 : th === 'fog' ? 0.1 : k >= 1 || d >= 1 ? 0.2 : 0.08;
@@ -5513,7 +5524,8 @@ function mcMk(type, x, z, v, o) { const e = makeEnemy(type, x, z, (Math.random()
 // enterRoom calls this last
 function mcEnter(R) {
   const P = G.P; if (!R.mc) { if (R.idx === G.mcEntry && !R.boss && G.state === 'play') R.mcEntryAt = G.time + (window.__fast ? 2 : rnd(6, 15)); return; }
-  const mc = G.mc, B = mcB(); Snd.music('mirror', 0.35); R.door.dest = undefined;
+  if (R.boss && !G.mc) G.mc = { k: 0, depth: 0, rewarded: true, falling: false, wait: {}, waitFog: {}, drops: [], chains: {}, followers: [], waveN: 3 }; if (R.boss) G.mcRun = true;
+  const mc = G.mc, B = mcB(); Snd.music('mirror', R.boss ? 0.9 : 0.35); R.door.dest = undefined;
   for (const e of G.E) { if (e.var === 'shade') e.sh = { st: 'up', b: 2 + ((Math.random() * 3) | 0) }; if (e.var) mcMark(e.var); }
   if (mc.falling) { mc.falling = false; mc.going = false;
     const [i, j] = mcNear(R, mc.landSq[0], mc.landSq[1], (a, b) => onBoard(R, a, b) && !R.sqBlock[b * R.cols + a] && !gridAt(R, ...sqC(R, a, b)) && !mcOcc(R, a, b)); [P.x, P.z] = sqC(R, i, j); G.cam.x = P.x; G.cam.z = P.z;
@@ -5527,11 +5539,13 @@ function mcEnter(R) {
     if (window.__fast) { mcSlam(P.x, P.z); P.mcGrace = G.time + 0.6; } else { G.mcAnim = { ph: 'drop', t: 0, T: 0.55 }; P.mcY = 9; P.mcGrace = G.time + 1.2; } if (P.tr.mcDropShade) P.calmB = Math.max(P.calmB || 0, 2);
     // and the pieces you left up there come after you, one by one
     mc.drops = []; (mc.followers || []).forEach((f, n) => { const [a, b] = mcNear(R, i + ((Math.random() * 5) | 0) - 2, j - 1 - ((Math.random() * 2) | 0), (x, y) => mcFree(R, x, y) && !(x === i && y === j) && !mc.drops.some(d => d.i === x && d.j === y));
-      mc.drops.push(Object.assign({}, f, { i: a, j: b, at: G.time + 3 * B + n * 0.3 })); }); mc.followers = [];
+      mc.drops.push(Object.assign({}, f, { i: a, j: b, at: G.time + 3 * B + n * 0.3 + (P.tr.mcMirrorSelf ? 3 * B : 0) })); }); mc.followers = [];
+    if (mc.sunkN) { for (let n = 0; n < mc.sunkN; n++) mcAt(0.6 + n * 0.15, () => { const R2 = G.room, x = R2.bx0 + Math.random() * (R2.bx1 - R2.bx0), z = R2.bz0 + Math.random() * (R2.bz1 - R2.bz0); burst(x, 4, z, 14, [0.75, 0.8, 1.1]); Snd.S.crack(); }); mc.sunkN = 0; } /* 墜落者: they break on the way down */
     G.flash = Math.max(G.flash, window.__fast ? 0.5 : 0.9); if (window.__fast) G.invert = 0.08;
   } else if (R.mc.k >= 1 && modeOf() !== 'glass' && !R.mc.final) placeCore(R, 'glass'); // the glass core waits at the top of every stage from the second on
   if (R.mc.theme === 'fog') { const S = mcS(), ps = mcPsq(); for (let n = 0; n < 3; n++) { const [i, j] = mcNear(R, (Math.random() * R.cols) | 0, 1 + ((Math.random() * (R.rows - 3)) | 0), (a, b) => mcFree(R, a, b) && Math.max(Math.abs(a - ps[0]), Math.abs(b - ps[1])) >= 2); const [x, z] = sqC(R, i, j); S.prisms.push({ x, z, until: 1e9, chain: 0, dbl: 1 }); } }
-  if (R.mc.final) { mc.waveN = 0; mcS().waveAt = G.time + 1.2; mcMark('depth'); }
+  if (R.boss) { mc.waveN = 3; mcMark('depth'); }
+  else if (R.mc.final) { mc.waveN = 0; mcS().waveAt = G.time + 1.2; mcMark('depth'); }
 }
 // ---------------------------------------------------------------- entering, falling
 function mcFollowers() { const out = []; for (const e of G.E) { if (out.length >= 8) break; if (e.dead || e.ally || e.d.boss || !e.d.chess || e.held) continue; out.push({ type: e.type, inv: !!e.inv, var: e.var === 'shade' ? 'shade' : 'glass', wasGlass: e.var === 'glass' }); } return out; }
@@ -5544,13 +5558,13 @@ function mcGo(i) { const mc = G.mc; if (mc.going) return; mc.going = true; Snd.S
 function mcStart() { const R = G.room, P = G.P, idx = G.roomIdx;
   G.mcRun = true; G.pastRoom = -1; G.run.floors = G.run.floors.slice(0, idx + 1).concat(mcFloors(idx < 8 ? 6 : 4));
   G.mc = { k: 0, depth: 0, rewarded: false, falling: true, landSq: mcPsq(), wait: {}, waitFog: {}, drops: [], chains: {}, followers: mcFollowers(), waveN: 0 };
-  mcMark('city'); mcGo(idx + 1); }
+  G.mc.real = true; mcMark('city'); mcGo(idx + 1); }
 function mcFall() { const R = G.room, mc = G.mc; if (!mc || mc.going) return;
-  mc.depth++; mc.falling = true; mc.landSq = mcPsq(); mc.followers = mcFollowers(); hook('mcFall', {}); mcGo(G.roomIdx); }
-function mcSlam(x, z) { const P = G.P, big = P.tr.mcDrop ? 1 : 0, r = SQ * (1.15 + big * 0.6);
+  mc.depth++; mc.falling = true; mc.landSq = mcPsq(); mc.followers = mcFollowers(); if (G.P.tr.mcMirrorSelf) mc.followers = mc.followers.slice(0, Math.ceil(mc.followers.length / 2)); if (G.P.tr.keySink) { mc.sunkN = mc.followers.length; mc.followers = []; } hook('mcFall', {}); mcGo(G.roomIdx); }
+function mcSlam(x, z) { const P = G.P, big = P.tr.mcDrop ? 1 : 0, ks = P.tr.keySink ? UPGS.filter(u => u.mcOnly && P.tr[u.id]).length : 0, r = SQ * (1.15 + big * 0.6 + (ks ? 0.4 : 0));
   for (const e of G.E.slice()) { if (e.dead || e.ally || e.spawnT > 0 || e.d.boss || dist(e.x, e.z, x, z) > r + e.r * 0.5) continue;
     if (e.var === 'glass') { mcShatter(e, angTo(x, z, e.x, e.z), 'upg'); continue; }
-    hurtEnemy(e, Math.max(4, e.maxHp * 0.45) * (big ? 2 : 1), angTo(x, z, e.x, e.z), 'upg'); if (!e.dead) U.stun(e, 2); }
+    hurtEnemy(e, Math.max(4, e.maxHp * 0.45) * (big ? 2 : 1) + ks * 3, angTo(x, z, e.x, e.z), 'upg'); if (!e.dead) U.stun(e, 2); }
   ring(x, z, r, [0.75, 0.8, 1.2]); ring(x, z, r * 0.6, [1.2, 1.2, 1.4]); burst(x, 0.3, z, 30, [0.6, 0.65, 0.9]); G.shake = Math.max(G.shake || 0, 0.8); G.hitstop = Math.max(G.hitstop || 0, 0.06); Snd.S.slam(); Snd.S.crack(); }
 // ---------------------------------------------------------------- 影障
 function mcVeil(n, chain) { const P = G.P; if (!n || G.mcAnim || P.inv > 0 || P.mcInvT > G.time || G.state !== 'play') return;
@@ -5558,13 +5572,16 @@ function mcVeil(n, chain) { const P = G.P; if (!n || G.mcAnim || P.inv > 0 || P.
   P.veil = (P.veil || 0) + n; P.veilT = G.time; P.vdc = 0; mcMark('veil');
   burst(P.x, 0.8, P.z, 8 + n * 4, [0.22, 0.08, 0.38]); ring(P.x, P.z, 0.9, [0.5, 0.2, 0.9]); Snd.S.crack(); G.shake = Math.max(G.shake || 0, 0.2);
   if (P.tr.mcReverse) { const e = U.near(P.x, P.z, 6); if (e) { U.zap(P.x, P.z, e.x, e.z, [0.7, 0.4, 1.3]); hurtEnemy(e, 1.5 * n, angTo(P.x, P.z, e.x, e.z), 'upg'); } }
+  if (P.veil >= 6 && P.tr.mcVeilBurst) { P.veil = 0; P.rootT = 2.5; U.aoe(P.x, P.z, 3, 6 * dmgMul(P), [0.5, 0.2, 0.95], 'upg'); for (const e of G.E) if (!e.dead && !e.ally && dist(e.x, e.z, P.x, P.z) < 3.2) U.stun(e, 2); for (let k = 0; k < 3; k++) ring(P.x, P.z, 1 + k * 0.9, [0.6, 0.25, 1.1]); G.shake = Math.max(G.shake || 0, 0.9); Snd.S.slam(); Snd.S.mirrorOut(); P.inv = Math.max(P.inv, 2.5); return; }
   if (P.veil >= 6) { P.veil = 0; P.rootT = 1.5; G.flash = Math.max(G.flash, 0.4); G.invert = 0.12; for (let k = 0; k < 3; k++) ring(P.x, P.z, 0.8 + k * 0.6, [0.4, 0.1, 0.7]);
     hurtPlayer(2, 'veil'); P.inv = Math.max(P.inv, 2.5); } }
 function mcHitP(evn) { const f = evn.from, b = evn.bolt;
+  if (evn.magic) { mcVeil(evn.veil || 2, null); return true; }
   if ((b && b.fog) || (f && (f.var === 'shade' || f.shadeT > G.time))) { if (evn.clone && G.puddles && G.puddles.some(p => p.id === evn.clone)) { popPuddle(evn.clone); return true; } mcVeil(2, null); return true; }
   return false; }
 // hurtPlayer asks first: the hand can't be hit, glass breaks instead of bleeding (in 鏡城)
 function mcHurt(dmg, src) { const P = G.P; if (G.mcAnim) return true; if (src === 'veil') return false;
+  if (src === 'bNight') { if (P.hand) { mcVeil(1, null); return true; } if (modeOf() === 'glass' || P.gform) mcBreak(); return !!window.__god; } /* 暗夜騎士: the sword cuts glass and mist alike */
   if (P.hand || P.mcSunkT > G.time) return true;
   if (modeOf() === 'glass' || P.gform) { mcBreak(); return !!G.mcRun || !!window.__god; }
   return false; }
@@ -5576,7 +5593,7 @@ function mcShatter(e, a, src, chain) {
   for (let k = 0; k < 26; k++) { const an = rnd(0, TAU), sp = rnd(2, 6.5); G.fx.push({ k: 'chip', x, y: rnd(0.4, 1.5), z, vx: Math.cos(an) * sp, vy: rnd(2, 6), vz: Math.sin(an) * sp, life: rnd(0.7, 1.4), s: rnd(0.04, 0.1), col: k % 4 ? [0.8, 0.86, 1.1] : [0.25, 0.08, 0.4], r0: rnd(0, 6) }); }
   burst(x, 1.0, z, 14, [0.3, 0.1, 0.5]); ring(x, z, 1.0, [0.8, 0.85, 1.3]); Snd.S.shatter(); G.hitstop = Math.max(G.hitstop || 0, 0.035); G.shake = Math.max(G.shake || 0, 0.25);
   if (P.tr.mcCollect) G.shards = (G.shards || 0) + 1;
-  if (P.tr.mcReso) for (const o of G.E) if (!o.dead && !o.ally && o.spawnT <= 0 && o.var !== 'glass' && dist(o.x, o.z, x, z) < 2.2) hurtEnemy(o, 3, angTo(x, z, o.x, o.z), 'upg');
+  if (P.tr.mcReso) for (const o of G.E) if (!o.dead && !o.ally && o.spawnT <= 0 && o.var !== 'glass' && dist(o.x, o.z, x, z) < 2.2) hurtEnemy(o, 3, angTo(x, z, o.x, o.z), 'rattle');
   if (P.tr.mcArmor) for (const o of G.E) if (!o.dead && !o.ally && dist(o.x, o.z, x, z) < 1.8 * SQ) o.pinT = G.time + 3;
   if (P.tr.mcChain) for (const o of G.E) if (!o.dead && o.var === 'glass' && o.spawnT <= 0 && !o.held && dist(o.x, o.z, x, z) < 1.25 * SQ) mcAt(0.15, () => mcShatter(o, angTo(x, z, o.x, o.z), 'upg', chain));
   if (!e.reformed) mcRattle(type, x, z, a || 0, chain, dbl); /* (a pawn that already stood up once stays broken) */
@@ -5604,7 +5621,7 @@ function mcLine(R, i, j, d) { const out = []; for (let k = 1; k < 12; k++) { con
 function mcRay(i, j, d, chain, dbl, mine) { const R = G.room, P = G.P, S = mcS(), B = mcB(), sqs = []; for (let k = 1; k < 12; k++) { const a = i + d[0] * k, b = j + d[1] * k; if (!onBoard(R, a, b)) break; sqs.push([a, b]); }
   const [x0, z0] = sqC(R, i, j); S.rays.push({ x: x0, z: z0, a: Math.atan2(d[1], d[0]), len: Math.max(1, sqs.length) * SQ * Math.hypot(d[0], d[1]), t: 0.4, max: 0.4, mine });
   for (const [a, b] of sqs) { if (!mine && mcGround(P) && mcOnSq(P.x, P.z, a, b)) mcVeil(2 * dbl, chain);
-    for (const o of G.E) { if (o.dead || o.ally || o.d.boss || o.held || !mcOnSq(o.x, o.z, a, b)) continue; if (mine) { o.shadeT = 0; hurtEnemy(o, 2 * dmgMul(P), Math.atan2(d[1], d[0]), 'upg'); } else { o.shadeT = G.time + 8 * B; mcMark('shadeT'); } } } }
+    for (const o of G.E) { if (o.dead || o.ally || o.d.boss || o.held || !mcOnSq(o.x, o.z, a, b)) continue; if (mine) { o.shadeT = 0; hurtEnemy(o, 2 * dmgMul(P), Math.atan2(d[1], d[0]), 'rattle'); } else { o.shadeT = G.time + 8 * B; mcMark('shadeT'); } } } }
 // ---------------------------------------------------------------- your own 遺言 (a glass piece you swallowed and spat out)
 function mcMine(m, x, z, a) { const P = G.P, R = G.room, B = mcB(), S = mcS(), [i, j] = sqOf(R, x, z);
   const go = () => {
@@ -5616,7 +5633,7 @@ function mcMine(m, x, z, a) { const P = G.P, R = G.room, B = mcB(), S = mcS(), [
     else if (m.type === 'queen') { for (const d of DIRS.queen) mcRay(i, j, d, 0, 1, true); P.veil = Math.floor((P.veil || 0) / 2); for (const o of G.E) o.shadeT = 0; G.flash = Math.max(G.flash, 0.35); Snd.S.bell(); } // 八方淨光
     else if (m.type === 'king') { const os = G.E.filter(o => !o.dead && !o.ally && !o.d.boss && !o.held).sort((p, q) => dist(p.x, p.z, x, z) - dist(q.x, q.z, x, z)); // 反國破
       P.mcInvT = G.time + (os.length + 1) * B / 2 + 0.3; P.inv = Math.max(P.inv, P.mcInvT - G.time);
-      os.forEach((o, n) => mcAt((n + 1) * B / 2, () => { if (o.dead) return; if (o.sunk) mcSurface(o); if (o.var === 'glass') mcShatter(o, angTo(x, z, o.x, o.z), 'upg'); else { hurtEnemy(o, 6 * dmgMul(P), angTo(x, z, o.x, o.z), 'upg'); if (!o.dead) U.stun(o, 1); } ring(o.x, o.z, 1, [1.2, 1.1, 1.5]); }));
+      os.forEach((o, n) => mcAt((n + 1) * B / 2, () => { if (o.dead) return; if (o.sunk) mcSurface(o); if (o.var === 'glass') mcShatter(o, angTo(x, z, o.x, o.z), 'upg'); else { hurtEnemy(o, 6 * dmgMul(P), angTo(x, z, o.x, o.z), 'rattle'); if (!o.dead) U.stun(o, 1); } ring(o.x, o.z, 1, [1.2, 1.1, 1.5]); }));
       for (let k = 0; k < 3; k++) ring(x, z, 1.5 + k * 1.4, [1.1, 1.1, 1.5]); Snd.S.bell(); }
   };
   go(); if (P.tr.mcEcho && !m.shade) mcAt(B, go); mcMark('m_' + (m.shade ? 'shade' : m.type)); }
@@ -5636,28 +5653,36 @@ function mcSurface(e) { const R = G.room, P = G.P, s = e.sh || (e.sh = {}), B = 
   burst(e.x, 0.4, e.z, 18, [0.04, 0.02, 0.08]); ring(e.x, e.z, 1, [0.4, 0.15, 0.7]); Snd.S.mirrorOut();
   if (!P.inMirror) { const occ = (a, b) => mcOcc(R, a, b, e), mv = pieceMoves(R, effKind(e.type, e.inv), i, j, occ, ps); if (mv.some(m => m[0] === ps[0] && m[1] === ps[1])) { const [x, z] = sqC(R, ps[0], ps[1]); e.plan = { x, z, cap: true, fx: e.x, fz: e.z }; e.ph = 1; e.state = 'plan'; e.face = angTo(e.x, e.z, x, z); } } }
 // ---------------------------------------------------------------- the phantom hand
-function mcBreak() { const P = G.P, B = mcB(); if (P.hand) return;
-  if (P.gform && P.form) { const t = P.form; P.gform = false; loseForm(false); mcMine({ type: t }, P.x, P.z, P.face); }
+function mcBreak() { const P = G.P, B = mcB(); if (P.hand) return; for (const e of G.E) if (e.held && e.d.boss) { e.held = false; e.spawnT = 0; }
+  if (P.gform && P.form) { const ms = mcFormParts(); P.gform = false; loseForm(false); ms.forEach((m, k) => mcAt(k * 0.25, () => mcMine(m, G.P.x, G.P.z, G.P.face))); }
+  if (P.tr.mcRecycle) for (const o of G.E.slice()) if (!o.dead && o.var === 'glass' && o.spawnT <= 0 && !o.held && dist(o.x, o.z, P.x, P.z) < 2.6) mcAt(0.05 + dist(o.x, o.z, P.x, P.z) * 0.04, () => mcShatter(o, angTo(G.P.x, G.P.z, o.x, o.z), 'upg'));
   P.hand = { t: (P.tr.mcGrip ? 9 : 6) * B, held: null, holdT: 0 }; P.inv = Math.max(P.inv, 0.25); P.dash = null; P.lungeT = 0; P.hopJ = null; P.jump = null;
   for (let k = 0; k < 30; k++) { const an = rnd(0, TAU), sp = rnd(2, 7); G.fx.push({ k: 'chip', x: P.x, y: rnd(0.2, 0.8), z: P.z, vx: Math.cos(an) * sp, vy: rnd(2, 5), vz: Math.sin(an) * sp, life: rnd(0.6, 1.2), s: rnd(0.04, 0.1), col: [0.75, 0.82, 1.1], r0: rnd(0, 6) }); }
   ring(P.x, P.z, 1.2, [0.8, 0.85, 1.3]); G.hitstop = Math.max(G.hitstop || 0, 0.08); G.shake = Math.max(G.shake || 0, 0.5); Snd.S.shatter(); mcMark('hand'); }
-function mcHandEnd() { const P = G.P, h = P.hand, R = G.room; if (!h) return; P.hand = null; const B = mcB();
-  if (h.held && h.held.e && !h.held.e.dead) { const e = h.held.e, t = e.type, inv = e.inv; e.noDrop = true; e.mcNoTopple = true; e.spawnT = 0; e.held = false; killEnemy(e); becomePiece(t, inv); if (P.form === t) { P.gform = true; mcMark('gform'); } }
+function mcHandEnd() { const P = G.P, h = P.hand, R = G.room; if (!h) return; P.hand = null; const B = mcB(); for (const H of [h.held, h.held2]) if (H && H.sword) nkSwordBack(H.from);
+  if (h.held && h.held.e && h.held.e.d.boss) { const e = h.held.e; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...mcPsq(), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); }
+  else if (h.held && h.held.e && !h.held.e.dead) { const e = h.held.e, t = e.type, inv = e.inv; e.noDrop = true; e.mcNoTopple = true; e.spawnT = 0; e.held = false; killEnemy(e); becomePiece(t, inv); if (P.form === t) { P.gform = true; mcMark('gform'); } }
+  if (h.held2 && h.held2.e && !h.held2.e.dead) { const e = h.held2.e; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...mcPsq(), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); }
   P.inv = Math.max(P.inv, B); fixPos(R, P); if (R.bx0 !== undefined) { P.x = clamp(P.x, R.bx0 + 0.3, R.bx1 - 0.3); P.z = clamp(P.z, R.bz0 + 0.3, R.bz1 - 0.3); fixPos(R, P); }
   burst(P.x, 0.5, P.z, 20, [0.7, 0.78, 1.1]); ring(P.x, P.z, 1, [0.8, 0.85, 1.3]); Snd.S.gulp(); P.squash = 0.6; }
+// grab one thing within reach (not `skip`): a piece (a sunk phantom too, and the phantom king), else a fog bolt
+function mcGrabOne(skip) { const P = G.P; let best = null, bd = 1.6; if (!skip) { const sw = nkHandGrab(); if (sw) return sw; }
+  for (const e of G.E) { if (e === skip || e.dead || e.ally || (e.d.boss && !(e.type === 'bMirror' && e.form === 'shade')) || e.held || (e.spawnT > 0 && !e.sunk)) continue; const big = e.d.boss ? 1.0 : 0; const d = dist(P.x, P.z, e.x, e.z) - big; if (d < bd) { bd = d; best = e; } }
+  if (best) { const e = best; if (e.d.boss) { e.mv = null; e.hz = []; G.hitstop = Math.max(G.hitstop || 0, 0.1); G.shake = Math.max(G.shake || 0, 0.6); mcMark('mk_grab'); } if (e.sunk) { burst(e.x, 0.4, e.z, 16, [0.05, 0.02, 0.1]); mcMark('tear'); }
+    e.held = true; e.sunk = false; e.spawnT = 99; e.mv = null; e.plan = null; e.ph = 0; e.state = 'idle'; return { e }; }
+  const b = G.B.find(b => !b.dead && b.fog && dist(P.x, P.z, b.x, b.z) < 1.4); if (b) { b.dead = true; if (P.tr.mcInhale) P.veil = Math.max(0, (P.veil || 0) - 1); return { fog: true }; }
+  return null; }
 function mcHandClick() { const P = G.P, h = P.hand, a = aimAngle(); P.face = a; P.atkCd = 0.22;
-  if (h.held) { const sp = 15, T = { x: P.x + Math.cos(a) * 0.5, z: P.z + Math.sin(a) * 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, life: 0.9, a, hit: [] }; if (h.held.e) T.e = h.held.e; else T.fog = true;
-    mcS().thrown.push(T); h.held = null; h.holdT = 0; Snd.S.spit(); P.squash = -0.4; return; }
-  let best = null, bd = 1.6; for (const e of G.E) { if (e.dead || e.ally || e.d.boss || e.held || (e.spawnT > 0 && !e.sunk)) continue; const d = dist(P.x, P.z, e.x, e.z); if (d < bd) { bd = d; best = e; } }
-  if (best) { const e = best; if (e.sunk) { burst(e.x, 0.4, e.z, 16, [0.05, 0.02, 0.1]); mcMark('tear'); } e.held = true; e.sunk = false; e.spawnT = 99; e.mv = null; e.plan = null; e.ph = 0; e.state = 'idle'; h.held = { e }; Snd.S.swallow(); P.squash = 0.4; return; }
-  const b = G.B.find(b => !b.dead && b.fog && dist(P.x, P.z, b.x, b.z) < 1.4); if (b) { b.dead = true; h.held = { fog: true }; Snd.S.swallow(); if (P.tr.mcInhale) P.veil = Math.max(0, (P.veil || 0) - 1); return; }
+  if (h.held || h.held2) { const both = h.held && h.held2, sp = 15; [['held', both ? -0.2 : 0], ['held2', both ? 0.2 : 0]].forEach(([k, da]) => { const H = h[k]; if (!H) return; const aa = a + da, T = { x: P.x + Math.cos(aa) * 0.5, z: P.z + Math.sin(aa) * 0.5, vx: Math.cos(aa) * sp, vz: Math.sin(aa) * sp, life: 0.9, a: aa, hit: [] }; if (H.e) T.e = H.e; else if (H.sword) { T.sword = true; T.from = H.from; T.life = 0.8; } else if (H.wrist) return; else T.fog = true; mcS().thrown.push(T); h[k] = null; });
+    h.holdT = 0; Snd.S.spit(); P.squash = -0.4; return; }
+  h.held = mcGrabOne(null); if (h.held && h.held.wrist) { h.held = null; P.squash = 0.5; return; } if (P.tr.mcTwin) h.held2 = mcGrabOne(h.held && h.held.e);
+  if (h.held || h.held2) { if (!h.held) { h.held = h.held2; h.held2 = null; } Snd.S.swallow(); P.squash = 0.4; return; }
   G.fx.push({ k: 'ring', x: P.x + Math.cos(a) * 0.9, z: P.z + Math.sin(a) * 0.9, r: 0.5, life: 0.2, max: 0.2, col: [0.4, 0.2, 0.7] }); Snd.S.slash(); }
-function mcHandSlam() { const P = G.P, h = P.hand, R = G.room, B = mcB(), held = h.held, r = held ? 2.8 : 1.6, dmg = (held ? 5 : 2) * dmgMul(P); P.atkCd = 0.5;
-  if (held && held.e) { const e = held.e; h.held = null; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...sqOf(R, P.x, P.z), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); if (e.var === 'glass') mcShatter(e, P.face, 'upg'); else hurtEnemy(e, 6 * dmgMul(P), P.face, 'upg'); }
-  else if (held) h.held = null;
+function mcHandSlam() { const P = G.P, h = P.hand, R = G.room, B = mcB(), held = h.held || h.held2, r = (held ? 2.8 : 1.6) + (h.held && h.held2 ? 0.6 : 0), dmg = (held ? 5 : 2) * dmgMul(P) * (h.held && h.held2 ? 1.4 : 1); P.atkCd = 0.5;
+  for (const k of ['held', 'held2']) { const H = h[k]; h[k] = null; if (H && H.sword) { const b = H.from; if (b && !b.dead && dist(b.x, b.z, P.x, P.z) < r + 1) { b.nkBig = true; hurtEnemy(b, 1, P.face, 'hand'); } nkSwordBack(b); } if (!H || !H.e) continue; const e = H.e; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...sqOf(R, P.x, P.z), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); if (e.var === 'glass') mcShatter(e, P.face, 'upg'); else { e.mkBig = true; hurtEnemy(e, 6 * dmgMul(P), P.face, 'hand'); } }
   for (const e of G.E) if (!e.dead && e.sunk && dist(e.x, e.z, P.x, P.z) < r + 0.5) { e.sh.tx = e.x; e.sh.tz = e.z; mcSurface(e); e.plan = null; e.ph = 0; U.stun(e, 2); }
   const hit = G.E.filter(e => !e.dead && !e.ally && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < r + e.r * 0.5);
-  U.aoe(P.x, P.z, r, dmg, [0.6, 0.4, 1.1], 'upg'); for (const e of hit) if (!e.dead) U.stun(e, held ? 2 : 1);
+  U.aoe(P.x, P.z, r, dmg, [0.6, 0.4, 1.1], 'hand'); for (const e of hit) if (!e.dead) U.stun(e, held ? 2 : 1);
   ring(P.x, P.z, r * 0.6, [1.0, 0.9, 1.4]); burst(P.x, 0.2, P.z, 26, [0.3, 0.25, 0.4]); G.shake = Math.max(G.shake || 0, held ? 0.9 : 0.5); G.hitstop = Math.max(G.hitstop || 0, held ? 0.07 : 0.04); Snd.S.slam(); Snd.S.crack(); mcMark('slam');
   if (P.tr.mcQuake) { const x = P.x, z = P.z; mcAt(B, () => { U.aoe(x, z, r * 0.85, dmg * 0.6, [0.5, 0.35, 0.9], 'upg'); G.shake = Math.max(G.shake || 0, 0.4); Snd.S.slam(); }); } }
 // right mouse: the hand slams, a glass slime with a piece in its mouth spits it
@@ -5676,9 +5701,9 @@ function mcBeat() { const R = G.room, P = G.P, B = mcB(); if (!G.mcRun && !P.han
   const nFog = G.B.filter(b => !b.dead && b.fog).length;
   for (const e of G.E) { if (e.dead || e.ally || e.held || e.d.boss) continue;
     if (e.shadeT > G.time && !e.swift) { e.swift = true; e.mcSw = true; } else if (!(e.shadeT > G.time) && e.mcSw) { e.swift = false; e.mcSw = false; }
-    if (e.var === 'glass' && e.spawnT <= 0) { e.fogC = e.fogC === undefined ? (Math.random() * 4) | 0 : e.fogC + 1; const per = e.shadeT > G.time ? 2 : R.mc.theme === 'fog' ? 3 : 4;
+    if (e.var === 'glass' && e.spawnT <= 0) { e.fogC = e.fogC === undefined ? (Math.random() * 4) | 0 : e.fogC + 1; const per = e.shadeT > G.time ? 2 : R.boss ? 7 : R.mc.theme === 'fog' ? 3 : 4;
       if (e.fogC % per === per - 1) e.fogWarn = G.time;
-      else if (e.fogC % per === 0 && nFog < 8 && !P.inMirror && G.state === 'play') { const a = angTo(e.x, e.z, P.x, P.z), sp = 2.6 * (P.tr.mcSee ? 0.7 : 1); G.B.push({ x: e.x + Math.cos(a) * 0.5, z: e.z + Math.sin(a) * 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, life: 8, fog: true }); Snd.S.bolt(); } }
+      else if (e.fogC % per === 0 && nFog < (R.boss ? 4 : 8) && !P.inMirror && G.state === 'play') { const a = angTo(e.x, e.z, P.x, P.z), sp = 2.6 * (P.tr.mcSee ? 0.7 : 1); G.B.push({ x: e.x + Math.cos(a) * 0.5, z: e.z + Math.sin(a) * 0.5, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, life: 8, fog: true }); Snd.S.bolt(); } }
     if (e.var === 'shade') { const s = e.sh || (e.sh = { st: 'up', b: 3 }); s.b--;
       if (s.st === 'up') { if (s.b <= 0 && !e.mv && !e.plan && e.spawnT <= 0) { mcSink(e); if (R.mc.theme === 'tide') s.b = Math.max(2, s.b - 1); } }
       else { if (s.b === 1 && !s.drop) mcS().ripples.push({ x: s.tx, z: s.tz, t: B * 1.1, max: B * 1.1 }); if (s.b <= 0 && !s.drop) mcSurface(e); else if (s.b >= 2 && !s.drop) mcAim(e); } } }
@@ -5711,10 +5736,12 @@ function mcTick(dt) { const R = G.room, P = G.P, B = mcB();
   if (G.mcq && G.mcq.length) { const due = G.mcq.filter(q => q.at <= G.time); G.mcq = G.mcq.filter(q => q.at > G.time); for (const q of due) try { q.fn(); } catch (err) { console.error(err); } }
   if (P.rootT > 0) P.rootT -= dt;
   if (modeOf() !== 'glass') { if (P.hand) mcHandEnd(); P.mouthR = null; } if (!P.form) P.gform = false;
+  else if (modeOf() === 'glass' && !P.gform) { P.gform = true; const F = P.fx2 && FX2[P.fx2.id] ? FX2[P.fx2.id] : P.fuse; if (F && F.name) { UI.toast('mirror', '琉璃' + F.name); mcMark('glassFuse'); } }
   if (P.mcSunkT && P.mcSunkT <= G.time) { P.mcSunkT = 0; U.aoe(P.x, P.z, 1.8, 4 * dmgMul(P), [0.4, 0.2, 0.8], 'upg'); for (const e of G.E) if (!e.dead && dist(e.x, e.z, P.x, P.z) < 2) U.stun(e, 2); burst(P.x, 0.4, P.z, 22, [0.05, 0.02, 0.1]); Snd.S.mirrorOut(); Snd.S.slam(); }
   // the hand
-  if (P.hand) { const h = P.hand, mx = P.tr.mcGrip ? 6 : 4; if (h.held && h.holdT < mx * B) h.holdT += dt; else h.t -= dt;
-    if (h.held && h.held.e) { const e = h.held.e; if (e.dead) h.held = null; else { e.x = P.x; e.z = P.z; e.spawnT = 99; } }
+  if (P.hand) { const h = P.hand, mx = P.tr.mcGrip ? 6 : 4; if ((h.held || h.held2) && h.holdT < mx * B) h.holdT += dt; else h.t -= dt;
+    if (h.held2 && h.held2.e) { const e = h.held2.e, a2 = aimAngle(); if (e.dead) h.held2 = null; else { e.x = P.x - Math.sin(a2) * 1.0; e.z = P.z + Math.cos(a2) * 1.0; e.spawnT = 99; } }
+    if (h.held && h.held.e) { const e = h.held.e; if (e.dead) h.held = null; else if (e.d.boss && h.holdT > 1.6 * B) { h.held = null; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...mcPsq(), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); P.inv = Math.max(P.inv, 0.3); G.shake = Math.max(G.shake || 0, 0.7); ring(e.x, e.z, 1.6, [0.6, 0.25, 1.1]); Snd.S.slam(); } else { e.x = P.x; e.z = P.z; e.spawnT = 99; } }
     if (h.t <= 0) mcHandEnd(); }
   // entry mirrors on the old map
   if (!R.mc && R.mcEntryAt && !R.mcEntry && G.time >= R.mcEntryAt && R.bx0 !== undefined && G.state === 'play') { const ps = mcPsq(), c = [];
@@ -5725,9 +5752,10 @@ function mcTick(dt) { const R = G.room, P = G.P, B = mcB();
       Snd.S.mirrorOut(); Snd.S.bell(); UI.toast('mirror', '鏡城'); } else R.mcEntryAt = G.time + 2; }
   if (R.mcEntry && G.state === 'play' && mcGround(P)) { const [i, j] = mcPsq(); if (R.mcEntry.has(MCK(i, j))) { mcStart(); return; } }
   if (!R.mc) return;
-  const S = mcS(), mc = G.mc; mcTearTick();
+  const S = mcS(), mc = G.mc; mcTearTick(); mkFrame(dt); nkFrame(dt);
+  for (const b of G.B) if (!b.dead && b.fog) { b.trT = (b.trT || 0) - dt; if (b.trT <= 0) { b.trT = 0.035; (b.tr = b.tr || []).unshift([b.x, b.z]); if (b.tr.length > 7) b.tr.pop(); } }
   // floor mirrors: you fall, pushed pieces fall, fog falls
-  if (G.state === 'play' && !R.mc.bottom && mcGround(P) && !(P.mcGrace > G.time) && P.lungeT <= 0) { const [i, j] = mcPsq(); if (mcFM(R, i, j)) { mcFall(); return; } }
+  if (G.state === 'play' && !R.mc.bottom && mcGround(P) && !(P.mcGrace > G.time) && P.lungeT <= 0 && !P.dash) { /* (a dash skims over a mirror) */ const [i, j] = mcPsq(); if (mcFM(R, i, j)) { mcFall(); return; } }
   if (!R.mc.bottom) { for (const e of G.E) { if (e.dead || e.ally || e.d.boss || e.held || e.sunk || e.mv || e.spawnT > 0 || !e.d.chess) continue; const [i, j] = sqOf(R, e.x, e.z); if (!mcFM(R, i, j)) continue;
       (mc.wait[R.mc.depth + 1] = mc.wait[R.mc.depth + 1] || []).push({ type: e.type, inv: !!e.inv, var: e.var, i, j }); e.dead = true; burst(e.x, 0.5, e.z, 16, [0.7, 0.75, 1.0]); ring(e.x, e.z, 0.9, [0.8, 0.85, 1.2]); Snd.S.mirrorIn(); }
     for (const b of G.B) { if (b.dead || !b.fog) continue; const [i, j] = sqOf(R, b.x, b.z); if (!onBoard(R, i, j) || !mcFM(R, i, j)) continue; b.dead = true; (mc.waitFog[R.mc.depth + 1] = mc.waitFog[R.mc.depth + 1] || []).push({ x: b.x, z: b.z, vx: b.vx, vz: b.vz, life: Math.max(3, b.life), fog: true }); burst(b.x, 0.4, b.z, 10, [0.3, 0.15, 0.5]); } }
@@ -5759,7 +5787,7 @@ function mcTick(dt) { const R = G.room, P = G.P, B = mcB();
     let tgt = null; if (J.mine) { if (J.n <= 0) { S.jumpers.splice(S.jumpers.indexOf(J), 1); continue; } const e = G.E.filter(o => !o.dead && !o.ally && o.spawnT <= 0 && !J.hit.includes(o)).sort((p, q) => dist(p.x, p.z, J.x, J.z) - dist(q.x, q.z, J.x, J.z))[0]; if (!e) { S.jumpers.splice(S.jumpers.indexOf(J), 1); continue; } J.hit.push(e); tgt = [e.x, e.z]; J.n--; }
     else { if (J.step >= J.path.length) { S.jumpers.splice(S.jumpers.indexOf(J), 1); continue; } tgt = sqC(R, J.path[J.step][0], J.path[J.step][1]); J.step++; }
     J.fx = J.x; J.fz = J.z; J.x = tgt[0]; J.z = tgt[1]; J.t0 = G.time; J.next = G.time + 0.5 * B; Snd.S.land(); ring(J.x, J.z, 0.9, J.mine ? [0.9, 0.9, 1.3] : [0.5, 0.2, 0.9]);
-    if (J.mine) U.aoe(J.x, J.z, 1.2, 4 * dmgMul(P), [0.8, 0.85, 1.3], 'upg'); else if (mcGround(P) && dist(P.x, P.z, J.x, J.z) < 0.85) mcVeil(2 * J.dbl, J.chain); }
+    if (J.mine) U.aoe(J.x, J.z, 1.2, 4 * dmgMul(P), [0.8, 0.85, 1.3], 'rattle'); else if (mcGround(P) && dist(P.x, P.z, J.x, J.z) < 0.85) mcVeil(2 * J.dbl, J.chain); }
   // prisms split what passes through
   for (const pr of S.prisms.slice()) { if (pr.until < G.time) { S.prisms.splice(S.prisms.indexOf(pr), 1); burst(pr.x, 0.8, pr.z, 10, [0.8, 0.85, 1.2]); continue; }
     if (!pr.mine) for (const b of G.B.slice()) { if (b.dead || b.prismed || dist(b.x, b.z, pr.x, pr.z) > 0.5) continue; b.prismed = true; b.fog = true; const sp = Math.hypot(b.vx, b.vz), a = Math.atan2(b.vz, b.vx); for (const s of [-0.4, 0.4]) G.B.push({ x: b.x, z: b.z, vx: Math.cos(a + s) * sp, vz: Math.sin(a + s) * sp, life: b.life, fog: true, prismed: true }); Snd.S.bell(); }
@@ -5768,22 +5796,24 @@ function mcTick(dt) { const R = G.room, P = G.P, B = mcB();
   // towers fall
   for (const T of S.towers.slice()) { if (G.time < T.at) continue; S.towers.splice(S.towers.indexOf(T), 1); const a = Math.atan2(T.d[1], T.d[0]);
     for (const [i, j] of T.sqs) { const [x, z] = sqC(R, i, j); burst(x, 0.3, z, 8, T.mine ? [0.8, 0.85, 1.2] : [0.3, 0.15, 0.5]);
-      for (const o of G.E.slice()) { if (o.dead || o.ally || o.held || o.d.boss || (o.spawnT > 0 && !o.sunk) || !mcOnSq(o.x, o.z, i, j)) continue; if (o.sunk) mcSurface(o); if (o.var === 'glass') mcShatter(o, a, 'upg', T.chain); else { hurtEnemy(o, (T.mine ? 6 * dmgMul(P) : 4), a, 'upg'); if (!o.dead) U.stun(o, 2); } }
+      for (const o of G.E.slice()) { if (o.dead || o.ally || o.held || o.d.boss || (o.spawnT > 0 && !o.sunk) || !mcOnSq(o.x, o.z, i, j)) continue; if (o.sunk) mcSurface(o); if (o.var === 'glass') mcShatter(o, a, 'upg', T.chain); else { hurtEnemy(o, (T.mine ? 6 * dmgMul(P) : 4), a, 'rattle'); if (!o.dead) U.stun(o, 2); } }
       if (!T.mine && mcGround(P) && mcOnSq(P.x, P.z, i, j)) mcVeil(2 * T.dbl, T.chain);
       if (!R.mc.bottom) { const k = MCK(i, j); if (!R.mc.temp[k]) R.mc.temp[k] = { until: G.time + 4 * B, was: R.sqBlock[j * R.cols + i] }; else R.mc.temp[k].until = G.time + 4 * B; R.sqBlock[j * R.cols + i] = 6; } }
     G.shake = Math.max(G.shake || 0, 0.7); Snd.S.slam(); Snd.S.crunch(); S.rays.push({ x: sqC(R, T.i, T.j)[0], z: sqC(R, T.i, T.j)[1], a, len: Math.max(1, T.sqs.length + 0.5) * SQ, t: 0.5, max: 0.5, tower: true, mine: T.mine }); }
   for (const r of S.rays) r.t -= dt; S.rays = S.rays.filter(r => r.t > 0); for (const r of S.ripples) r.t -= dt; S.ripples = S.ripples.filter(r => r.t > 0);
   // thrown things
-  for (const T of S.thrown.slice()) { T.x += T.vx * dt; T.z += T.vz * dt; T.life -= dt; if (T.e) { T.e.x = T.x; T.e.z = T.z; T.e.spawnT = 99; }
+  for (const T of S.thrown.slice()) { if (T.fog && P.tr.mcAntiFog) { const e = U.near(T.x, T.z, 9); if (e) { const sp = Math.hypot(T.vx, T.vz), a0 = Math.atan2(T.vz, T.vx), a1 = angTo(T.x, T.z, e.x, e.z), na = a0 + clamp(wrapA(a1 - a0), -8 * dt, 8 * dt); T.vx = Math.cos(na) * sp; T.vz = Math.sin(na) * sp; } if (!T.af) { T.af = true; T.life *= 2; } }
+    T.x += T.vx * dt; T.z += T.vz * dt; T.life -= dt; if (T.e) { T.e.x = T.x; T.e.z = T.z; T.e.spawnT = 99; }
     let hitE = null; for (const o of G.E) { if (o.dead || o.ally || o === T.e || o.spawnT > 0 || T.hit.includes(o) || dist(o.x, o.z, T.x, T.z) > o.r + 0.35) continue; hitE = o; break; }
     const wall = gridAt(R, T.x, T.z) === 255 && !propAt(R, T.x, T.z) || (R.bx0 !== undefined && (T.x < R.bx0 || T.x > R.bx1 || T.z < R.bz0 || T.z > R.bz1));
-    if (hitE && (T.e || T.fog) && P.tr.mcHurl && !wall && T.life > 0) { T.hit.push(hitE); hurtEnemy(hitE, 10 * dmgMul(P), T.a, 'upg'); continue; }
+    if (hitE && (T.e || T.fog) && P.tr.mcHurl && !wall && T.life > 0) { T.hit.push(hitE); hurtEnemy(hitE, 10 * dmgMul(P), T.a, 'hand'); continue; }
     if (!hitE && !wall && T.life > 0) continue;
     S.thrown.splice(S.thrown.indexOf(T), 1); const x = clamp(T.x, R.bx0 + 0.2, R.bx1 - 0.2), z = clamp(T.z, R.bz0 + 0.2, R.bz1 - 0.2);
     if (T.mine) { const [i, j] = sqOf(R, x, z), [cx, cz] = sqC(R, clamp(i, 0, R.cols - 1), clamp(j, 0, R.rows - 1)); burst(cx, 0.8, cz, 16, [0.75, 0.8, 1.1]); Snd.S.shatter(); mcMine(T.mine, cx, cz, T.a); continue; }
-    if (hitE) hurtEnemy(hitE, (T.fog ? 4 : 5) * dmgMul(P) * (P.tr.mcHurl ? 2 : 1), T.a, 'upg');
+    if (T.sword) { if (hitE && hitE.type === 'bNight') { hitE.nkBig = true; G.shake = Math.max(G.shake || 0, 1.1); G.hitstop = Math.max(G.hitstop || 0, 0.14); Snd.S.slam(); mcMark('nk_swordHit'); hurtEnemy(hitE, 1, T.a, 'hand'); } else if (hitE) hurtEnemy(hitE, 12 * dmgMul(P), T.a, 'hand'); ring(x, z, 1.3, [0.9, 0.9, 1.3]); nkSwordBack(T.from); continue; }
+    if (hitE) hurtEnemy(hitE, (T.fog ? (P.tr.mcAntiFog ? 8 : 4) : 5) * dmgMul(P) * (P.tr.mcHurl ? 2 : 1), T.a, 'hand');
     if (T.e) { const e = T.e; e.held = false; e.spawnT = 0; const [i, j] = mcNear(R, ...sqOf(R, x, z), (a, b) => mcFree(R, a, b, e)); [e.x, e.z] = sqC(R, i, j);
-      if (e.var === 'glass') mcShatter(e, T.a, 'upg'); else { hurtEnemy(e, 5 * dmgMul(P), T.a, 'upg'); if (!e.dead) { U.stun(e, 2); if (e.var === 'shade') e.sh = { st: 'up', b: 3 }; } } }
+      if (e.var === 'glass') mcShatter(e, T.a, 'upg'); else { if (e.d.boss) { e.mkBig = true; G.shake = Math.max(G.shake || 0, 1); G.hitstop = Math.max(G.hitstop || 0, 0.1); } hurtEnemy(e, 5 * dmgMul(P), T.a, 'hand'); if (!e.dead) { if (!e.d.boss) U.stun(e, 2); if (e.var === 'shade') e.sh = { st: 'up', b: 3 }; } } }
     else burst(x, 0.6, z, 14, [0.3, 0.15, 0.5]);
     G.shake = Math.max(G.shake || 0, 0.35); Snd.S.hit(); }
   // 鏡底: three waves for now
@@ -5795,7 +5825,7 @@ function mcWave(n) { const R = G.room, P = G.P, ps = mcPsq(), L = [['pawn', 'kni
   G.flash = Math.max(G.flash, 0.3); Snd.S.bell(); Snd.S.mirrorOut(); }
 // the room can't count as cleared while something is still on its way
 function mcClearOk() { if (G.mcq && G.mcq.length) return false; const R = G.room; if (!R.mc) return true; if (G.mc && G.mc.drops.length) return false; const S = R.mcs; if (S && (S.piles.length || S.thrown.length)) return false; if (R.mc.final && (G.mc.waveN || 0) < 3) return false; return true; }
-function mcCleared(R) { if (!R.mc) return false; if (R.final) { META.addSand(40); if (UNLOCK.give('glass')) setTimeout(() => UI.toast('mirror', '玻璃'), 1600); mcMark('bottom'); return false; }
+function mcCleared(R) { if (!R.mc) return false; if (R.boss) { if (R.final && G.mc && G.mc.real) { META.addSand(40); if (UNLOCK.give('glass')) setTimeout(() => UI.toast('mirror', '玻璃'), 1600); mcMark('bottom'); } return false; } /* boss rooms: the normal boss ending (a challenge ends there) */
   if (G.mc && G.mc.rewarded) { R.cleared = true; R.door.open = true; if (R.door2) R.door2.open = true; Snd.S.door(); META.addSand(3); return true; }
   return false; }
 // ---------------------------------------------------------------- the 16 upgrades you only find down here
@@ -5816,9 +5846,16 @@ const MC_UPGS = [
   { id: 'mcSee', name: '看穿', desc: '看得清沉下的幻影；霧彈變慢', ic: 'eye', rar: 1 },
   { id: 'mcArmor', name: '碎甲', desc: '玻璃棋碎掉時，旁邊的棋子三秒內受到的傷害加倍', ic: 'shard', rar: 2 },
   { id: 'mcChain', name: '連碎', desc: '玻璃棋碎掉時，旁邊的玻璃棋也跟著碎', ic: 'shard', rar: 3 },
+  { id: 'mcRecycle', name: '碎鏡回收', desc: '你碎成影手時，周圍的玻璃棋一起碎', ic: 'shard', rar: 1 },
+  { id: 'mcTwin', name: '雙手', desc: '影手變成兩隻：一次抓兩個、一起丟、一起砸', ic: 'swallow', rar: 3 },
+  { id: 'mcMirrorSelf', name: '鏡中倒影', desc: '往下掉時，你的倒影留在上層：只有一半棋子追下來，而且晚三拍', ic: 'mirror', rar: 2 },
+  { id: 'mcAbyss', name: '深淵之眼', desc: '每往下一層，這一關的傷害 +12%', ic: 'eye', rar: 2 },
+  { id: 'mcVeilBurst', name: '影障轉換', desc: '影障滿時不扣血，改成炸出一圈幻影衝擊；代價是定住更久', ic: 'quake', rar: 2 },
+  { id: 'mcAntiFog', name: '反霧', desc: '影手丟出的霧彈會追蹤棋子，傷害加倍', ic: 'drop', rar: 1 },
+  { id: 'keySink', name: '墜落者', desc: '追你的棋子都在半空碎掉；墜擊範圍變大，每有一個鏡城增益，傷害 +3', ic: 'crown', rar: 3, key: true },
 ];
 for (const u of MC_UPGS) { u.max = 1; u.mcOnly = true; u.stage = 2; u.diag = { p: [[2, 2, u.ic, u.rar === 3 ? 'gold' : 'silver']], hint: true }; UPGS.push(u); }
-function mcDmgK(src) { const P = G.P; return P.tr.mcVeilWalk && (P.veil || 0) >= 3 && src === 'lunge' ? 1.5 : 1; }
+function mcDmgK(src) { const P = G.P, R = G.room; return (P.tr.mcVeilWalk && (P.veil || 0) >= 3 && src === 'lunge' ? 1.5 : 1) * (P.tr.mcAbyss && R && R.mc ? 1 + 0.12 * R.mc.depth : 1); }
 function mcSpeedK() { const P = G.P; return P.tr.mcVeilWalk && (P.veil || 0) >= 3 ? 1.25 : P.hand ? 1.2 : P.mcSunkT > G.time ? 1.4 : 1; }
 // 撕影: a lunge drags a sunk phantom out of the shadow
 function mcTearTick() { const P = G.P; if (!P.tr.mcTear || !(P.lungeT > 0)) return; for (const e of G.E) if (!e.dead && e.sunk && dist(e.x, e.z, P.x, P.z) < 0.9) { e.sh.tx = e.x; e.sh.tz = e.z; mcSurface(e); e.plan = null; e.ph = 0; U.stun(e, 2); hurtEnemy(e, 3 * dmgMul(P), P.face, 'upg'); } }
@@ -5834,6 +5871,7 @@ function mcDraw(world, decals, present, t, pieceItems) {
     for (let n = 0; n < 2; n++) { const ph = ((t * 0.45 + n * 0.5 + (i * 7 + j * 3) * 0.13) % 1), r = 0.15 + ph * 0.55; decals.push({ geo: 'ringT', m: M4.trs(x, 0.03, z, 0, r, 1, r), col: [0.7 * (1 - ph), 0.78 * (1 - ph), 1.15 * (1 - ph)], kind: D, alpha: 1 }); }
     if (temp) for (let n = 0; n < 3; n++) decals.push({ geo: 'plane', m: M4.trs(x, 0.031, z, n * 1.1 + i, SQ * 0.9, 1, 0.03), col: [0.9, 0.9, 1.1], kind: D, alpha: 1 }); };
   if (R.mcEntry) for (const k of R.mcEntry) mirrorSq(k, false, true);
+  mkDraw(world, decals, present, t, pieceItems, mirrorSq); nkDraw(world, decals, present, t, pieceItems);
   if (R.mc) { const M = R.mc; for (const k of M.fm) { if (M.closed) { const [i, j] = k.split(',').map(Number), [x, z] = sqC(R, i, j); decals.push({ geo: 'ringT', m: M4.trs(x, 0.03, z, 0, 0.55, 1, 0.55), col: [0.18, 0.2, 0.32], kind: D, alpha: 1 }); } else mirrorSq(k); } for (const k in M.temp) if (M.temp[k].until > G.time) mirrorSq(k, true);
     for (const g of M.groups) if (g.warn) for (const [i, j] of g.warn) { const [x, z] = sqC(R, i, j), w = 0.5 + 0.5 * Math.sin(t * 14); decals.push({ geo: 'plane', m: M4.trs(x, 0.036, z, 0, SQ * 0.9, 1, SQ * 0.9), col: [0.25 * w, 0.28 * w, 0.45 * w], kind: D, alpha: 1 }); }
     if (M.sinkWarn) for (let i = 0; i < R.cols; i++) { const [x, z] = sqC(R, i, M.sinkWarn.row), w = 0.5 + 0.5 * Math.sin(t * 18); decals.push({ geo: 'plane', m: M4.trs(x, 0.036, z, 0, SQ * 0.92, 1, SQ * 0.92), col: [0.35 * w, 0.18 * w, 0.55 * w], kind: D, alpha: 1 }); } }
@@ -5844,7 +5882,11 @@ function mcDraw(world, decals, present, t, pieceItems) {
       if (e.fogWarn && G.time - e.fogWarn < B) { const k = (G.time - e.fogWarn) / B; decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.04, e.z, 0, 1.0 - k * 0.5, 1, 1.0 - k * 0.5), col: [0.5 * k, 0.2 * k, 0.9 * k], kind: D, alpha: 1 }); } }
     if (e.shadeT > G.time) { const k = 0.6 + 0.4 * Math.sin(t * 8 + e.seed); decals.push({ geo: 'ringT', m: M4.trs(e.x, 0.037, e.z, 0, 0.9, 1, 0.9), col: [0.45 * k, 0.12 * k, 0.8 * k], kind: D, alpha: 1 }); } }
   // fog bolts
-  for (const b of G.B) if (!b.dead && b.fog) { const w = Math.sin(t * 9 + b.x) * 0.04; present.push({ geo: 'sphere', m: M4.trs(b.x, 0.85, b.z, t * 3, 0.26 + w, 0.22, 0.26 - w), col: [0.05, 0.02, 0.09], kind: 9 }); present.push({ geo: 'sphere', m: M4.trs(b.x, 0.85, b.z, 0, 0.1, 0.1, 0.1), col: [0.7, 0.3, 1.2], kind: 5 }); decals.push({ geo: 'disc', m: M4.trs(b.x, 0.03, b.z, 0, 0.32, 1, 0.32), col: [0.1, 0.03, 0.16], kind: D, alpha: 1 }); }
+  for (const b of G.B) if (!b.dead && b.fog) { const pu = 0.85 + 0.15 * Math.sin(t * 14 + b.x * 3), hy = 0.85; // a comet of ink: a dark head round a violet core, three wisps circling it, a fading tail
+    present.push({ geo: 'sphere', m: M4.trs(b.x, hy, b.z, t * 4, 0.25, 0.22, 0.25), col: [0.04, 0.015, 0.07], kind: 9 }); present.push({ geo: 'sphere', m: M4.trs(b.x, hy, b.z, 0, 0.14 * pu, 0.14 * pu, 0.14 * pu), col: [1.2, 0.5, 2.0], kind: 5 });
+    for (let k = 0; k < 3; k++) { const an = t * 9 + k * 2.1 + b.x, rr = 0.32; present.push({ geo: 'sphere', m: M4.trs(b.x + Math.cos(an) * rr, hy + Math.sin(an * 1.3) * 0.12, b.z + Math.sin(an) * rr, 0, 0.05, 0.05, 0.05), col: [0.9, 0.4, 1.5], kind: 5 }); }
+    const tr = b.tr || []; tr.forEach((q, k) => { const f = 1 - (k + 1) / (tr.length + 1); present.push({ geo: 'sphere', m: M4.trs(q[0], hy - (1 - f) * 0.15, q[1], 0, 0.2 * f, 0.17 * f, 0.2 * f), col: [0.3 * f, 0.09 * f, 0.55 * f], kind: 5 }); });
+    decals.push({ geo: 'ringT', m: M4.trs(b.x, 0.035, b.z, t * 2, 0.42, 1, 0.42), col: [0.45, 0.15, 0.8], kind: D, alpha: 1 }); decals.push({ geo: 'disc', m: M4.trs(b.x, 0.03, b.z, 0, 0.3, 1, 0.3), col: [0.1, 0.03, 0.16], kind: D, alpha: 1 }); }
   if (S) {
     for (const p of S.piles) { const [x, z] = sqC(R, p.i, p.j), k = clamp01(1 - (p.at - G.time) / (2 * B)); decals.push({ geo: 'disc', m: M4.trs(x, 0.033, z, 0, 0.45, 1, 0.45), col: [0.4, 0.42, 0.55], kind: D, alpha: 1 }); for (let n = 0; n < 5; n++) present.push({ geo: 'box', m: M4.trs(x + Math.cos(n * 1.3) * 0.25 * (1 - k), 0.06 + k * n * 0.12, z + Math.sin(n * 1.3) * 0.25 * (1 - k), n + t * k * 4, 0.14, 0.04, 0.1), col: [0.8, 0.85, 1.1], kind: 5 }); }
     for (const J of S.jumpers) { const k = clamp01((G.time - J.t0) / (0.3 * B)), x = lerp(J.fx, J.x, k), z = lerp(J.fz, J.z, k), y = Math.sin(k * Math.PI) * 1.3; pieceItems('knight', x, y, z, angTo(J.fx, J.fz, J.x, J.z), 0.9, J.mine ? [0.75, 0.8, 1.05] : [0.05, 0.02, 0.09], 6, present, null, false);
@@ -5854,27 +5896,50 @@ function mcDraw(world, decals, present, t, pieceItems) {
       const [x, z] = sqC(R, T.i, T.j); present.push({ geo: 'box', m: M4.mul(M4.trs(x, 0, z, -Math.atan2(T.d[1], T.d[0]), 1, 1, 1), M4.mul(RZm(-k * 1.2), M4.trs(0, 1.1, 0, 0, 0.5, 2.2, 0.5))), col: T.mine ? [0.75, 0.8, 1.1] : [0.55, 0.6, 0.8], kind: 9 }); }
     for (const r of S.rays) { const k = r.t / r.max, cx = r.x + Math.cos(r.a) * r.len / 2, cz = r.z + Math.sin(r.a) * r.len / 2; decals.push({ geo: 'plane', m: M4.trs(cx, 0.045, cz, -r.a, r.len, 1, (r.tower ? 1.3 : 0.35) * (0.4 + k)), col: r.mine ? [1.1 * k, 1.15 * k, 1.5 * k] : [0.5 * k, 0.15 * k, 0.9 * k], kind: D, alpha: 1 }); if (!r.tower) present.push({ geo: 'box', m: M4.trs(cx, 0.9, cz, -r.a, r.len, 0.05 * k + 0.01, 0.05 * k + 0.01), col: r.mine ? [1.6, 1.6, 2] : [0.8, 0.3, 1.5], kind: 5 }); }
     for (const r of S.ripples) { const k = 1 - r.t / r.max; for (const q of [0, 0.35]) { const rr = 0.2 + ((k + q) % 1) * 0.9; decals.push({ geo: 'ringT', m: M4.trs(r.x, 0.04, r.z, 0, rr, 1, rr), col: [0.55, 0.2, 0.95], kind: D, alpha: 1 }); } }
-    for (const T of S.thrown) { if (T.e) pieceItems(T.e.type, T.x, 0.7, T.z, T.a + t * 10, 0.7, T.e.var === 'glass' ? [0.62, 0.68, 0.86] : T.e.d.col, 9, present, null, T.e.inv); else if (T.mine) pieceItems(T.mine.type, T.x, 0.7, T.z, t * 12, 0.45, [0.7, 0.76, 1.0], 9, present, null, false); else present.push({ geo: 'sphere', m: M4.trs(T.x, 0.8, T.z, 0, 0.24, 0.24, 0.24), col: [0.05, 0.02, 0.09], kind: 9 }); }
+    for (const T of S.thrown) { if (T.sword) { mkSword(present, T.x - Math.cos(T.a) * 1.6, 0.9, T.z - Math.sin(T.a) * 1.6, [Math.cos(T.a), 0, Math.sin(T.a)], NK_FAST, 1.4); continue; } if (T.e) pieceItems(T.e.d.boss ? 'king' : T.e.type, T.x, 0.7, T.z, T.a + t * 10, T.e.d.boss ? 1.4 : 0.7, T.e.var === 'glass' ? [0.62, 0.68, 0.86] : T.e.d.col, 9, present, null, T.e.inv); else if (T.mine) pieceItems(T.mine.type, T.x, 0.7, T.z, t * 12, 0.45, [0.7, 0.76, 1.0], 9, present, null, false); else present.push({ geo: 'sphere', m: M4.trs(T.x, 0.8, T.z, 0, 0.24, 0.24, 0.24), col: [0.05, 0.02, 0.09], kind: 9 }); }
   }
   // followers on their way down: a shadow that darkens, then the piece
   if (G.mc && R.mc) for (const d of G.mc.drops) { const [x, z] = sqC(R, d.i, d.j), left = d.at - G.time, k = clamp01(1 - left / (3 * B)); decals.push({ geo: 'disc', m: M4.trs(x, 0.035, z, 0, 0.25 + 0.4 * k, 1, 0.25 + 0.4 * k), col: [0.05 * k, 0.04 * k, 0.1 * k], kind: D, alpha: 1 }); decals.push({ geo: 'ringT', m: M4.trs(x, 0.037, z, 0, 0.7, 1, 0.7), col: [0.5 * k, 0.5 * k, 0.8 * k], kind: D, alpha: 1 });
     if (left < 0.5) pieceItems(d.type, x, left * 14, z, 0, 0.9, d.var === 'shade' ? [0.04, 0.02, 0.07] : [0.62, 0.68, 0.86], 9, present, null, d.inv); }
   // the hand, the mouth, the veil
-  if (P.hand && G.state !== 'dead') { const a = aimAngle(), h = P.hand, cl = h.held ? 1 : 0.35 + 0.15 * Math.sin(t * 6), col = [0.06, 0.03, 0.1], y = (h.held ? 1.75 : 1.0) + Math.sin(t * 3) * 0.08, ca = Math.cos(a), sa = Math.sin(a), HS = 1.5;
-    present.push({ geo: 'sphere', m: M4.trs(P.x, y, P.z, -a, 0.32 * HS, 0.14 * HS, 0.36 * HS), col, kind: 9 }); present.push({ geo: 'sphere', m: M4.trs(P.x, y + 0.02, P.z, -a, 0.36 * HS, 0.06, 0.4 * HS), col: [0.22, 0.07, 0.38], kind: 5 });
-    for (let f = 0; f < 4; f++) { const off = (f - 1.5) * 0.15 * HS, fx = P.x + ca * 0.38 * HS - sa * off, fz = P.z + sa * 0.38 * HS + ca * off; present.push({ geo: 'box', m: M4.trs(fx + ca * 0.12 * HS * (1 - cl), y - 0.05 - cl * 0.2, fz + sa * 0.12 * HS * (1 - cl), -a, 0.3 * HS, 0.08 * HS, 0.09 * HS), col, kind: 9 }); }
-    present.push({ geo: 'box', m: M4.trs(P.x + ca * 0.1 * HS - sa * 0.34 * HS, y, P.z + sa * 0.1 * HS + ca * 0.34 * HS, -a - 0.7, 0.22 * HS, 0.08 * HS, 0.09 * HS), col, kind: 9 });
-    decals.push({ geo: 'disc', m: M4.trs(P.x, 0.028, P.z, 0, 0.55, 1, 0.55), col: [0.1, 0.03, 0.16], kind: D, alpha: 1 });
-    for (let k = 0; k < 3; k++) { const q = (t * 1.5 + k / 3) % 1; present.push({ geo: 'sphere', m: M4.trs(P.x - ca * q * 0.8, y - q * 0.5, P.z - sa * q * 0.8, 0, 0.1 * (1 - q), 0.1 * (1 - q), 0.1 * (1 - q)), col: [0.3, 0.1, 0.5], kind: 5 }); }
+  if (P.hand && G.state !== 'dead') { const a = aimAngle(), h = P.hand, grip = h.held ? 1 : 0, col = [0.05, 0.025, 0.08], glow = [0.8, 0.32, 1.45], ca = Math.cos(a), sa = Math.sin(a);
+    // a phantom hand lying flat over the floor, palm down, fingers toward where you aim: only the claws are solid,
+    // the rest is mist holding the shape of a hand (additive, so light passes through it); a slit eye on its back;
+    // the fingers flex while it is empty and curl down into a fist round what it holds
+    const bob = Math.sin(t * 3) * 0.06, hy = (h.held ? 1.9 : 1.1) + bob; mcHandDraw(P.x, P.z, hy, a, grip, present, decals, t);
+    if (P.tr.mcTwin) { const ox = P.x - Math.sin(a) * 1.0, oz = P.z + Math.cos(a) * 1.0, h2 = h.held2; mcHandDraw(ox, oz, (h2 ? 1.9 : 1.1) + Math.sin(t * 3 + 1.5) * 0.06, a, h2 ? 1 : 0, present, decals, t, { quiet: true });
+      if (h2 && h2.e) pieceItems(h2.e.d.boss ? 'king' : h2.e.type, ox + Math.cos(a) * 0.35, (h2.e.d.boss ? -0.7 : 0.4), oz + Math.sin(a) * 0.35, t, h2.e.d.boss ? 1.5 : 0.8, h2.e.var === 'glass' ? [0.62, 0.68, 0.86] : h2.e.var === 'shade' || h2.e.d.boss ? [0.04, 0.02, 0.07] : h2.e.d.col, 9, present, null, h2.e.inv); }
+    const y = hy;
     const f = clamp01(h.t / ((P.tr.mcGrip ? 9 : 6) * B)); decals.push({ geo: 'ringT', m: M4.trs(P.x, 0.04, P.z, 0, 0.4 + 0.5 * f, 1, 0.4 + 0.5 * f), col: [0.45, 0.2, 0.85], kind: D, alpha: 1 });
-    if (h.held && h.held.e) pieceItems(h.held.e.type, P.x + ca * 0.25, y - 1.55, P.z + sa * 0.25, t, 0.8, h.held.e.var === 'glass' ? [0.62, 0.68, 0.86] : h.held.e.var === 'shade' ? [0.04, 0.02, 0.07] : h.held.e.d.col, 9, present, null, h.held.e.inv);
-    else if (h.held) present.push({ geo: 'sphere', m: M4.trs(P.x + ca * 0.3, y - 0.25, P.z + sa * 0.3, t * 3, 0.22, 0.22, 0.22), col: [0.05, 0.02, 0.09], kind: 9 }); }
+    if (h.held && h.held.e) pieceItems(h.held.e.d.boss ? 'king' : h.held.e.type, P.x + ca * 0.35, y - (h.held.e.d.boss ? 2.6 : 1.5), P.z + sa * 0.35, t, h.held.e.d.boss ? 1.5 : 0.8, h.held.e.var === 'glass' ? [0.62, 0.68, 0.86] : h.held.e.var === 'shade' || h.held.e.d.boss ? [0.04, 0.02, 0.07] : h.held.e.d.col, 9, present, null, h.held.e.inv);
+    else if (h.held && h.held.sword) mkSword(present, P.x + ca * 0.35, y - 0.2, P.z + sa * 0.35, [ca * 0.3, -1, sa * 0.3], NK_SLOW, 0.8);
+    else if (h.held && !h.held.wrist) present.push({ geo: 'sphere', m: M4.trs(P.x + ca * 0.35, y - 0.35, P.z + sa * 0.35, t * 3, 0.22, 0.22, 0.22), col: [0.05, 0.02, 0.09], kind: 9 }); }
   if (P.mouthR && !P.hand && !P.inMirror) pieceItems(P.mouthR.type, P.x, 0.12, P.z, t, 0.32, P.mouthR.shade ? [0.04, 0.02, 0.07] : [0.75, 0.8, 1.1], 5, present, null, false);
   if ((P.veil || 0) >= 3 && !P.inMirror) { const k = (P.veil / 6) * (0.7 + 0.3 * Math.sin(t * 10)); decals.push({ geo: 'disc', m: M4.trs(P.x, 0.026, P.z, 0, 0.9, 1, 0.9), col: [0.18 * k, 0.05 * k, 0.32 * k], kind: D, alpha: 1 }); }
   if (P.rootT > 0) for (let n = 0; n < 6; n++) { const a = n / 6 * TAU + t; present.push({ geo: 'box', m: M4.trs(P.x + Math.cos(a) * 0.5, 0.2, P.z + Math.sin(a) * 0.5, -a, 0.08, 0.5, 0.08), col: [0.08, 0.03, 0.12], kind: 9 }); }
   if (G.mcAnim && G.mcAnim.ph === 'sink') { const A = G.mcAnim, k = clamp01(A.t / A.T); for (let n = 0; n < 3; n++) { const q = (k * 1.6 + n / 3) % 1, r = 0.2 + q * 1.1; decals.push({ geo: 'ringT', m: M4.trs(A.cx, 0.04, A.cz, 0, r, 1, r), col: [1.1 * (1 - q), 1.15 * (1 - q), 1.5 * (1 - q)], kind: D, alpha: 1 }); } decals.push({ geo: 'disc', m: M4.trs(A.cx, 0.035, A.cz, 0, 0.5 * (1 - k) + 0.1, 1, 0.5 * (1 - k) + 0.1), col: [0.5, 0.55, 0.8], kind: D, alpha: 1 }); }
   if (G.mcAnim && G.mcAnim.ph === 'drop') { const k = clamp01(G.mcAnim.t / G.mcAnim.T); decals.push({ geo: 'disc', m: M4.trs(P.x, 0.035, P.z, 0, 0.15 + 0.5 * k, 1, 0.15 + 0.5 * k), col: [0.02, 0.02, 0.05], kind: D, alpha: 1 }); for (let n = 0; n < 4; n++) { const y = P.mcY + 0.6 + n * 0.7; present.push({ geo: 'box', m: M4.trs(P.x + Math.cos(n * 2.1) * 0.35, y, P.z + Math.sin(n * 2.1) * 0.35, 0, 0.02, 0.5, 0.02), col: [0.6, 0.65, 1.0], kind: 5 }); } }
   if (P.mcSunkT > G.time) decals.push({ geo: 'disc', m: M4.trs(P.x, 0.03, P.z, 0, 0.6, 1, 0.5), col: [0.06, 0.02, 0.1], kind: D, alpha: 1 });
+}
+// the phantom hand, drawn wherever it is (yours, or in an execution): grip 0 = open and flexing, 1 = a fist
+function mcHandDraw(hx, hz, hy, a, grip, present, decals, t, o) { o = o || {};
+  const ca = Math.cos(a), sa = Math.sin(a), col = [0.05, 0.025, 0.08], up = [0, 1, 0], fw = [ca, 0, sa], sd = [-sa, 0, ca], S2 = 1.5 * (o.scale || 1), pc = [hx, hy, hz], D = 8;
+  const add = (u, v, k) => [u[0] + v[0] * k, u[1] + v[1] * k, u[2] + v[2] * k], nrm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }, crs = (u, v) => [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+  const boxAx = (c, ax, ay, az, col2, kind) => present.push({ geo: 'box', m: [ax[0], ax[1], ax[2], 0, ay[0], ay[1], ay[2], 0, az[0], az[1], az[2], 0, c[0], c[1], c[2], 1], col: col2, kind });
+  let pn = 0; const puff = (c, r) => { pn++; const ph = t * 2.6 + pn * 1.37, dr = 0.045 * S2, q = 0.75 + 0.25 * Math.sin(ph * 1.7), lit = pn % 6 === 0;
+    decals.push({ geo: 'sphere', m: M4.trs(c[0] + Math.sin(ph) * dr, c[1] + Math.sin(ph * 1.3 + 1) * dr * 0.5, c[2] + Math.cos(ph * 0.9) * dr, ph, r * q, r * q * 0.7, r * q), col: lit ? [0.26, 0.08, 0.46] : [0.1, 0.032, 0.19], kind: D, alpha: 1 }); };
+  const fogSeg = (p0, d, len, w) => { const n = Math.max(2, Math.round(len / (w * 0.9))); for (let k = 0; k <= n; k++) puff(add(p0, d, len * k / n), w * (0.75 + 0.2 * Math.sin(k * 2.1 + t * 3))); return add(p0, d, len); };
+  const claw = (p0, d, len) => { const z = nrm(crs(d, sd)); for (const [a0, a1, w] of [[0, 0.55, 0.06], [0.5, 1, 0.032]]) { const c = add(p0, d, len * (a0 + a1) / 2); boxAx(c, d.map(v => v * len * (a1 - a0)), sd.map(v => v * w * S2), z.map(v => v * w * S2 * 0.7), a0 ? [1.5, 1.4, 2.0] : [0.08, 0.06, 0.12], a0 ? 5 : 9); }
+    present.push({ geo: 'sphere', m: M4.trs(...add(p0, d, len), 0, 0.025, 0.025, 0.025), col: [1.8, 1.4, 2.4], kind: 5 }); };
+  for (const [a2, b2] of [[-1, -1], [-1, 1], [0, 0], [1, -1], [1, 1], [-1, 0], [1, 0]]) puff(add(add(pc, fw, a2 * 0.16 * S2), sd, b2 * 0.18 * S2), 0.11 * S2);
+  for (let k = 0; k < 8; k++) { const q = ((t * 0.7 + k / 8) % 1), sw = Math.sin(t * 2.4 + k * 1.9) * 0.15 * q; puff(add(add(add(pc, fw, -(0.3 + q * 0.9) * S2), sd, sw), up, -q * 0.5), (0.13 - q * 0.08) * S2); } /* the wrist frays into a trail of mist */
+  { const op = (Math.sin(t * 0.9) > 0.93 ? 0.12 : 1), ec = add(pc, up, 0.08 * S2); decals.push({ geo: 'sphere', m: M4.mul([fw[0], fw[1], fw[2], 0, up[0], up[1], up[2], 0, sd[0], sd[1], sd[2], 0, ec[0], ec[1], ec[2], 1], M4.trs(0, 0, 0, 0, 0.07 * S2 * op + 0.005, 0.03, 0.17 * S2)), col: [1.0, 0.4, 1.4], kind: D, alpha: 1 }); boxAx(add(ec, up, 0.02), fw.map(v => v * 0.08 * S2 * op + 0.005), up.map(v => v * 0.02), sd.map(v => v * 0.025 * S2), [0.02, 0, 0.03], 1); }
+  for (let f = 0; f < 4; f++) { const off = (f - 1.5) * 0.13 * S2, fan = (f - 1.5) * (grip ? 0.05 : 0.16 + 0.04 * Math.sin(t * 2)), flex = grip ? 1 : 0.12 + 0.18 * (0.5 + 0.5 * Math.sin(t * 5 + f * 0.9)), len = [0.24, 0.3, 0.29, 0.22][f] * S2;
+    let p = add(add(pc, sd, off), fw, 0.24 * S2), th = 0;
+    for (let k = 0; k < 3; k++) { th += flex * [0.4, 0.7, 0.8][k]; const d = nrm(add(add(fw.map(v => v * Math.cos(th)), up, -Math.sin(th)), sd, fan)); p = fogSeg(p, d, len * [1, 0.85, 0.7][k], 0.07 * S2 * [1, 0.85, 0.72][k]); }
+    claw(p, nrm(add(add(fw.map(v => v * Math.cos(th + 0.45)), up, -Math.sin(th + 0.45)), sd, fan)), 0.24 * S2); }
+  { let p = add(add(pc, sd, -0.27 * S2), fw, 0.02 * S2); const tb = grip ? 0.9 : 0.2 + 0.12 * Math.sin(t * 4); for (const [k, len, w] of [[0, 0.2, 0.07], [1, 0.17, 0.06]]) { const d = nrm(add(add(fw.map(v => v * 0.55), sd, -0.85 + tb * 0.8), up, -tb * (k + 1) * 0.45)); p = fogSeg(p, d, len * S2, w * S2); } claw(p, nrm(add(add(fw, sd, 0.4), up, -0.5)), 0.2 * S2); }
+  if (!o.quiet && Math.random() < 0.6) G.fx.push({ k: 'chip', x: hx + rnd(-0.5, 0.5), y: hy + rnd(-0.2, 0.2), z: hz + rnd(-0.5, 0.5), vx: rnd(-0.3, 0.3), vy: rnd(0.2, 0.8), vz: rnd(-0.3, 0.3), life: 0.6, s: 0.04, col: [0.45, 0.18, 0.85], r0: 0 });
 }
 const RXm = a => { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]; };
 const RZm = a => { const c = Math.cos(a), s = Math.sin(a); return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; };
@@ -5903,7 +5968,465 @@ function mcGuide() { try { MUI.infoCard('mc:city', IC.mirror, '第一次進入',
   `${IC.drop} 霧彈和黑影不扣血，累積畫面下方的影障；滿了扣 2 血並定住`], '#b9b2ff'); } catch (e) { } }
 // ---------------------------------------------------------------- test hooks
 window.__MC = { start() { if (G.state !== 'play') return false; mcStart(); return true; }, fall() { mcFall(); }, state() { const R = G.room; return { mc: G.mc && { k: G.mc.k, depth: G.mc.depth, rewarded: G.mc.rewarded, drops: G.mc.drops.length, wait: G.mc.wait }, room: R.mc ? { depth: R.mc.depth, layers: R.mc.layers, bottom: R.mc.bottom, final: R.mc.final, fm: [...R.mc.fm] } : null, veil: G.P.veil || 0, hand: !!G.P.hand, E: G.E.filter(e => !e.dead).map(e => ({ type: e.type, var: e.var || null, sunk: !!e.sunk })) }; },
-  shatter: mcShatter, rattle: mcRattle, mine: mcMine, veil: mcVeil, breakGlass: mcBreak, handClick: mcHandClick, handSlam: mcHandSlam, mk: mcMk, sink: mcSink, surface: mcSurface, swallowE: mcSwallowE, rmb: mcRmb, wave: mcWave };
+  fusAtk: a => fx2Attack(a), shatter: mcShatter, rattle: mcRattle, mine: mcMine, veil: mcVeil, breakGlass: mcBreak, handClick: mcHandClick, handSlam: mcHandSlam, mk: mcMk, sink: mcSink, surface: mcSurface, swallowE: mcSwallowE, rmb: mcRmb, wave: mcWave };
+// ============================================================================
+// 鏡城 fusions: swallowing a phantom piece fuses with your shape (幻影合體); in 玻璃 every shape you take is glass,
+// and a glass fusion that breaks lets out the 遺言 of both its halves (琉璃合體)
+// ============================================================================
+Object.assign(FX2, {
+  shadeKnight: { name: '影騎', key: 'ghost+knight', base: 'knight', top: null, ch: 3, desc: 'L 跳時沉進影子（無敵），落地從影中撲出，周圍棋子暈住' },
+  shadeBishop: { name: '暗刃', key: 'ghost+bishop', base: 'bishop', top: null, beats: 16, desc: '斜衝留下一道影痕，一拍後影痕再斬一次' },
+  shadeRook: { name: '沉城', key: 'ghost+rook', base: 'rook', top: null, ch: 3, desc: '從地底直衝，穿過所有棋子，衝到底一起炸出地面' },
+  shadeQueen: { name: '影后', key: 'ghost+queen', base: 'queen', top: null, beats: 12, desc: '每次衝刺，你的影子朝反方向再衝一次' },
+  shadeKing: { name: '幽王', key: 'ghost+king', base: 'king', top: null, ch: 4, desc: '國王震放出八道影觸，沿線把棋子拖倒' },
+});
+const SHADE_FX = { knight: 'shadeKnight', bishop: 'shadeBishop', rook: 'shadeRook', queen: 'shadeQueen', king: 'shadeKing' };
+for (const id of Object.values(SHADE_FX)) { const F = FX2[id]; F.id = id; F.x2 = true; F.parts = F.key.split('+'); F.mode = 'x2'; FUSE_DESC[id] = F.desc; FUSE_LIST.push(F); }
+fx2Trigger = (orig => function (type, inv, v) { if (v === 'shade' && !(G.room && G.room.chess) && SHADE_FX[type]) { fx2Start(SHADE_FX[type]); mcMark('f_' + SHADE_FX[type]); return true; } return orig(type, inv, v); })(fx2Trigger);
+// strike everything near a line (present side)
+function mcLineHit(x0, z0, x1, z1, w, dmg, col, stun) { const L = dist(x0, z0, x1, z1), n = Math.max(1, Math.ceil(L / 0.6)), hit = new Set();
+  for (let k = 0; k <= n; k++) { const x = lerp(x0, x1, k / n), z = lerp(z0, z1, k / n); burst(x, 0.4, z, 3, col); for (const e of G.E) if (!e.dead && !e.ally && e.spawnT <= 0 && !hit.has(e) && dist(e.x, e.z, x, z) < w + e.r * 0.5) hit.add(e); }
+  for (const e of hit) { hurtEnemy(e, dmg, angTo(x0, z0, x1, z1), 'upg'); if (!e.dead && stun) U.stun(e, stun); } return hit.size; }
+fx2Attack = (orig => function (a) { const P = G.P, X = P.fx2; if (!X || !FX2[X.id] || !X.id.startsWith('shade')) return orig(a);
+  const id = X.id, F = FX2[id], B = mcB(), spend = () => { if (F.ch) { P.charges--; UI.form && UI.form(); } };
+  if (F.ch && P.charges <= 0) { loseForm(false); return true; }
+  if (id === 'shadeKnight') { if (!fx2Leap(a, {})) return false; P.jump.shade = true; P.mcSunkT = G.time + P.jump.dur; P.inv = Math.max(P.inv, P.jump.dur + 0.15); burst(P.x, 0.3, P.z, 18, [0.05, 0.02, 0.1]); spend(); P.atkCd = 0.4; return true; }
+  if (id === 'shadeBishop') { fx2Dash(a, 'bishop', 'shadeB', 6.5); P.dash.x0 = P.x; P.dash.z0 = P.z; P.atkCd = 0.4; return true; }
+  if (id === 'shadeRook') { fx2Dash(a, 'rook', 'sinkRook', 9); P.dash.x0 = P.x; P.dash.z0 = P.z; P.mcSunkT = G.time + 9 / 24 + 0.05; P.inv = Math.max(P.inv, 0.55); burst(P.x, 0.3, P.z, 20, [0.05, 0.02, 0.1]); Snd.S.mirrorIn(); spend(); P.atkCd = 0.6; return true; }
+  if (id === 'shadeQueen') { const x0 = P.x, z0 = P.z; fx2QueenDash(a); const D = P.dash, dx = D ? -D.dx : -Math.cos(a), dz = D ? -D.dz : -Math.sin(a); P.atkCd = 0.3;
+    mcAt(0.22, () => { const x1 = x0 + dx * 7.5, z1 = z0 + dz * 7.5; mcLineHit(x0, z0, x1, z1, 0.8, 4 * dmgMul(G.P), [0.3, 0.1, 0.55], 0); mcS().rays.push({ x: x0, z: z0, a: Math.atan2(dz, dx), len: 7.5, t: 0.4, max: 0.4, tower: true }); Snd.S.slash(); }); return true; }
+  if (id === 'shadeKing') { royalSlam(2.4, 4 * dmgMul(P)); for (const d of DIRS.queen) { const l = Math.hypot(d[0], d[1]), dx = d[0] / l, dz = d[1] / l, len = 3 * SQ * l; mcLineHit(P.x, P.z, P.x + dx * len, P.z + dz * len, 0.6, 3 * dmgMul(P), [0.25, 0.08, 0.45], 1); mcS().rays.push({ x: P.x, z: P.z, a: Math.atan2(dz, dx), len, t: 0.5, max: 0.5 }); }
+    G.shake = Math.max(G.shake || 0, 0.6); Snd.S.mirrorOut(); spend(); P.atkCd = 0.6; return true; }
+  return orig(a); })(fx2Attack);
+fx2Land = (orig => function (J) { if (J.shade) { const P = G.P; P.mcSunkT = 0; U.aoe(P.x, P.z, 2.0, 5 * dmgMul(P), [0.4, 0.15, 0.8], 'lunge'); for (const e of G.E) if (!e.dead && !e.ally && e.spawnT <= 0 && dist(e.x, e.z, P.x, P.z) < 2.2) U.stun(e, 2);
+    burst(P.x, 0.4, P.z, 26, [0.05, 0.02, 0.1]); ring(P.x, P.z, 2, [0.5, 0.2, 0.9]); G.shake = Math.max(G.shake || 0, 0.6); Snd.S.mirrorOut(); Snd.S.slam(); if (P.charges <= 0) setTimeout(() => { if (G.P.fx2 && G.P.fx2.id === 'shadeKnight' && G.P.charges <= 0) loseForm(false); }, 200); return true; }
+  return orig(J); })(fx2Land);
+fx2DashEnd = (orig => function (D, hitWall) { const P = G.P, B = mcB();
+  if (D.fu === 'shadeB' && D.x0 !== undefined) { const x0 = D.x0, z0 = D.z0, x1 = P.x, z1 = P.z; mcS().rays.push({ x: x0, z: z0, a: angTo(x0, z0, x1, z1), len: dist(x0, z0, x1, z1), t: B, max: B }); mcAt(B, () => { mcLineHit(x0, z0, x1, z1, 0.8, 4 * dmgMul(G.P), [0.35, 0.12, 0.65], 1); Snd.S.slash(); G.shake = Math.max(G.shake || 0, 0.35); }); }
+  if (D.fu === 'sinkRook' && D.x0 !== undefined) { P.mcSunkT = 0; const n = mcLineHit(D.x0, D.z0, P.x, P.z, 0.9, 6 * dmgMul(P), [0.08, 0.03, 0.14], 2); U.aoe(P.x, P.z, 2, 4 * dmgMul(P), [0.4, 0.15, 0.8], 'upg');
+    for (let k = 0; k < 30; k++) { const an = rnd(0, TAU), sp = rnd(2, 6); G.fx.push({ k: 'chip', x: P.x, y: 0.2, z: P.z, vx: Math.cos(an) * sp, vy: rnd(3, 8), vz: Math.sin(an) * sp, life: rnd(0.6, 1.2), s: rnd(0.06, 0.14), col: [0.12, 0.05, 0.2], r0: rnd(0, 6) }); }
+    G.shake = Math.max(G.shake || 0, 0.9); G.hitstop = Math.max(G.hitstop || 0, n ? 0.08 : 0.03); Snd.S.mirrorOut(); Snd.S.slam(); Snd.S.crunch(); }
+  return orig(D, hitWall); })(fx2DashEnd);
+// what a broken glass shape lets out: every piece in it (a phantom part sinks you instead)
+function mcFormParts() { const P = G.P, out = []; const F = P.fx2 && FX2[P.fx2.id] ? FX2[P.fx2.id] : P.fuse; const parts = F && F.parts ? F.parts : [P.form];
+  for (const p of parts) { if (p === 'ghost') out.push({ shade: true }); else if (FORM_EXEC[p] || p === 'pawn') out.push({ type: p }); }
+  if (!out.some(m => m.type) && P.form) out.push({ type: P.form }); return out; }
+// ---------------------------------------------------------------- the phantom hand's execution: 影握
+// the slime breaks into the hand, the hand flies over the piece, closes round it, lifts it and crushes it; then the shards come home
+function mcExecDraw(X, out, decals, t, en, pre, post, pieceItems) {
+  const Sx = X.px, Sz = X.pz, Ex = X.ex, Ez = X.ez, a = angTo(Sx, Sz, Ex, Ez), ss = k => k * k * (3 - 2 * k); let showE = true;
+  if (!X.fired) { const fly = ss(clamp01(pre / 0.55)), close = clamp01((pre - 0.62) / 0.3), lift = ss(clamp01((pre - 0.75) / 0.25));
+    const hx = lerp(Sx, Ex - Math.cos(a) * 0.15, fly), hz = lerp(Sz, Ez - Math.sin(a) * 0.15, fly), hy = lerp(0.6, 2.6, Math.sin(fly * Math.PI * 0.5)) - close * 0.5 + lift * 1.1;
+    mcHandDraw(hx, hz, hy, a, close > 0.5 ? 1 : 0, out, decals, t, { quiet: true, scale: 1 + close * 0.15 });
+    if (pre < 0.25) { const k = pre / 0.25; for (let n = 0; n < 14; n++) { const an = n * 2.4, r = k * 1.2; out.push({ geo: 'box', m: M4.trs(Sx + Math.cos(an) * r, 0.3 + k * (n % 3) * 0.3, Sz + Math.sin(an) * r, an + t * 8, 0.09, 0.03, 0.06), col: [0.85, 0.92, 1.3], kind: 5 }); } }
+    if (lift > 0 || close > 0) { const sq = 1 - close * 0.18 - lift * 0.15; for (const it of en) it.m = M4.mul(M4.mul(M4.trs(Ex, lift * 1.1, Ez), M4.mul([sq, 0, 0, 0, 0, 1 + lift * 0.1, 0, 0, 0, 0, sq, 0, 0, 0, 0, 1], M4.trs(-Ex, 0, -Ez))), it.m); }
+    decals.push({ geo: 'disc', m: M4.trs(Ex, 0.03, Ez, 0, 0.4 + fly * 0.5, 1, 0.4 + fly * 0.5), col: [0.14 * fly, 0.04 * fly, 0.24 * fly], kind: 8, alpha: 1 }); }
+  else { showE = false; const open = post > 0.2 ? 0 : 1, back = ss(clamp01((post - 0.35) / 0.55)), hx = lerp(Ex, Sx, back), hz = lerp(Ez, Sz, back), sc = 1 - back * 0.7;
+    if (post < 0.9) mcHandDraw(hx, hz, lerp(2.4, 0.5, back), a, open, out, decals, t, { quiet: true, scale: sc });
+    if (post > 0.55) { const k = clamp01((post - 0.55) / 0.45); out.push({ geo: 'sphere', m: M4.trs(Sx, 0.4 * k, Sz, t, 0.55 * k, 0.42 * k, 0.55 * k), col: SMODES.glass.col, kind: 3 }); }
+    decals.push({ geo: 'ringT', m: M4.trs(Ex, 0.04, Ez, 0, 0.5 + post * 2.5, 1, 0.5 + post * 2.5), col: [0.6 * (1 - post), 0.25 * (1 - post), 1.0 * (1 - post)], kind: 8, alpha: 1 }); }
+  return showE; }
+function mcExecFire(X) { const ex = X.ex, ez = X.ez; Snd.S.crunch(); Snd.S.shatter(); G.shake = 0.9; ring(ex, ez + 0, 2.4, [0.6, 0.25, 1.1]); burst(ex, 2.4, ez, 30, [0.06, 0.02, 0.1]);
+  for (let k = 0; k < 40; k++) { const an = rnd(0, TAU), sp = rnd(2, 7); G.fx.push({ k: 'chip', x: ex, y: 2.2, z: ez, vx: Math.cos(an) * sp, vy: rnd(-1, 4), vz: Math.sin(an) * sp, life: rnd(0.7, 1.4), s: rnd(0.05, 0.13), col: k % 3 ? (X.e.d.col || [0.5, 0.5, 0.5]) : [0.4, 0.15, 0.75], r0: rnd(0, 6) }); }
+  mcMark('x_handCrush'); }
+
+// ============================================================================
+// e3p_mirrorking.js — 鏡底: 玻璃國王 / 幻影國王 (the first of the 鏡之系列)
+//  One board, four door mirrors (step in one, come out of another; fog does the same).
+//  The fight forces 玻璃 so everyone can become the hand.
+//  玻璃國王: hit him normally. Many magic moves (影障 only), a few physical ones (they break you into the hand).
+//   · 召兵: glass pieces drop around you, chosen by where you stand (鏡陣: in a ring)
+//   · 碎光: fog that curls in from both sides; 螺光: a spiral of fog; 迴光: fog that flies out and comes back
+//   · 八方: eight rays (later from every door too); 沉鏡: he sinks and comes up from the door nearest you
+//   · 國破: with four glass pieces up, he shatters them all outward
+//   · 斷罪 (physical): the scepter comes down on a 3×3 (連斷: and again where you went)
+//  Every quarter of his life the glass bursts (the burst is physical) and 幻影國王 goes berserk for eight beats:
+//   · 影噬 pounces, 鏡穿 dashes out of one door and across, 黑環 rings of shadow, 影爪 (physical, once)
+//   · only the hand reaches him: grab him, slam him, throw him (or throw glass at him)
+//  then the shards fly back and he is glass again. After the third burst he stays a phantom to the end.
+//  遺言 never touch him.
+// ============================================================================
+Object.assign(BOSS, { bMirror: { name: '玻璃國王', body: 'king', track: 'mirror', beat: 0.5, mirrors: 0, pillars: [] } });
+Object.assign(ENEMY, { bMirror: { name: '玻璃國王', hp: 180, r: 0.85, spd: 0, col: [0.42, 0.5, 0.72], scale: 2.1, boss: true } });
+const MIRROR_BOSSES = ['bMirror'];
+BOSS_CORE.bMirror = 'glass';
+const MK_NAME = { glass: '玻璃國王', shade: '幻影國王' };
+const MK_MAGIC = [0.75, 0.3, 1.25];
+function mkInit(e) { e.hz = []; e.nb = 0; e.form = 'glass'; e.seg = 0; e.bname = MK_NAME.glass; e.kc = { sum: 2, fog: 3, ray: 7, dive: 9, jud: 5, rup: 6 }; e.fq = 0; e.clawed = false; mkDoors(); }
+// four doors, away from where you come in
+function mkDoors() { const R = G.room; if (!R.mc) return; R.mcDoors = new Set();
+  for (const [i, j] of [[1, 1], [R.cols - 2, 1], [1, R.rows - 3], [R.cols - 2, R.rows - 3]]) { if (R.sqBlock[j * R.cols + i]) continue; R.mcDoors.add(MCK(i, j)); R.sqBlock[j * R.cols + i] = 6; } }
+const mkDoorList = R => [...(R.mcDoors || [])].map(k => k.split(',').map(Number));
+const mkHz = (e, sqs, n, o) => { const h = Object.assign({ sqs, n, n0: n, kind: 'red', dmg: 1 }, o || {}); if (h.magic) h.tint = MK_MAGIC; (e.hz = e.hz || []).push(h); return h; };
+// hits on him: 遺言 never; the phantom only by the hand (and then a fixed share of his life)
+function mkGate(e, dmg, src) {
+  if (src === 'rattle') return null;
+  if (e.form === 'break' || e.form === 'reform') return null;
+  const T = [0.75, 0.5, 0.25];
+  if (e.form === 'shade') { if (src !== 'hand') return null; dmg = e.maxHp * (e.mkBig ? 0.09 : 0.045); e.mkBig = false; Snd.S.shatter(); ring(e.x, e.z, 1.6, [0.7, 0.3, 1.2]);
+    const floor = e.seg < 3 ? (T[e.seg] + 0.12) * e.maxHp : 0; /* (the phantom can take at most half of the next glass stretch) */ return Math.max(0, Math.min(dmg, e.hp - floor)) || (e.seg >= 3 ? dmg : null); }
+  if (e.dive) return null;
+  const floor = T[e.seg] * e.maxHp; if (e.hp - dmg <= floor) { dmg = Math.max(0, e.hp - floor); mkBreak(e); } return dmg || null; }
+// ---------------------------------------------------------------- the glass bursts, the shards come back
+function mkBreak(e) { if (e.form === 'break') return; e.form = 'break'; e.brk = G.time; e.hz = []; e.mv = null; e.dive = null; e.seg++;
+  G.slowT = Math.max(G.slowT || 0, 0.7); G.hitstop = Math.max(G.hitstop || 0, 0.1); Snd.S.crack(); Snd.S.warn(); }
+function mkBurst(e) { const P = G.P, R = G.room; e.form = 'shade'; e.bname = MK_NAME.shade; e.frenzy = e.seg >= 3 ? 1e9 : 8; e.clawed = false; e.fq = 0; e.opener = true; e.bt = R.beat * 0.6; UI.boss(true); document.querySelector('#bossbar') && document.querySelector('#bossbar').classList.add('shade');
+  for (let k = 0; k < 70; k++) { const an = rnd(0, TAU), sp = rnd(3, 11); G.fx.push({ k: 'chip', x: e.x, y: rnd(0.4, 3.2), z: e.z, vx: Math.cos(an) * sp, vy: rnd(2, 9), vz: Math.sin(an) * sp, life: rnd(0.8, 1.8), s: rnd(0.06, 0.18), col: k % 5 ? [0.75, 0.82, 1.15] : [0.3, 0.1, 0.55], r0: rnd(0, 6) }); }
+  for (let k = 0; k < 3; k++) ring(e.x, e.z, 1.5 + k * 1.3, k === 1 ? [0.6, 0.25, 1.1] : [0.9, 0.95, 1.4]); burst(e.x, 1.5, e.z, 40, [0.08, 0.02, 0.14]);
+  G.flash = Math.max(G.flash, 0.9); G.invert = 0.12; G.shake = Math.max(G.shake || 0, 1.2); G.hitstop = Math.max(G.hitstop || 0, 0.12); Snd.S.shatter(); Snd.S.bell(); Snd.S.slam(); Snd.phase(Math.min(3, 1 + e.seg));
+  // the burst itself is a blow: near enough and the glass of you breaks too
+  if (G.state === 'play' && !P.inMirror && dist(P.x, P.z, e.x, e.z) < 2.9) hurtPlayer(1, 'bMirror');
+  for (const o of G.E.slice()) if (!o.dead && o !== e && o.var === 'glass' && dist(o.x, o.z, e.x, e.z) < 3.6) mcAt(0.08 + dist(o.x, o.z, e.x, e.z) * 0.05, () => mcShatter(o, angTo(e.x, e.z, o.x, o.z), 'upg'));
+  e.shards = null; mcMark('mk_shade'); }
+function mkReform(e) { const R = G.room; e.form = 'reform'; e.rf = G.time; e.hz = []; e.mv = null; const [cx, cz] = sqC(R, Math.floor(R.cols / 2), 2);
+  e.rfFrom = [e.x, e.z]; e.rfTo = [cx, cz]; e.shards = Array.from({ length: 46 }, () => { const an = rnd(0, TAU), d = rnd(3, 9); return { x: cx + Math.cos(an) * d, z: cz + Math.sin(an) * d, y: rnd(0.05, 0.3), s: rnd(0.06, 0.16), dl: rnd(0, 0.35), r0: rnd(0, 6) }; });
+  Snd.S.mirrorIn(); }
+function mkReformDone(e) { const R = G.room; e.form = 'glass'; e.bname = MK_NAME.glass; e.shards = null; [e.x, e.z] = e.rfTo; e.bt = R.beat; UI.boss(true); document.querySelector('#bossbar') && document.querySelector('#bossbar').classList.remove('shade');
+  ring(e.x, e.z, 2.2, [1.1, 1.15, 1.6]); ring(e.x, e.z, 1.2, [1.4, 1.4, 1.8]); burst(e.x, 1.6, e.z, 26, [0.8, 0.85, 1.2]); G.flash = Math.max(G.flash, 0.6); G.shake = Math.max(G.shake || 0, 0.5); Snd.S.bell(); Snd.S.mirrorOut(); }
+// ---------------------------------------------------------------- the brain
+AIX.bMirror = function (e, W, dt) {
+  const R = W.R; if (W.fut) { if (e.mv) stepMv(e, dt, W); if (e.form === 'glass' || e.form === 'shade') bossTick(e, W, dt, () => { }); return; }
+  if (e.form === 'break') { if (G.time - e.brk >= 0.85) mkBurst(e); return; }
+  if (e.form === 'reform') { const k = (G.time - e.rf) / 1.3; e.x = lerp(e.rfFrom[0], e.rfTo[0], Math.min(1, k * 1.5)); e.z = lerp(e.rfFrom[1], e.rfTo[1], Math.min(1, k * 1.5)); if (k >= 1) mkReformDone(e); return; }
+  if (e.mv) { if (stepMv(e, dt, W)) { e.hop = 0; W.events.push({ k: 'slam', x: e.x, z: e.z, e }); if (e.form === 'shade') mkInk(e.x, e.z, 1.2); } return; }
+  if (e.dive) { mkDiveTick(e, W, dt); return; }
+  bossTick(e, W, dt, () => { if (e.form === 'glass') mkGlassBeat(e, W); else mkShadeBeat(e, W); });
+};
+function mkGlassBeat(e, W) { const R = W.R, P = W.P, ps = psq(W); if (!ps) return; const s = e.seg; for (const k in e.kc) e.kc[k]--;
+  if (e.hz.length >= 3) return; const [i, j] = sqOf(R, e.x, e.z), glassN = G.E.filter(o => !o.dead && o.var === 'glass').length;
+  if (e.kc.jud <= 0) { e.kc.jud = 6 - Math.min(s, 2) + ((aiRand(e, e.nb) * 2) | 0); mkHz(e, mkBox(R, ps, 1), 2, { tag: 'jud', again: s >= 1 }); return; } // 斷罪 (physical)
+  if (glassN >= 4 && e.kc.rup <= 0) { e.kc.rup = 10; mkHz(e, [], 2, { tag: 'rupture', dmg: 0 }); mcS().ripples.push({ x: e.x, z: e.z, t: R.beat * 2, max: R.beat * 2 }); Snd.S.warn(); return; } // 國破
+  if (e.kc.sum <= 0 && glassN < 6) { e.kc.sum = 6; mkSummon(e, 2 + Math.min(s, 2), s >= 2); return; }
+  if (s >= 1 && e.kc.ray <= 0) { e.kc.ray = 9; const sqs = mkRays(R, i, j, DIRS.queen); if (s >= 2) for (const [a, b] of mkDoorList(R)) for (const q of mkRays(R, a, b, DIRS.rook)) if (!sqsHas(sqs, q[0], q[1])) sqs.push(q);
+    mkHz(e, sqs, 3, { tag: 'rays', magic: true, veil: 2 }); Snd.S.warn(); return; } // 八方
+  if (e.kc.dive <= 0) { e.kc.dive = 10; mkDive(e, W); return; } // 沉鏡
+  if (e.kc.fog <= 0) { e.kc.fog = 7; const m = (e.fq++) % 3; mkFog(e, m === 0 ? 'pincer' : m === 1 ? 'spiral' : 'boomer', s); return; }
+  // otherwise one king step, keeping a little distance
+  const d = Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j)); if (aiRand(e, e.nb * 3) < 0.5) { let best = null, bs = 1e9; for (const [a, b] of DIRS.king) { const q = [i + a, j + b]; if (!onBoard(R, q[0], q[1]) || R.sqBlock[q[1] * R.cols + q[0]] || occSet(W, e).has(sqKey(q[0], q[1]))) continue; const dd = Math.max(Math.abs(ps[0] - q[0]), Math.abs(ps[1] - q[1])), sc = Math.abs(dd - 3) + aiRand(e, a * 5 + b + e.nb) * 0.7; if (sc < bs) { bs = sc; best = q; } }
+    if (best && d !== 3) { const [x, z] = sqC(R, best[0], best[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.3, jump: true, h: 0.4 }; e.face = angTo(e.x, e.z, x, z); } } }
+function mkShadeBeat(e, W) { const R = W.R, P = W.P, ps = psq(W); if (--e.frenzy <= 0) { mkReform(e); return; } if (!ps || e.hz.length >= 3) return;
+  const [i, j] = sqOf(R, e.x, e.z), n = e.fq++, fast = e.seg >= 3 ? 1 : 0;
+  if (n % 8 === 0) e.clawed = false; /* (the claw comes round again every eight beats, so in the endless last frenzy you can always become the hand) */
+  if (e.opener) { e.opener = false; if (!P.hand) { const tq = [i + clamp(ps[0] - i, -3, 3), j + clamp(ps[1] - j, -3, 3)], sqs = [tq].concat(DIRS.king.map(([a, b]) => [tq[0] + a, tq[1] + b]).filter(q => onBoard(R, q[0], q[1]))); mkHz(e, sqs, 2, { tag: 'rush', to: [tq], jump: true }); return; } } // 影衝 (physical): out of the burst straight at you, so you can become the hand
+  const pat = ['pounce', 'pounce', 'ring', 'dash', 'pounce', 'claw', 'pounce', 'dash'][n % 8];
+  if (pat === 'claw' && !e.clawed) { e.clawed = true; const f = [Math.sign(ps[0] - i), Math.sign(ps[1] - j)], sqs = []; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const q = [ps[0] + a, ps[1] + b]; if (onBoard(R, q[0], q[1]) && (a * f[0] + b * f[1]) >= 0) sqs.push(q); } mkHz(e, sqs, 2, { tag: 'claw' }); Snd.S.warn(); return; } // 影爪 (physical)
+  if (pat === 'ring') { for (let r = 1; r <= 3; r++) { const sqs = []; for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && onBoard(R, i + a, j + b)) sqs.push([i + a, j + b]); mkHz(e, sqs, r + 1, { tag: 'ring', magic: true, veil: 2 }); } return; } // 黑環
+  if (pat === 'dash' && mkDoorList(R).length >= 2) { const ds = mkDoorList(R), d0 = ds.sort((p, q) => Math.hypot(q[0] - ps[0], q[1] - ps[1]) - Math.hypot(p[0] - ps[0], p[1] - ps[1]))[0], horiz = Math.abs(ps[1] - d0[1]) < Math.abs(ps[0] - d0[0]); // 鏡穿: out of the far door, across your line
+    const lane = horiz ? ps[1] : ps[0], sqs = []; const n2 = horiz ? R.cols : R.rows; for (let k = 0; k < n2; k++) sqs.push(horiz ? [k, lane] : [lane, k]); const sgn = (horiz ? d0[0] : d0[1]) < n2 / 2 ? 1 : -1; if (sgn < 0) sqs.reverse();
+    mkHz(e, sqs, 2, { tag: 'dash', magic: true, veil: 2, door: d0, line: sqs }); Snd.S.warn(); return; }
+  // 影噬: a pounce onto you (two squares at most), the square you are on shown for one beat (in the last frenzy, half a beat less)
+  const tq = [i + clamp(ps[0] - i, -2, 2), j + clamp(ps[1] - j, -2, 2)], sqs = [tq].concat(DIRS.rook.map(([a, b]) => [tq[0] + a, tq[1] + b]).filter(q => onBoard(R, q[0], q[1])));
+  mkHz(e, sqs, 2 - fast, { tag: 'pounce', magic: true, veil: 2, to: [tq], jump: true }); }
+const mkBox = (R, c, r) => { const out = []; for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if (onBoard(R, c[0] + a, c[1] + b)) out.push([c[0] + a, c[1] + b]); return out; };
+function mkRays(R, i, j, dirs) { const out = []; for (const [a, b] of dirs) for (let k = 1; k < 12; k++) { const q = [i + a * k, j + b * k]; if (!onBoard(R, q[0], q[1])) break; out.push(q); } return out; }
+// 召兵: by where you stand (open floor → a queen, a corner → a rook, close to him → pawns, else horses and bishops); 鏡陣: in a ring around you
+function mkSummon(e, n, ringed) { const R = G.room, P = G.P, ps = mcPsq(), [i, j] = sqOf(R, e.x, e.z), mc = G.mc, B = R.beat; if (!mc) return;
+  const edge = Math.min(ps[0], ps[1], R.cols - 1 - ps[0], R.rows - 1 - ps[1]), near = Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j)) <= 2, queens = G.E.filter(o => !o.dead && o.type === 'queen').length;
+  const pick = k => near ? 'pawn' : edge === 0 && k === 0 ? 'rook' : edge >= 2 && k === 0 && !queens ? 'queen' : ['knight', 'bishop', 'pawn', 'rook'][(Math.random() * 4) | 0];
+  const taken = new Set(mc.drops.map(d => MCK(d.i, d.j)));
+  for (let k = 0; k < n; k++) { let q = null; for (let t = 0; t < 40 && !q; t++) { const c = ringed ? (() => { const an = k / n * TAU + rnd(-0.3, 0.3); return [Math.round(ps[0] + Math.cos(an) * 2), Math.round(ps[1] + Math.sin(an) * 2)]; })() : [(Math.random() * R.cols) | 0, (Math.random() * (R.rows - 1)) | 0];
+      if (mcFree(R, c[0], c[1]) && !taken.has(MCK(c[0], c[1])) && Math.max(Math.abs(c[0] - ps[0]), Math.abs(c[1] - ps[1])) >= (ringed ? 2 : 2)) q = c; }
+    if (!q) continue; taken.add(MCK(q[0], q[1])); mc.drops.push({ type: pick(k), inv: false, var: 'glass', i: q[0], j: q[1], at: G.time + 1.6 * B + k * 0.18 }); }
+  e.face = angTo(e.x, e.z, P.x, P.z); e.hop = 0.3; ring(e.x, e.z, 1.4, [0.9, 0.95, 1.4]); Snd.S.bell(); mcMark('mk_summon'); }
+// fog with a path of its own: 碎光 curls in from both sides, 螺光 spirals out, 迴光 flies out and comes back
+function mkFog(e, mode, s) { const P = G.P, a0 = angTo(e.x, e.z, P.x, P.z), sp = 3.6 * (P.tr.mcSee ? 0.75 : 1);
+  const shot = (a, o) => G.B.push(Object.assign({ x: e.x + Math.cos(a) * 0.9, z: e.z + Math.sin(a) * 0.9, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, life: 6, fog: true, mk: true, t: 0 }, o));
+  if (mode === 'pincer') { const n = s >= 2 ? 4 : 2; for (let k = 0; k < n; k++) { const side = k % 2 ? 1 : -1, off = 0.75 + (k >> 1) * 0.3; shot(a0 + side * off, { turn: -side * (0.95 + (k >> 1) * 0.15), turnT: 1.35 }); } }
+  else if (mode === 'spiral') { const n = 5 + s; for (let k = 0; k < n; k++) shot(a0 + k / n * TAU, { turn: 1.15, turnT: 9, spd0: 0.55 }); }
+  else { const n = 2 + Math.min(s, 1); for (let k = 0; k < n; k++) shot(a0 + (k - (n - 1) / 2) * 0.32, { back: 1.0, home: e }); }
+  e.face = a0; ring(e.x, e.z, 1.2, [0.6, 0.25, 1.0]); Snd.S.bolt(); Snd.S.mirrorOut(); }
+// fog steering (present only) and the doors: fog that enters one comes out of another, aimed at you
+function mkFogTick(dt) { const R = G.room, P = G.P, ds = mkDoorList(R);
+  for (const b of G.B) { if (b.dead || !b.fog) continue; b.t = (b.t || 0) + dt;
+    if (b.turn && b.t < b.turnT) { const a = Math.atan2(b.vz, b.vx) + b.turn * dt, sp = Math.hypot(b.vx, b.vz) * (b.spd0 ? 1 + dt * 0.6 : 1); b.vx = Math.cos(a) * sp; b.vz = Math.sin(a) * sp; }
+    if (b.back && b.t > b.back && !b.backed) { b.backed = true; const h = b.home && !b.home.dead ? b.home : null, tx = h ? h.x : b.x - b.vx, tz = h ? h.z : b.z - b.vz, a = angTo(b.x, b.z, P.x, P.z) * 0.5 + angTo(b.x, b.z, tx, tz) * 0.5, sp = Math.hypot(b.vx, b.vz) * 1.25; b.vx = -b.vx * 0.2 + Math.cos(angTo(b.x, b.z, tx, tz)) * sp; b.vz = -b.vz * 0.2 + Math.sin(angTo(b.x, b.z, tx, tz)) * sp; b.life = Math.max(b.life, 3); burst(b.x, 0.8, b.z, 6, [0.5, 0.2, 0.9]); }
+    if (Math.random() < dt * 22) G.fx.push({ k: 'chip', x: b.x, y: 0.85, z: b.z, vx: rnd(-0.3, 0.3), vy: rnd(0.1, 0.6), vz: rnd(-0.3, 0.3), life: 0.5, s: 0.05, col: [0.32, 0.1, 0.55], r0: 0 });
+    if (ds.length >= 2 && !(b.portT > G.time)) { const q = sqOf(R, b.x, b.z), at = ds.findIndex(d => d[0] === q[0] && d[1] === q[1]); if (at >= 0) { const others = ds.filter((_, k) => k !== at), d = others[(Math.random() * others.length) | 0], [x, z] = sqC(R, d[0], d[1]), a = angTo(x, z, P.x, P.z), sp = Math.hypot(b.vx, b.vz);
+        burst(b.x, 0.5, b.z, 8, [0.8, 0.85, 1.2]); b.x = x + Math.cos(a) * 0.4; b.z = z + Math.sin(a) * 0.4; b.vx = Math.cos(a) * sp; b.vz = Math.sin(a) * sp; b.turn = 0; b.portT = G.time + 0.6; b.life = Math.max(b.life, 3); ring(x, z, 0.9, [0.9, 0.95, 1.4]); Snd.S.mirrorOut(); } } } }
+// 沉鏡: he sinks where he stands and comes up out of the door nearest you, in a burst of 影障
+function mkDive(e, W) { const R = W.R, ps = psq(W), ds = mkDoorList(R); if (!ds.length || !ps) return; const d = ds.sort((p, q) => Math.hypot(p[0] - ps[0], p[1] - ps[1]) - Math.hypot(q[0] - ps[0], q[1] - ps[1]))[0];
+  const [tx, tz] = sqC(R, d[0], d[1]); e.dive = { t: 0, fx: e.x, fz: e.z, tx, tz, d, dur: R.beat * 2.4 }; e.hz = []; burst(e.x, 0.4, e.z, 26, [0.75, 0.8, 1.1]); ring(e.x, e.z, 1.5, [0.85, 0.9, 1.3]); Snd.S.mirrorIn(); mcMark('mk_dive'); }
+function mkDiveTick(e, W, dt) { const R = W.R, D = e.dive; D.t += dt; const k = clamp01(D.t / D.dur); e.x = lerp(D.fx, D.tx, k * k * (3 - 2 * k)); e.z = lerp(D.fz, D.tz, k * k * (3 - 2 * k));
+  if (!D.warned && k > 0.45) { D.warned = true; mcS().ripples.push({ x: D.tx, z: D.tz, t: R.beat * 1.3, max: R.beat * 1.3 }); mkHz(e, mkBox(R, D.d, 1), 2, { tag: 'surface', magic: true, veil: 2 }); }
+  if (k >= 1) { e.dive = null; const [i, j] = mcNear(R, D.d[0], D.d[1] + 1, (a, b) => onBoard(R, a, b) && !R.sqBlock[b * R.cols + a] && !mcOcc(R, a, b, e)); [e.x, e.z] = sqC(R, i, j); burst(e.x, 0.6, e.z, 30, [0.75, 0.8, 1.15]); ring(e.x, e.z, 2, [0.9, 0.95, 1.4]); G.shake = Math.max(G.shake || 0, 0.6); Snd.S.mirrorOut(); Snd.S.slam(); }
+  else bossTick(e, W, dt, () => { }); }
+function mkInk(x, z, r) { for (let k = 0; k < 8; k++) G.fx.push({ k: 'stain', x: x + rnd(-r, r) * 0.6, z: z + rnd(-r, r) * 0.6, life: 2.2, max: 2.2, s: rnd(0.3, 0.6), a: rnd(0, TAU) }); }
+// hazards that fire (present side)
+function mkFire(e, h) { const R = G.room, P = G.P;
+  if (h.tag === 'jud') { for (const q of h.sqs) { const [x, z] = sqC(R, q[0], q[1]); burst(x, 0.3, z, 5, [1.1, 1.0, 1.3]); } G.shake = Math.max(G.shake || 0, 0.8); Snd.S.slam(); Snd.S.crunch(); G.hitstop = Math.max(G.hitstop || 0, 0.05);
+    for (const q of h.sqs) for (const o of G.E.slice()) if (!o.dead && o.var === 'glass' && mcOnSq(o.x, o.z, q[0], q[1])) mcShatter(o, 0, 'upg');
+    if (h.again) { const ps = mcPsq(); mkHz(e, mkBox(R, ps, 1), 2, { tag: 'jud' }); } }
+  if (h.tag === 'rupture') { mcRattle('king', e.x, e.z, 0, 0, 1); G.flash = Math.max(G.flash, 0.35); Snd.S.bell(); }
+  if (h.tag === 'rays' || h.tag === 'ring' || h.tag === 'surface' || h.tag === 'pounce') { for (const q of h.sqs) { if (Math.random() < 0.5) { const [x, z] = sqC(R, q[0], q[1]); burst(x, 0.4, z, 4, [0.4, 0.12, 0.7]); } } if (h.tag === 'rays') { const [i, j] = sqOf(R, e.x, e.z); for (const d of DIRS.queen) mcS().rays.push({ x: e.x, z: e.z, a: Math.atan2(d[1], d[0]), len: 11 * SQ, t: 0.45, max: 0.45 }); } if (h.tag !== 'pounce') G.shake = Math.max(G.shake || 0, 0.35); Snd.S.zap(); }
+  if (h.tag === 'dash') { const L = h.line, [x0, z0] = sqC(R, L[0][0], L[0][1]), [x1, z1] = sqC(R, L[L.length - 1][0], L[L.length - 1][1]); burst(e.x, 1, e.z, 20, [0.05, 0.02, 0.1]);
+    e.x = x0; e.z = z0; e.mv = { fx: x0, fz: z0, tx: x1, tz: z1, t: 0, dur: 0.28, lin: true }; e.face = angTo(x0, z0, x1, z1); mcS().rays.push({ x: x0, z: z0, a: e.face, len: dist(x0, z0, x1, z1), t: 0.5, max: 0.5, tower: true }); G.shake = Math.max(G.shake || 0, 0.6); Snd.S.lunge(); Snd.S.mirrorOut(); }
+  if (h.tag === 'claw' || h.tag === 'rush') { G.shake = Math.max(G.shake || 0, 0.7); Snd.S.slash(); Snd.S.slam(); } }
+// per frame (present): fog steering, doors for you, phantom ink, the boss bar
+function mkFrame(dt) { const R = G.room, P = G.P, B = G.boss; if (!R.mcDoors) return; mkFogTick(dt);
+  if (B && B.held && !(P.hand && ((P.hand.held && P.hand.held.e === B) || (P.hand.held2 && P.hand.held2.e === B))) && !mcS().thrown.some(T => T.e === B)) { B.held = false; B.spawnT = 0; }
+  if (G.state === 'play' && !P.inMirror && !P.hand && mcGround(P) && !(P.doorT > G.time)) { const q = mcPsq(), ds = mkDoorList(R), at = ds.findIndex(d => d[0] === q[0] && d[1] === q[1]); // a door: out of the one farthest from where you went in
+    if (at >= 0 && ds.length >= 2) { const others = ds.filter((_, k) => k !== at).sort((a, b) => Math.hypot(b[0] - q[0], b[1] - q[1]) - Math.hypot(a[0] - q[0], a[1] - q[1])), d = others[0], [x, z] = sqC(R, d[0], d[1]);
+      burst(P.x, 0.5, P.z, 16, [0.8, 0.85, 1.2]); ring(P.x, P.z, 1, [0.9, 0.95, 1.4]); P.x = x; P.z = z + SQ * 0.55; fixPos(R, P); P.doorT = G.time + 0.8; P.inv = Math.max(P.inv, 0.3); burst(x, 0.5, z, 16, [0.8, 0.85, 1.2]); ring(x, z, 1, [0.9, 0.95, 1.4]); Snd.S.mirrorIn(); Snd.S.mirrorOut(); G.cam.x = P.x; G.cam.z = P.z; } }
+  if (B && !B.dead && B.type === 'bMirror' && B.form === 'shade' && Math.random() < dt * 10) G.fx.push({ k: 'stain', x: B.x + rnd(-0.4, 0.4), z: B.z + rnd(-0.4, 0.4), life: 1.4, max: 1.4, s: rnd(0.3, 0.5), a: rnd(0, TAU) });
+  if (B && B.dead && !B.mkEnd) { B.mkEnd = true; for (const d of mkDoorList(R)) { const [x, z] = sqC(R, d[0], d[1]); for (let k = 0; k < 24; k++) { const an = rnd(0, TAU), sp = rnd(2, 8); G.fx.push({ k: 'chip', x, y: 0.1, z, vx: Math.cos(an) * sp, vy: rnd(3, 9), vz: Math.sin(an) * sp, life: rnd(0.8, 1.6), s: rnd(0.05, 0.12), col: [0.8, 0.86, 1.2], r0: rnd(0, 6) }); } ring(x, z, 2, [1, 1, 1.5]); } R.mcDoors = new Set(); G.slowT = Math.max(G.slowT || 0, 1.2); G.flash = 1; Snd.S.shatter(); Snd.S.bell(); mcMark('mk_down'); } }
+// drawing (from mcDraw): doors, the cracks before the burst, the shards coming home, the phantom's aura
+function mkDraw(world, decals, present, t, pieceItems, mirrorSq) { const R = G.room, B = G.boss, D = 8;
+  for (const k of R.mcDoors || []) mirrorSq(k, false, true);
+  if (!B || B.dead || B.type !== 'bMirror') return; const sc = 2.1, top = 3.3;
+  if (B.form === 'break') { const k = clamp01((G.time - B.brk) / 0.85); // cracks run over the glass, brighter and longer, then it goes
+    for (let n = 0; n < Math.floor(4 + k * 16); n++) { const a = n * 2.39 + B.seed, y = 0.3 + ((n * 0.37) % 1) * top, rr = 0.55 * sc * (1 - y / top * 0.55) * 0.5 + 0.12;
+      present.push({ geo: 'box', m: M4.mul(M4.trs(B.x + Math.cos(a) * rr, y, B.z + Math.sin(a) * rr, -a, 1, 1, 1), M4.mul(RZm(n * 1.3), M4.trs(0, 0, 0, 0, 0.025, 0.3 + k * 0.3, 0.025))), col: [2.2, 2.2, 2.6], kind: 5 }); }
+    decals.push({ geo: 'ringT', m: M4.trs(B.x, 0.04, B.z, 0, 2.6 * k + 0.3, 1, 2.6 * k + 0.3), col: [0.9 * k, 0.95 * k, 1.4 * k], kind: D, alpha: 1 }); }
+  if (B.form === 'shade') { const w = 0.6 + 0.4 * Math.sin(t * 9); decals.push({ geo: 'disc', m: M4.trs(B.x, 0.03, B.z, 0, 1.5, 1, 1.5), col: [0.16 * w, 0.04 * w, 0.28 * w], kind: D, alpha: 1 }); for (let n = 0; n < 6; n++) { const a = t * 2.2 + n / 6 * TAU, y = 0.6 + ((t * 0.8 + n / 6) % 1) * 3; present.push({ geo: 'sphere', m: M4.trs(B.x + Math.cos(a) * 0.9, y, B.z + Math.sin(a) * 0.9, 0, 0.12, 0.2, 0.12), col: [0.45, 0.12, 0.85], kind: 5 }); } }
+  if (B.form === 'reform' && B.shards) { const k = clamp01((G.time - B.rf) / 1.3); for (const s of B.shards) { const q = clamp01((k - s.dl) / (1 - s.dl)), e2 = q * q, y = lerp(s.y, 0.4 + (s.r0 % 1) * top, e2) + Math.sin(q * Math.PI) * 1.2; present.push({ geo: 'box', m: M4.trs(lerp(s.x, B.x, e2), y, lerp(s.z, B.z, e2), s.r0 + t * 6 * (1 - q), s.s, s.s * 0.4, s.s * 0.8), col: [0.85, 0.92, 1.4], kind: 5 }); }
+    decals.push({ geo: 'ringT', m: M4.trs(B.x, 0.04, B.z, 0, 2.6 * (1 - k) + 0.3, 1, 2.6 * (1 - k) + 0.3), col: [0.9 * k, 0.95 * k, 1.4 * k], kind: D, alpha: 1 }); }
+  if (B.dive) { const k = clamp01(B.dive.t / B.dive.dur); decals.push({ geo: 'disc', m: M4.trs(B.x, 0.033, B.z, 0, 1.1, 1, 0.9), col: [0.1, 0.04, 0.18], kind: D, alpha: 1 }); for (let n = 0; n < 2; n++) { const q = (t * 1.4 + n / 2) % 1, rr = 0.3 + q * 1.4; decals.push({ geo: 'ringT', m: M4.trs(B.x, 0.035, B.z, 0, rr, 1, rr), col: [0.8 * (1 - q), 0.85 * (1 - q), 1.3 * (1 - q)], kind: D, alpha: 1 }); } }
+}
+// the boss draws as glass, as a phantom, or not at all (sunk / bursting apart)
+function mkLook(e) { if (e.type === 'bNight') return e.hidden ? { hide: true } : null; if (e.type !== 'bMirror') return null; if (e.dive || (e.form === 'break' && G.time - e.brk > 0.82)) return { hide: true };
+  if (e.form === 'shade') return { col: [0.03, 0.02, 0.05], kind: 9, scale: 1.08 }; if (e.form === 'reform') return { col: [0.42, 0.5, 0.72], kind: 3, scale: clamp01((G.time - e.rf) / 1.3) };
+  if (e.form === 'break') { const k = (G.time - e.brk) / 0.85; return { col: [0.42 + k * 0.6, 0.5 + k * 0.6, 0.72 + k * 0.7], kind: 3, scale: 1 + Math.sin(G.time * 60) * 0.02 * k }; } return { col: [0.42, 0.5, 0.72], kind: 3 }; }
+window.__MK = { boss: () => G.boss, burst: () => G.boss && mkBreak(G.boss), kill() { const B = G.boss; if (!B) return; B.form = 'glass'; B.seg = 3; B.hp = 0.01; B.form = 'shade'; hurtEnemy(B, 1, 0, 'hand'); } };
+
+// ============================================================================
+// e3q_nightknight.js — 暗夜騎士 (鏡之系列 II, the knight): the guardian halfway down the mirror city
+//  A rider and horse made of night mist; only the hooves, the eyes and an enormous sword are solid.
+//  The arena is a board hanging over the abyss: heavy blows knock squares away, he leaps the gaps (a knight
+//  doesn't care what is in between), you have to go round. Fall in and the fight rewinds three seconds —
+//  everything but your own wounds: the damage you did is gone.
+//  · every blow comes fast or slow: the blade shines white for a fast one, blue and brightening for a slow one;
+//    sometimes he raises a slow one and snaps it fast instead (變刀)
+//  · blows chain into combos (3 → 5 long); each next blow depends on where you went: aside, back, or in close
+//  · three grabs: 扼頸 (thrown into the nearest gap), 踏碾 (trampled twice), 劍挾 (pinned and dragged)
+//  · the hand: steal the sword while it's stuck in the floor (he is left with nothing but mist), throw it back at him,
+//    or catch his wrist as he grabs for you
+// ============================================================================
+Object.assign(BOSS, { bNight: { name: '暗夜騎士', body: 'knight', track: 'mirror', beat: 0.4, mirrors: 0, pillars: [] } });
+Object.assign(ENEMY, { bNight: { name: '暗夜騎士', hp: 320, r: 0.85, spd: 0, col: [0.04, 0.03, 0.07], scale: 2.0, boss: true } });
+MIRROR_BOSSES.push('bNight');
+const NK_FAST = [1.35, 1.35, 1.5], NK_SLOW = [0.35, 0.55, 1.45];
+const NK_SHADE = [0.55, 0.2, 1.1];
+const NK_SHADOW_TAGS = ['vslash', 'sweep', 'spin', 'whirl', 'thrust', 'backhand', 'bridge'];
+function nkInit(e) { e.hz = []; e.nb = 0; e.combo = null; e.rec = 0; e.stuck = false; e.noSword = 0; e.planted = 0; e.sw = { pose: 'drag', t: 0 }; G.room.nkHoles = new Set(); G.room.nkFall = []; G.nkHist = []; G.nkRew = null; G.nkGrab = null; e.lastD = 0; }
+const nkPh = e => bossPhase(e);
+const nkKey = (i, j) => i + ',' + j;
+const nkHole = (R, i, j) => !!(R.nkHoles && R.nkHoles.has(nkKey(i, j)));
+// hits on him: harder while his sword is stuck in the floor, harder still while it is planted; the hand hits as a share of his life
+function nkGate(e, dmg, src) { if (G.nkRew || e.hidden) return null; const tally = (k, v) => { if (window.__nkSrc) window.__nkSrc[k] = (window.__nkSrc[k] || 0) + Math.round(v); return v; }; if (src === 'hand' && e.nkBig) { e.nkBig = false; return tally('sword', e.maxHp * 0.08); } if (src === 'hand' && e.nkWrist) { e.nkWrist = false; return tally('wrist', e.maxHp * 0.06); }
+  const out = dmg * (e.planted > 0 ? 1.6 : e.stuck ? 1.5 : 1); if (window.__nkSrc) window.__nkSrc[src] = (window.__nkSrc[src] || 0) + Math.round(out); return out; }
+// ---------------------------------------------------------------- the arena: squares that fall away and come back
+function nkBreak(R, i, j, keep) { if (!onBoard(R, i, j) || nkHole(R, i, j)) return; const ps = sqOf(R, G.P.x, G.P.z); if (keep && ps[0] === i && ps[1] === j) return;
+  const B = G.boss, bq = B ? sqOf(R, B.x, B.z) : null; if (bq && bq[0] === i && bq[1] === j) return;
+  R.nkHoles.add(nkKey(i, j)); const [x, z] = sqC(R, i, j); R.nkFall.push({ x, z, t: 0, sp: rnd(-3, 3), dark: (i + j) % 2 });
+  burst(x, 0.1, z, 10, [0.5, 0.5, 0.7]); Snd.S.crunch(); }
+function nkMend(R, n) { const hs = [...R.nkHoles]; for (let k = 0; k < n && hs.length; k++) { const key = hs.splice((Math.random() * hs.length) | 0, 1)[0]; R.nkHoles.delete(key); const [i, j] = key.split(',').map(Number), [x, z] = sqC(R, i, j); R.nkFall.push({ x, z, t: 0, up: true, dark: (i + j) % 2 }); burst(x, 0.2, z, 8, [0.7, 0.75, 1.0]); } if (n) Snd.S.mirrorOut(); }
+// ---------------------------------------------------------------- the brain
+AIX.bNight = function (e, W, dt) {
+  if (W.fut) { if (e.mv) stepMv(e, dt, W); bossTick(e, W, dt, () => { }); return; }
+  if (G.nkRew || G.nkGrab) return;
+  if (e.mv) { if (stepMv(e, dt, W)) { e.hop = 0; nkLand(e); } return; }
+  bossTick(e, W, dt, () => nkBeat(e, W));
+};
+function nkLand(e) { const R = G.room; G.shake = Math.max(G.shake || 0, 0.5); Snd.S.slam(); ring(e.x, e.z, 1.4, [0.6, 0.65, 0.95]); burst(e.x, 0.2, e.z, 12, [0.3, 0.3, 0.45]);
+  if (e.chargeBreak) { const [i, j] = sqOf(R, e.x, e.z), adj = DIRS.rook.map(([a, b]) => [i + a, j + b]).filter(q => onBoard(R, q[0], q[1])); const q = adj[(Math.random() * adj.length) | 0]; if (q) nkBreak(R, q[0], q[1], true); } }
+function nkBeat(e, W) { const R = W.R, P = W.P, ps = psq(W); if (!ps) return; const ph = nkPh(e);
+  if (e.noSword > 0) e.noSword--; if (e.planted > 0 && --e.planted <= 0) { e.sw.pose = 'drag'; e.stuck = false; }
+  if ((e.nb % (ph >= 3 ? 14 : 10)) === 0 && R.nkHoles.size > 3) nkMend(R, 2);
+  if ((e.nb % 14) === 7 && G.E.filter(o => !o.dead && !o.d.boss).length < 2 && G.mc && G.mc.drops.length === 0) mkSummon(e, 2); // the night sends riders: something for the hand to throw // the abyss gives squares back, an L at a time
+  if (ph !== (e.lastPh || 1)) { e.lastPh = ph; nkPhase(e, W, ph); return; }
+  if (e.dive) { nkDiveBeat(e, W); return; }
+  if (e.hz.some(h => !h.shadow)) return;
+  if (e.rec > 0) { if (--e.rec <= 0) { e.stuck = false; e.sw.pose = 'drag'; if (aiRand(e, e.nb + 21) < 0.5) nkApproach(e, W); } return; }
+  const [i, j] = sqOf(R, e.x, e.z), d = Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j));
+  if (!e.combo) { // a new combo: its length grows with the fight
+    e.combo = { left: 3 + (ph >= 2 ? 1 : 0) + (ph >= 3 ? 1 : 0), last: null };
+    if (d > 3 && ph >= 3 && aiRand(e, e.nb + 13) < 0.45) return nkDiveStart(e, W);
+    if (d > 3 && !e.noSword) return nkDo(e, W, ph >= 2 && aiRand(e, e.nb + 1) < 0.35 ? 'bridge' : aiRand(e, e.nb) < 0.55 ? 'charge' : 'crescent');
+    if (d > 2) { if (aiRand(e, e.nb + 3) < 0.4 || e.noSword) return nkApproach(e, W); return nkDo(e, W, aiRand(e, e.nb + 4) < 0.5 ? 'vslash' : 'grabChoke'); }
+    return nkDo(e, W, e.noSword ? 'stomp' : aiRand(e, e.nb + 5) < 0.2 ? 'grabChoke' : aiRand(e, e.nb + 6) < 0.5 ? 'spin' : 'vslash'); }
+  if (e.combo.left <= 0) { e.combo = null; e.rec = ph >= 3 ? 1 : 2; e.stuck = !e.noSword; e.sw.pose = e.noSword ? 'none' : 'stuck'; mcS().ripples.push({ x: e.x, z: e.z, t: R.beat * e.rec, max: R.beat * e.rec }); return; } // the opening
+  // the next blow: by where you went
+  const rel = d <= 1 ? 'close' : d > (e.lastD || 0) ? 'back' : 'side', L = e.combo.last;
+  const T = { vslash: { side: 'sweep', back: 'crescent', close: 'grabChoke' }, spin: { side: 'spin2', back: 'charge', close: 'grabTrample' }, charge: { side: 'backhand', back: 'plant', close: 'spinLand' },
+    thrust: { side: 'whirl', back: 'throw', close: 'grabChoke' }, sweep: { side: 'thrust', back: 'vslash', close: 'grabPin' }, crescent: { side: 'thrust', back: 'charge', close: 'spin' } };
+  let nx = (T[L] || T.vslash)[rel] || 'vslash'; if (e.noSword && !['crescent', 'stomp', 'grabChoke', 'grabTrample'].includes(nx)) nx = rel === 'close' ? 'grabTrample' : rel === 'back' ? 'crescent' : 'stomp';
+  if (nx.startsWith('grab') && d > 2) nx = 'thrust';
+  if (ph >= 2 && !e.noSword && (nx === 'vslash' || nx === 'crescent' || nx === 'thrust' || nx === 'sweep') && aiRand(e, e.nb * 3 + 7) < 0.4) nx = 'bridge';
+  if (ph >= 3 && !e.combo.dived && (rel === 'back' ? 0.6 : 0.3) > aiRand(e, e.nb * 7 + 2)) { e.combo.dived = true; return nkDiveStart(e, W); }
+  if (nx.startsWith('grab') && (e.combo.grabbed || aiRand(e, e.nb * 5 + 1) < 0.45)) nx = e.noSword ? 'stomp' : aiRand(e, e.nb + 9) < 0.5 ? 'sweep' : 'spinLand'; // a grab ends the combo, and not every time
+  nkDo(e, W, nx); }
+// one L-leap toward you (it takes one beat)
+function nkApproach(e, W) { const R = W.R, ps = psq(W), [i, j] = sqOf(R, e.x, e.z); let best = null, bs = 1e9;
+  for (const [a, b] of KN) { const q = [i + a, j + b]; if (!onBoard(R, q[0], q[1]) || nkHole(R, q[0], q[1]) || (q[0] === ps[0] && q[1] === ps[1])) continue; const s = Math.abs(Math.max(Math.abs(q[0] - ps[0]), Math.abs(q[1] - ps[1])) - 1.5) + aiRand(e, a * 7 + b + e.nb) * 0.4; if (s < bs) { bs = s; best = q; } }
+  if (!best) return; const [x, z] = sqC(R, best[0], best[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.2, jump: true, h: 1.6 }; e.face = angTo(e.x, e.z, x, z); e.chargeBreak = false; }
+// a blow: fast (1 beat), slow (3), or a feint (shown slow, snaps fast after a beat)
+function nkSpeed(e, fastOnly) { const ph = nkPh(e), r = aiRand(e, e.nb * 11 + 3); if (fastOnly) return 'fast'; if (r < 0.12 + ph * 0.08) return 'feint'; return r < 0.55 ? 'fast' : 'slow'; }
+function nkHz(e, sqs, sp, o) { const n = sp === 'fast' ? 1 : 3, h = Object.assign({ sqs: sqs.filter(q => q[0] >= 0), n, n0: n, kind: 'red', dmg: 1, tint: sp === 'fast' ? NK_FAST : NK_SLOW, sp, ang: e.atkA || e.face }, o || {}); if (sp === 'feint') { h.feint = true; h.n = h.n0 = 3; } e.hz.push(h); e.sw.pose = sp === 'slow' || sp === 'feint' ? 'raise' : 'ready'; e.sw.sp = sp; e.sw.t = G.time; return h; }
+const NK_STEP = { sweep: 2, thrust: 2, spin: 1, spinLand: 1, backhand: 1, vslash: 1, whirl: 1, grabChoke: 3, grabTrample: 3, grabPin: 2, stomp: 2 };
+function nkStep(e, W, mv, ps) { const R = W.R, n = NK_STEP[mv]; let [i, j] = sqOf(R, e.x, e.z); if (!n) return [i, j]; const d = Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j)); if (d <= 1) return [i, j];
+  let q = [i, j]; for (let k = 0; k < Math.min(n, d - 1); k++) { const nq = [q[0] + Math.sign(ps[0] - q[0]), q[1] + Math.sign(ps[1] - q[1])]; if (!onBoard(R, nq[0], nq[1]) || nkHole(R, nq[0], nq[1]) || (nq[0] === ps[0] && nq[1] === ps[1])) break; q = nq; }
+  if (q[0] === i && q[1] === j) return q; const [x, z] = sqC(R, q[0], q[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: mv.startsWith('grab') ? 0.16 : 0.13, lin: true }; e.chargeBreak = false; e.dashFx = G.time; return q; }
+function nkDo(e, W, mv) { if (nkPh(e) >= 2 && !e.noSword && ['vslash', 'sweep', 'thrust', 'spin'].includes(mv) && aiRand(e, e.nb * 13 + 5) < 0.3) mv = 'bridge'; const R = W.R, P = W.P, ps = psq(W), [i, j] = nkStep(e, W, mv, ps), c = e.combo || { left: 1 }; c.left--; c.last = mv; e.lastD = Math.max(Math.abs(ps[0] - i), Math.abs(ps[1] - j));
+  const toward = [Math.sign(ps[0] - i), Math.sign(ps[1] - j)], ax = Math.abs(ps[0] - i) >= Math.abs(ps[1] - j) ? [toward[0] || 1, 0] : [0, toward[1] || 1]; e.face = Math.atan2(ps[1] - j, ps[0] - i); e.atkA = Math.atan2(ax[1], ax[0]);
+  const line = (d0, len, from) => { const out = []; const f = from || [i, j]; for (let k = 1; k <= len; k++) out.push([f[0] + d0[0] * k, f[1] + d0[1] * k]); return out.filter(q => onBoard(R, q[0], q[1])); };
+  const box = (c0, r) => { const out = []; for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if ((a || b) && onBoard(R, c0[0] + a, c0[1] + b)) out.push([c0[0] + a, c0[1] + b]); return out; };
+  const side = [-ax[1], ax[0]];
+  if (mv === 'bridge') { const per = [ax[1], ax[0]], L = []; const c0 = ps; for (let k = -12; k <= 12; k++) { const q = [c0[0] + per[0] * k, c0[1] + per[1] * k]; if (onBoard(R, q[0], q[1])) L.push(q); } nkHz(e, L, 'slow', { tag: 'bridge', fall: true }); return; } // 斷橋: the whole row across your path falls away
+  if (mv === 'vslash') { const sp = nkSpeed(e); nkHz(e, line(ax, 12), sp, { tag: 'vslash', fall: sp !== 'fast' }); return; } // 夜斬: down a whole line (a slow one brings the line down)
+  if (mv === 'sweep') { const sq = []; for (const s of [-1, 0, 1]) for (const k of [1, 2, 3]) sq.push([i + ax[0] * k + side[0] * s, j + ax[1] * k + side[1] * s]); nkHz(e, sq.filter(q => onBoard(R, q[0], q[1])), 'fast', { tag: 'sweep' }); return; } // 橫掃追擊
+  if (mv === 'spin' || mv === 'spinLand') { const sp = mv === 'spinLand' ? 'fast' : nkSpeed(e); nkHz(e, box([i, j], sp === 'fast' ? 1 : 2), sp, { tag: 'spin' }); return; } // 月輪
+  if (mv === 'spin2') { nkHz(e, box([i, j], 1), 'fast', { tag: 'spin' }); nkHz(e, box([i, j], 2).filter(q => Math.max(Math.abs(q[0] - i), Math.abs(q[1] - j)) === 2), 'slow', { tag: 'spin' }); return; } // two turns, the second wider
+  if (mv === 'whirl') { nkHz(e, box([i, j], 2), 'slow', { tag: 'spin' }); return; } // 拉劍迴旋
+  if (mv === 'thrust') { nkHz(e, line(ax, 6), 'fast', { tag: 'thrust' }); return; } // 突刺
+  if (mv === 'backhand') { nkHz(e, box([i, j], 1), 'fast', { tag: 'spin' }); return; } // 落地反手斬
+  if (mv === 'throw') { const L = line(ax, 6); nkHz(e, L, 'fast', { tag: 'throwOut' }); nkHz(e, L.slice().reverse(), 'slow', { tag: 'throwBack' }); e.sw.pose = 'thrown'; return; } // 擲劍: out and back
+  if (mv === 'crescent') { const d = ax, sq = []; for (let s = -2; s <= 2; s++) { const k = 3 - Math.abs(s) * 0.5 | 0; sq.push([i + d[0] * (k + 1) + side[0] * s, j + d[1] * (k + 1) + side[1] * s]); } nkHz(e, sq.filter(q => onBoard(R, q[0], q[1])), 'slow', { tag: 'crescent', magic: true, veil: 2, tint: MK_MAGIC }); return; } // 劍氣・新月 (magic)
+  if (mv === 'plant') { for (let r = 1; r <= 3; r++) nkHz(e, box([i, j], r).filter(q => Math.max(Math.abs(q[0] - i), Math.abs(q[1] - j)) === r), 'fast', { tag: 'wave', magic: true, veil: 2, tint: MK_MAGIC, n: r + 1, n0: r + 1 }); e.planted = 6; e.sw.pose = 'planted'; c.left = 0; return; } // 插劍
+  if (mv === 'stomp') { nkHz(e, box([i, j], 1), 'fast', { tag: 'stomp', magic: true, veil: 2, tint: MK_MAGIC }); return; } // bare-handed: the hooves
+  if (mv === 'charge') { // 夜騎衝鋒: the same L, again and again, toward you
+    let best = null, bs = 1e9; for (const [a, b] of KN) { const s = Math.hypot(i + a * 2 - ps[0], j + b * 2 - ps[1]); if (s < bs) { bs = s; best = [a, b]; } }
+    const path = []; let q = [i, j]; for (let k = 0; k < 3; k++) { const nq = [q[0] + best[0], q[1] + best[1]]; if (!onBoard(R, nq[0], nq[1])) break; path.push(nq); q = nq; }
+    path.forEach((p, k) => nkHz(e, [p].concat(DIRS.rook.map(([a, b]) => [p[0] + a, p[1] + b])).filter(z => onBoard(R, z[0], z[1])), 'fast', { tag: 'charge', land: p, n: 2 + k, n0: 2 + k }));
+    e.sw.pose = 'drag'; return; }
+  if (mv.startsWith('grab')) { c.grabbed = true; c.left = Math.min(c.left, 0); const sq = mv === 'grabPin' ? line(ax, 3) : mv === 'grabTrample' ? line(ax, 2).concat(box([i, j], 1).filter(q => (q[0] - i) * ax[0] + (q[1] - j) * ax[1] > 0)) : box([i, j], 1); nkHz(e, sq, 'fast', { tag: mv, dmg: 0, n: 2, n0: 2, tint: [1.6, 0.25, 0.2] }); e.grabWind = G.time; Snd.S.warn(); return; }
+}
+// a new phase: he drags the sword round the board, the night thickens, the blade grows
+function nkPhase(e, W, ph) { const R = W.R, [i, j] = sqOf(R, e.x, e.z); e.hz = []; e.combo = null; e.rec = 0; e.dive = null; e.hidden = false; e.stuck = false; e.planted = 0; if (e.noSword) e.noSword = 0;
+  e.swScale = ph >= 3 ? 1.4 : 1.2; e.phaseT = G.time; e.stunB = 2;
+  for (let r = 1; r <= 2; r++) { const sq = []; for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && onBoard(R, i + a, j + b)) sq.push([i + a, j + b]); e.hz.push({ sqs: sq, n: 2 + r, n0: 2 + r, kind: 'red', dmg: 1, tag: 'wave', magic: true, veil: 2, tint: NK_SHADE, sp: 'slow' }); }
+  if (!W.fut) { G.flash = Math.max(G.flash, 0.6); G.shake = Math.max(G.shake || 0, 1.2); G.hitstop = Math.max(G.hitstop || 0, 0.15); Snd.S.bell(); Snd.S.slam(); ring(e.x, e.z, 3, NK_SHADE); burst(e.x, 2, e.z, 50, [0.15, 0.05, 0.28]); if (ph >= 3) { for (const q of [[i + 2, j], [i - 2, j], [i, j + 2], [i, j - 2]]) nkBreak(R, q[0], q[1], true); } mcMark('nk_phase' + ph); } }
+// phase 3: he leaps into the abyss and comes up out of a gap next to you
+function nkDiveStart(e, W) { const R = W.R; let [i, j] = sqOf(R, e.x, e.z); e.combo = e.combo || { left: 1 }; e.combo.left = Math.min(e.combo.left, 1);
+  e.dive = { st: 'in', b: 2 }; e.sw.pose = 'drag'; e.mv = { fx: e.x, fz: e.z, tx: e.x, tz: e.z, t: 0, dur: 0.3, jump: true, h: 2.2 }; e.diveT = G.time; Snd.S.warn(); }
+function nkDiveBeat(e, W) { const R = W.R, D = e.dive, ps = psq(W); if (!ps) return; D.b--;
+  if (D.st === 'in' && D.b <= 0) { D.st = 'under'; D.b = 1; e.hidden = true; burst(e.x, 0.3, e.z, 30, [0.1, 0.04, 0.2]); ring(e.x, e.z, 1.6, NK_SHADE); Snd.S.mirrorIn(); return; }
+  if (D.st === 'under' && D.b <= 0) { // pick the exit: a gap near you, or tear one open two squares away
+    let best = null, bd = 1e9; for (const k of R.nkHoles) { const [a, b] = k.split(',').map(Number), dd = Math.max(Math.abs(a - ps[0]), Math.abs(b - ps[1])); if (dd >= 1 && dd <= 3 && dd < bd) { bd = dd; best = [a, b]; } }
+    if (!best) { const c = KN.map(([a, b]) => [ps[0] + a, ps[1] + b]).filter(q => onBoard(R, q[0], q[1])); best = c[(aiRand(e, e.nb) * c.length) | 0] || [ps[0], Math.max(0, ps[1] - 2)]; nkBreak(R, best[0], best[1], true); }
+    const sq = []; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (onBoard(R, best[0] + a, best[1] + b)) sq.push([best[0] + a, best[1] + b]);
+    D.st = 'rise'; D.at = best; e.hz.push({ sqs: sq, n: 3, n0: 3, kind: 'red', dmg: 1, tag: 'rise', tint: NK_SLOW, sp: 'slow', ang: e.face, at: best }); D.b = 99; return; } }
+function nkRise(e, h) { const R = G.room, [x, z] = sqC(R, h.at[0], h.at[1]); e.hidden = false; e.dive = null; e.x = x; e.z = z;
+  const adj = DIRS.king.map(([a, b]) => [h.at[0] + a, h.at[1] + b]).filter(q => onBoard(R, q[0], q[1]) && !nkHole(R, q[0], q[1])); const q = adj[(Math.random() * adj.length) | 0];
+  if (q) { const [tx, tz] = sqC(R, q[0], q[1]); e.mv = { fx: x, fz: z, tx, tz, t: 0, dur: 0.25, jump: true, h: 2.4 }; }
+  e.sw.pose = 'swing'; e.sw.t = G.time; e.sw.tag = 'spin'; e.sw.a = e.face; e.sw.dur = 0.32; e.sw.slow = true; e.slashFx = { sqs: h.sqs, t: G.time, col: [0.4, 0.6, 1.5] };
+  burst(x, 0.5, z, 40, [0.15, 0.06, 0.3]); ring(x, z, 2, NK_SHADE); G.shake = Math.max(G.shake || 0, 1.1); G.hitstop = Math.max(G.hitstop || 0, 0.1); Snd.S.slam(); Snd.S.shatter(); mcMark('nk_rise'); }
+// ---------------------------------------------------------------- present side: blows land, grabs, the rewind
+function nkFire(e, h) { const R = G.room, P = G.P, B = R.beat;
+  if (h.feint) return;
+  if (h.shadow) { (e.ghosts = e.ghosts || []).push({ tag: h.stag, a: h.ang, x: h.gx, z: h.gz, t: G.time, dur: h.stag === 'spin' ? 0.32 : h.stag === 'thrust' ? 0.16 : 0.22 }); e.slashFx2 = { sqs: h.sqs, t: G.time }; Snd.S.zap(); return; }
+  if (h.tag === 'rise') { nkRise(e, h); return; }
+  if (NK_SHADOW_TAGS.includes(h.tag) && !e.noSword) { const n = nkPh(e), B2 = R.beat; for (let k = 1; k <= n; k++) e.hz.push({ sqs: h.sqs.slice(), n: Math.round(k / B2), n0: Math.round(k / B2), kind: 'red', dmg: 1, tag: 'shadow', stag: h.tag === 'bridge' ? 'vslash' : h.tag, shadow: true, magic: true, veil: 2, tint: NK_SHADE, ang: h.ang, gx: e.x, gz: e.z, sp: 'slow' }); }
+  if (h.tag === 'stomp' || h.tag === 'wave' || h.tag === 'throwBack' || h.tag.startsWith('grab')) { } else { e.sw.pose = 'swing'; e.sw.t = G.time; e.sw.tag = h.tag === 'bridge' ? 'vslash' : h.tag; e.sw.a = h.ang; e.sw.dur = h.tag === 'spin' ? 0.32 : h.tag === 'thrust' ? 0.16 : 0.22; e.sw.slow = h.sp !== 'fast'; e.face = h.ang; }
+  if (!h.tag.startsWith('grab') && h.tag !== 'charge') e.slashFx = { sqs: h.sqs, t: G.time, col: h.magic ? [0.5, 0.15, 0.9] : h.sp === 'fast' ? [1.1, 1.1, 1.3] : [0.4, 0.6, 1.5] };
+  if (h.tag === 'charge') { const [x, z] = sqC(R, h.land[0], h.land[1]); e.mv = { fx: e.x, fz: e.z, tx: x, tz: z, t: 0, dur: 0.22, jump: true, h: 1.2 }; e.face = angTo(e.x, e.z, x, z); e.chargeBreak = true; return; }
+  for (const q of h.sqs) { const [x, z] = sqC(R, q[0], q[1]); if (Math.random() < 0.6) burst(x, 0.3, z, 3, h.magic ? [0.4, 0.12, 0.7] : [0.75, 0.8, 1.1]); }
+  if (h.fall) for (const q of h.sqs) mcAt(0.12, () => nkBreak(R, q[0], q[1], true));
+  if (h.tag === 'throwOut') { const q = h.sqs[h.sqs.length - 1], [x, z] = sqC(R, q[0], q[1]); e.swFly = { x0: e.x, z0: e.z, x1: x, z1: z, t0: G.time, dur: 0.25 }; }
+  if (h.tag === 'throwBack') { e.swFly = null; e.sw.pose = 'drag'; }
+  if (h.tag.startsWith('grab')) { const ps = mcPsq();
+    if (!sqsHas(h.sqs, ps[0], ps[1]) || P.hand || P.inv > 0 || P.hopJ || P.jump || P.inMirror) { Snd.S.slash(); return; }
+    G.nkGrab = { kind: h.tag, t: 0, e, x0: P.x, z0: P.z }; P.dash = null; P.lungeT = 0; P.vx = P.vz = 0; Snd.S.swallow(); G.hitstop = Math.max(G.hitstop || 0, 0.08); mcMark('nk_' + h.tag); return; }
+  G.shake = Math.max(G.shake || 0, h.sp === 'slow' ? 0.8 : 0.4); if (!h.magic) { Snd.S.slash(); if (h.sp === 'slow') Snd.S.slam(); } else Snd.S.zap();
+}
+// a grab in progress: you are held, then thrown / trampled / dragged
+function nkGrabTick(dt) { const g = G.nkGrab, P = G.P, R = G.room, e = g.e; g.t += dt; P.rootT = 0.1; P.inv = Math.max(P.inv, 0.05);
+  if (g.kind === 'grabChoke') { if (g.t < 0.55) { P.x = lerp(g.x0, e.x + Math.cos(e.face) * 0.9, Math.min(1, g.t * 4)); P.z = lerp(g.z0, e.z + Math.sin(e.face) * 0.9, Math.min(1, g.t * 4)); P.mcY = Math.min(1.6, g.t * 5); return; }
+    if (!g.to) { const ps = mcPsq(); let best = null, bd = 1e9; for (const k of R.nkHoles) { const [i, j] = k.split(',').map(Number), dd = Math.hypot(i - ps[0], j - ps[1]); if (dd < bd && dd <= 4) { bd = dd; best = [i, j]; } }
+      if (!best) best = [clamp(ps[0] + Math.round(Math.cos(e.face) * 3), 0, R.cols - 1), clamp(ps[1] + Math.round(Math.sin(e.face) * 3), 0, R.rows - 1)]; g.to = sqC(R, best[0], best[1]); g.fx = P.x; g.fz = P.z; g.t1 = g.t; Snd.S.spit(); }
+    const k = clamp01((g.t - g.t1) / 0.35); P.x = lerp(g.fx, g.to[0], k); P.z = lerp(g.fz, g.to[1], k); P.mcY = 1.6 * (1 - k) + Math.sin(k * Math.PI) * 1.2;
+    if (k >= 1) { G.nkGrab = null; P.mcY = 0; P.rootT = 0; P.inv = 0; G.shake = Math.max(G.shake || 0, 0.8); Snd.S.slam(); const q = mcPsq(); if (!nkHole(R, q[0], q[1])) hurtPlayer(1, 'bNight'); } return; } // into a gap → the fall check takes it
+  if (g.kind === 'grabTrample') { for (const at of [0.35, 0.75]) if (g.t >= at && !(g['s' + at])) { g['s' + at] = 1; ring(P.x, P.z, 1.2, [0.8, 0.8, 1]); G.shake = Math.max(G.shake || 0, 0.9); Snd.S.slam(); Snd.S.crunch(); e.hop = 0; }
+    e.hop = Math.max(0, Math.sin(g.t * Math.PI / 0.4)) * 0.9; if (g.t >= 0.95) { G.nkGrab = null; P.rootT = 0; P.inv = 0; hurtPlayer(1, 'bNight'); P.rootT = Math.max(P.rootT || 0, 0.6); } return; }
+  if (g.kind === 'grabPin') { if (!g.to) { g.to = [P.x + Math.cos(e.face) * 3.5, P.z + Math.sin(e.face) * 3.5]; g.fx = P.x; g.fz = P.z; }
+    const k = clamp01(g.t / 0.6); P.x = clamp(lerp(g.fx, g.to[0], k), R.bx0 + 0.3, R.bx1 - 0.3); P.z = clamp(lerp(g.fz, g.to[1], k), R.bz0 + 0.3, R.bz1 - 0.3); if (Math.random() < 0.6) burst(P.x, 0.1, P.z, 3, [0.7, 0.7, 0.9]);
+    const q = mcPsq(); if (nkHole(R, q[0], q[1])) { G.nkGrab = null; P.rootT = 0; P.inv = 0; return; } if (k >= 1) { G.nkGrab = null; P.rootT = 0; P.inv = 0; hurtPlayer(1, 'bNight'); } } }
+// the rewind: three seconds of the fight run backwards; your own wounds stay
+function nkSnap() { const B = G.boss, R = G.room, P = G.P; if (!B || B.dead) return; const H = G.nkHist; if (H.length && G.time - H[H.length - 1].t < 0.25) return;
+  H.push({ t: G.time, bx: B.x, bz: B.z, hp: B.hp, px: P.x, pz: P.z, holes: [...R.nkHoles] }); while (H.length > 16) H.shift(); }
+function nkRewind() { const H = G.nkHist; if (!H.length) return; const back = G.boss && nkPh(G.boss) >= 3 ? 2.05 : 3.05, to = H.find(s => s.t >= G.time - back) || H[0], idx = H.indexOf(to); G.nkRew = { t: 0, dur: 0.9, path: H.slice(idx).reverse(), to }; const B = G.boss; if (B) { B.hz = []; B.mv = null; B.combo = null; B.dive = null; B.hidden = false; }
+  G.P.mcY = 0; G.P.dash = null; G.P.jump = null; G.P.lungeT = 0; G.nkGrab = null; Snd.S.mirrorIn(); Snd.S.bell(); mcMark('nk_rewind'); }
+function nkRewTick(dt) { const W = G.nkRew, P = G.P, B = G.boss, R = G.room; W.t += dt; const k = clamp01(W.t / W.dur), f = k * (W.path.length - 1), a = Math.floor(f), b = Math.min(W.path.length - 1, a + 1), u = f - a, A = W.path[a], C = W.path[b];
+  P.x = lerp(A.px, C.px, u); P.z = lerp(A.pz, C.pz, u); P.rootT = 0.1; P.inv = Math.max(P.inv, 0.6); if (B) { B.x = lerp(A.bx, C.bx, u); B.z = lerp(A.bz, C.bz, u); B.hp = Math.max(B.hp, lerp(A.hp, C.hp, u)); }
+  G.invert = 0.9; if (Math.random() < 0.5) G.fx.push({ k: 'chip', x: P.x, y: rnd(0.2, 1.4), z: P.z, vx: 0, vy: -1, vz: 0, life: 0.4, s: 0.05, col: [0.9, 0.95, 1.3], r0: 0 });
+  if (k >= 1) { const T = W.to; G.nkRew = null; P.x = T.px; P.z = T.pz; fixPos(R, P); P.rootT = 0; if (B) { B.x = T.bx; B.z = T.bz; B.hp = Math.max(B.hp, T.hp); B.bt = R.beat * 1.5; }
+    R.nkHoles = new Set(T.holes); G.nkHist = []; G.invert = 0.15; G.flash = Math.max(G.flash, 0.5); ring(P.x, P.z, 1.4, [0.9, 0.95, 1.4]); Snd.S.shatter(); UI.boss(true); } }
+// per frame (from mcTick, any room with him in it)
+function nkFrame(dt) { const R = G.room, P = G.P, B = G.boss; if (!B || B.type !== 'bNight' || B.dead) { if (G.nkRew || G.nkGrab) { G.nkRew = null; G.nkGrab = null; P.mcY = 0; } if (B && B.type === 'bNight' && B.dead && !R.nkGrave) { R.nkGrave = { x: B.x + Math.cos(B.face) * 1.4, z: B.z + Math.sin(B.face) * 1.4, t: G.time }; for (let n = 0; n < 40; n++) { const an = rnd(0, TAU), sp = rnd(1, 4); G.fx.push({ k: 'chip', x: B.x, y: rnd(0.5, 3), z: B.z, vx: Math.cos(an) * sp, vy: rnd(0.5, 2), vz: Math.sin(an) * sp, life: rnd(0.8, 1.6), s: rnd(0.08, 0.16), col: [0.12, 0.05, 0.2], r0: 0 }); } mcAt(0.35, () => { G.shake = Math.max(G.shake || 0, 1); Snd.S.slam(); ring(R.nkGrave.x, R.nkGrave.z, 1.6, [0.8, 0.85, 1.3]); }); } if (R.nkFall) { for (const f of R.nkFall) f.t += dt; R.nkFall = R.nkFall.filter(f => f.t < 1.2); } return; }
+  for (const f of R.nkFall) f.t += dt; R.nkFall = R.nkFall.filter(f => f.t < 1.2);
+  if (G.nkRew) { nkRewTick(dt); return; }
+  if (G.nkGrab) { nkGrabTick(dt); return; }
+  nkSnap();
+  if (B.swFly && G.time - B.swFly.t0 > 0.9) B.swFly = null;
+  // fall into a gap → rewind
+  if (G.state === 'play' && !P.inMirror && !P.hand && !P.hopJ && !P.jump && !P.dash && !(P.mcSunkT > G.time)) { const q = mcPsq(); if (nkHole(R, q[0], q[1])) { burst(P.x, 0.2, P.z, 18, [0.7, 0.75, 1.0]); nkRewind(); } }
+  // the hand: steal the sword while it is stuck or planted, or while a slow blow is coming
+}
+// the hand reaches for him (mcGrabOne asks first): his wrist while he grabs, his sword while it is stuck
+function nkHandGrab() { const P = G.P, B = G.boss; if (!B || B.dead || B.type !== 'bNight' || G.nkRew) return null;
+  if (B.hz.some(h => h.tag && h.tag.startsWith('grab')) && dist(P.x, P.z, B.x, B.z) < 3.6) { B.hz = []; B.combo = null; B.rec = 3; B.stuck = true; B.sw.pose = 'stuck'; B.stunB = 3; B.nkWrist = true; hurtEnemy(B, 1, angTo(P.x, P.z, B.x, B.z), 'hand');
+    ring(B.x, B.z, 1.8, [0.6, 0.25, 1.1]); burst(B.x, 1.6, B.z, 20, [0.25, 0.1, 0.4]); G.hitstop = Math.max(G.hitstop || 0, 0.14); G.shake = Math.max(G.shake || 0, 1); Snd.S.slam(); Snd.S.crunch(); mcMark('nk_wrist'); return { wrist: true }; }
+  return nkSwordGrab(); }
+function nkSwordGrab() { const P = G.P, B = G.boss; if (!B || B.dead || B.type !== 'bNight' || B.noSword || B.mv || G.time < (B.swordCd || 0) || !(B.stuck || B.planted > 0 || B.sw.pose === 'raise') || dist(P.x, P.z, B.x, B.z) > 3.4) return null; B.hz = [];
+  B.noSword = 8; B.stuck = false; B.planted = 0; B.sw.pose = 'none'; B.combo = null; B.rec = 1; G.hitstop = Math.max(G.hitstop || 0, 0.1); G.shake = Math.max(G.shake || 0, 0.7); Snd.S.swallow(); Snd.S.bell(); mcMark('nk_sword'); return { sword: true, from: B }; }
+function nkSwordBack(B) { if (B && !B.dead) { B.noSword = 0; B.swordCd = G.time + 6; B.sw.pose = 'drag'; ring(B.x, B.z, 1.2, [0.9, 0.9, 1.3]); } }
+// ---------------------------------------------------------------- drawing: the gaps, falling squares, the knight of mist, the sword
+function nkDraw(world, decals, present, t, pieceItems) { const R = G.room, B = G.boss, P = G.P, D = 8;
+  if (R.nkHoles) for (const k of R.nkHoles) { const [i, j] = k.split(',').map(Number), [x, z] = sqC(R, i, j), h2 = SQ / 2, w = 0.75 + 0.25 * Math.sin(t * 3 + i * 1.3 + j);
+    world.push({ geo: 'box', m: M4.trs(x, 0.006, z, 0, SQ + 0.01, 0.014, SQ + 0.01), col: [0, 0, 0], kind: 1 });
+    for (const [dx, dz, sx, sz, ni, nj] of [[0, -h2, SQ, 0.13, 0, -1], [0, h2, SQ, 0.13, 0, 1], [-h2, 0, 0.13, SQ, -1, 0], [h2, 0, 0.13, SQ, 1, 0]]) { if (nkHole(R, i + ni, j + nj)) continue;
+      decals.push({ geo: 'plane', m: M4.trs(x + dx, 0.04, z + dz, 0, sx, 1, sz), col: [0.9 * w, 1.0 * w, 1.6 * w], kind: D, alpha: 1 });
+      world.push({ geo: 'box', m: M4.trs(x + dx * 0.96, -0.9, z + dz * 0.96, 0, sx === SQ ? SQ : 0.05, 1.8, sz === SQ ? SQ : 0.05), col: [0.03, 0.035, 0.08], kind: 1 }); }
+    for (let n = 0; n < 3; n++) { const q = (t * 0.5 + n / 3 + (i * 0.37 + j * 0.61)) % 1; decals.push({ geo: 'sphere', m: M4.trs(x + Math.cos(n * 2.1 + i) * 0.35, -0.6 + q * 0.9, z + Math.sin(n * 2.1 + j) * 0.35, 0, 0.04, 0.04, 0.04), col: [0.35 * (1 - q), 0.4 * (1 - q), 0.8 * (1 - q)], kind: D, alpha: 1 }); } }
+  for (const f of R.nkFall || []) { const k = f.up ? 1 - f.t / 0.6 : f.t, y = f.up ? -6 * Math.max(0, k) * Math.max(0, k) : -0.6 * k * k * 9; if (f.up && f.t > 0.6) continue; world.push({ geo: 'box', m: M4.trs(f.x, y - 0.05, f.z, (f.sp || 0) * f.t, SQ * 0.96, 0.18, SQ * 0.96), col: f.dark ? [0.06, 0.065, 0.14] : [0.6, 0.64, 0.77], kind: 1 }); }
+  if (R.nkGrave) { const k = clamp01((G.time - R.nkGrave.t) / 0.35); mkSword(present, R.nkGrave.x, 3.2 + (1 - k * k) * 5, R.nkGrave.z, [0, -1, 0], NK_SLOW.map(v => v * 0.4), 1); }
+  if (!B || B.dead || B.type !== 'bNight') return;
+  if (B.slashFx) { const k = (G.time - B.slashFx.t) / 0.4; if (k < 1) for (const [i, j] of B.slashFx.sqs) { const [x, z] = sqC(R, i, j), f = (1 - k) * (1 - k); decals.push({ geo: 'plane', m: M4.trs(x, 0.045, z, 0, SQ * 0.95, 1, SQ * 0.95), col: B.slashFx.col.map(v => v * 0.55 * f), kind: D, alpha: 1 }); decals.push({ geo: 'plane', m: M4.trs(x, 0.05, z, B.face, SQ * 1.0, 1, 0.08), col: B.slashFx.col.map(v => v * 1.2 * f), kind: D, alpha: 1 }); } }
+  for (const g of B.ghosts || []) { const tt = G.time - g.t; if (tt > g.dur + 0.3) continue; const GB = { x: g.x, z: g.z, hop: 0, face: g.a }, fade = clamp01(1 - (tt - g.dur) / 0.3);
+    for (let m = 0; m <= 10; m++) { const q = nkSwingAt(GB, g, Math.min(tt, g.dur) - m * 0.014); if (!q) break; nkBlade(decals, q.h, q.d, 5.2 * (B.swScale || 1), m ? 0.4 : 0.6, 0.03, NK_SHADE.map(v => v * (m ? 0.15 : 0.6) * (1 - m / 11) * fade), D); }
+    for (let n = 0; n < 4; n++) decals.push({ geo: 'sphere', m: M4.trs(g.x + Math.cos(n * 1.6) * 0.3, 1.6 + n * 0.3, g.z + Math.sin(n * 1.6) * 0.3, 0, 0.35, 0.3, 0.35), col: [0.12 * fade, 0.04 * fade, 0.22 * fade], kind: D, alpha: 1 }); }
+  if (B.ghosts) B.ghosts = B.ghosts.filter(g => G.time - g.t < g.dur + 0.3);
+  if (B.slashFx2) { const k = (G.time - B.slashFx2.t) / 0.4; if (k < 1) for (const [i, j] of B.slashFx2.sqs) { const [x, z] = sqC(R, i, j); decals.push({ geo: 'plane', m: M4.trs(x, 0.046, z, 0, SQ * 0.95, 1, SQ * 0.95), col: NK_SHADE.map(v => v * 0.5 * (1 - k)), kind: D, alpha: 1 }); } }
+  for (const h of B.hz) if (h.shadow) { const k = 1 - h.n / h.n0; for (const [i, j] of h.sqs) { const [x, z] = sqC(R, i, j); decals.push({ geo: 'ringT', m: M4.trs(x, 0.04, z, 0, SQ * (0.25 + 0.2 * k), 1, SQ * (0.25 + 0.2 * k)), col: NK_SHADE.map(v => v * (0.25 + 0.4 * k)), kind: D, alpha: 1 }); } }
+  if (B.dive && B.dive.st === 'rise' && B.dive.at) { const [x, z] = sqC(R, B.dive.at[0], B.dive.at[1]); for (let n = 0; n < 8; n++) { const q = (t * 1.5 + n / 8) % 1; decals.push({ geo: 'sphere', m: M4.trs(x + Math.cos(n * 2.4) * 0.4, -0.5 + q * 2, z + Math.sin(n * 2.4) * 0.4, 0, 0.3 * (1 - q), 0.3 * (1 - q), 0.3 * (1 - q)), col: [0.2, 0.08, 0.35], kind: D, alpha: 1 }); } for (const s of [-1, 1]) present.push({ geo: 'sphere', m: M4.trs(x + s * 0.18, 0.15, z, 0, 0.08, 0.05, 0.08), col: [1.6, 1.4, 2.2], kind: 5 }); }
+  if (B.hidden) return;
+  if (B.phaseT && G.time - B.phaseT < 1.2) { const k = (G.time - B.phaseT) / 1.2; for (let n = 0; n < 16; n++) { const an = n / 16 * TAU + k * 3, r = 0.8 + k * 4; decals.push({ geo: 'sphere', m: M4.trs(B.x + Math.cos(an) * r, 0.6 + k, B.z + Math.sin(an) * r, 0, 0.5 * (1 - k), 0.4 * (1 - k), 0.5 * (1 - k)), col: [0.25, 0.08, 0.45], kind: D, alpha: 1 }); } }
+  const sc = 2.0, fx = Math.cos(B.face), fz = Math.sin(B.face), y0 = B.hop || 0;
+  if (B.dashFx && G.time - B.dashFx < 0.25) for (let n = 0; n < 5; n++) decals.push({ geo: 'sphere', m: M4.trs(B.x - fx * n * 0.45, 1.4, B.z - fz * n * 0.45, 0, 0.5 - n * 0.07, 0.4, 0.5 - n * 0.07), col: [0.12, 0.05, 0.2], kind: D, alpha: 1 });
+  // mist: the rider above the horse, a mane, a trail
+  for (let n = 0; n < 14; n++) { const ph = t * 2 + n * 1.7, h = 1.6 + (n % 5) * 0.32, r = 0.42 - (n % 5) * 0.05; decals.push({ geo: 'sphere', m: M4.trs(B.x - fx * 0.25 + Math.cos(ph) * r * 0.6, h * sc * 0.75 + y0, B.z - fz * 0.25 + Math.sin(ph) * r * 0.6, ph, 0.3, 0.26, 0.3), col: n % 4 ? [0.07, 0.03, 0.13] : [0.2, 0.08, 0.36], kind: D, alpha: 1 }); }
+  for (let n = 0; n < 6; n++) { const q = ((t * 0.8 + n / 6) % 1); decals.push({ geo: 'sphere', m: M4.trs(B.x - fx * (0.6 + q * 1.4), 1.2 + q * 0.4 + y0, B.z - fz * (0.6 + q * 1.4), 0, 0.28 * (1 - q), 0.2 * (1 - q), 0.28 * (1 - q)), col: [0.08, 0.03, 0.14], kind: D, alpha: 1 }); }
+  for (const s of [-1, 1]) present.push({ geo: 'sphere', m: M4.trs(B.x + fx * 0.55 - fz * s * 0.16, 2.35 + y0, B.z + fz * 0.55 + fx * s * 0.16, 0, 0.07, 0.05, 0.07), col: [1.6, 1.4, 2.2], kind: 5 });
+  for (const s of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) present.push({ geo: 'box', m: M4.trs(B.x + fx * 0.3 * s[1] - fz * 0.25 * s[0], 0.08 + y0, B.z + fz * 0.3 * s[1] + fx * 0.25 * s[0], -B.face, 0.2, 0.16, 0.2), col: [0.08, 0.07, 0.1], kind: 2 });
+  // the sword: dragged, raised (fast = white edge, slow = blue and brightening), swung, stuck, planted, thrown, or gone
+  const S = B.sw; if (S.pose === 'swing' && G.time - S.t > (S.dur || 0.22) + 0.25) S.pose = 'drag'; const pose = S.pose; if (pose === 'none' || (P.hand && ((P.hand.held && P.hand.held.sword) || (P.hand.held2 && P.hand.held2.sword)))) return;
+  const sinceT = G.time - S.t, slowK = S.sp === 'fast' ? 0 : clamp01(sinceT / (R.beat * 3)), edge = S.sp === 'fast' || (S.sp === 'feint' && sinceT > R.beat) ? NK_FAST : NK_SLOW.map(v => v * (0.5 + slowK * 1.2));
+  let hx = B.x + fx * 0.4 - fz * 0.55, hz = B.z + fz * 0.4 + fx * 0.55, hy = 2.0 + y0, dir = [fx, -0.35, fz];
+  if (pose === 'drag' || pose === 'ready') dir = [fx * 0.6 - fz * 0.2, -0.75, fz * 0.6 + fx * 0.2];
+  if (pose === 'raise') { dir = [-fx * 0.25, 1, -fz * 0.25]; hy = 2.4 + y0; }
+  if (pose === 'swing') { const sw = nkSwingAt(B, S, sinceT); if (sw) { [hx, hy, hz] = sw.h; dir = sw.d; if (sinceT < (S.dur || 0.22) + 0.12) for (let m = 1; m <= 14; m++) { const g = nkSwingAt(B, S, Math.min(sinceT, S.dur || 0.22) - m * 0.011); if (!g) break; const c = (S.slow ? [0.3, 0.5, 1.4] : [0.9, 0.9, 1.1]).map(v => v * 0.2 * (1 - m / 15) * clamp01(1 - (sinceT - (S.dur || 0.22)) / 0.12)); nkBlade(decals, g.h, g.d, 5.2 * (B.swScale || 1), 0.4, 0.02, c, D); } } }
+  if (pose === 'stuck' || pose === 'planted') { hx = B.x + fx * 1.4; hz = B.z + fz * 1.4; hy = 3.2; dir = [0, -1, 0]; }
+  if (pose === 'thrown' && B.swFly) { const k = clamp01((G.time - B.swFly.t0) / B.swFly.dur); hx = lerp(B.swFly.x0, B.swFly.x1, k); hz = lerp(B.swFly.z0, B.swFly.z1, k); hy = 1.0; const sp = t * 18; dir = [Math.cos(sp), 0, Math.sin(sp)]; }
+  mkSword(present, hx, hy, hz, dir, edge, (pose === 'raise' ? 1 + slowK * 0.6 : 1) * ((B.lastPh || 1) >= 2 ? 1.25 : 1), B.swScale || 1); }
+// where the swing is at time tt after it fired: the hand and the blade direction, per blow
+function nkSwingAt(B, S, tt) { if (tt < 0) return null; const k = clamp01(tt / (S.dur || 0.22)), e2 = 1 - (1 - k) * (1 - k), a = S.a !== undefined ? S.a : B.face, ca = Math.cos(a), sa = Math.sin(a), y0 = (B.hop || 0) + 2.0, tag = S.tag;
+  const sh = (r, an) => [B.x + Math.cos(an) * r, y0, B.z + Math.sin(an) * r];
+  if (tag === 'vslash' || tag === 'crescent' || tag === 'throwOut') { const p = 1.9 - e2 * 2.35; return { h: [B.x + ca * 0.7, y0 + 0.4, B.z + sa * 0.7], d: [ca * Math.cos(p), Math.sin(p), sa * Math.cos(p)] }; } // overhead, down the line
+  if (tag === 'sweep') { const an = a - 1.9 + e2 * 3.8; return { h: sh(0.7, an), d: [Math.cos(an), -0.12, Math.sin(an)] }; } // a wide flat arc
+  if (tag === 'spin') { const an = a - Math.PI + e2 * TAU * 1.0; return { h: sh(0.7, an), d: [Math.cos(an), -0.08, Math.sin(an)] }; } // all the way round
+  if (tag === 'whirl') { const an = a + e2 * TAU * 1.5; return { h: sh(0.8, an), d: [Math.cos(an), -0.2, Math.sin(an)] }; }
+  if (tag === 'thrust') { const r = 0.3 + e2 * 2.2; return { h: [B.x + ca * r, y0 - 0.5, B.z + sa * r], d: [ca, -0.05, sa] }; } // a stab, the whole body behind it
+  return { h: [B.x + ca * 0.6, y0, B.z + sa * 0.6], d: [ca, 0.6 - e2 * 1.2, sa] }; }
+function nkBlade(list, h, dir, L, W2, T, col, kind) { const l = Math.hypot(dir[0], dir[1], dir[2]) || 1, d = [dir[0] / l, dir[1] / l, dir[2] / l], up = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const z0 = [d[1] * up[2] - d[2] * up[1], d[2] * up[0] - d[0] * up[2], d[0] * up[1] - d[1] * up[0]], zl = Math.hypot(...z0) || 1, w = z0.map(v => v / zl), n2 = [d[1] * w[2] - d[2] * w[1], d[2] * w[0] - d[0] * w[2], d[0] * w[1] - d[1] * w[0]], c = h.map((v, i) => v + d[i] * L * 0.55);
+  list.push({ geo: 'box', m: [d[0] * L, d[1] * L, d[2] * L, 0, w[0] * W2, w[1] * W2, w[2] * W2, 0, n2[0] * T, n2[1] * T, n2[2] * T, 0, c[0], c[1], c[2], 1], col, kind, alpha: 1 }); }
+function mkSword(present, hx, hy, hz, dir, edge, glow, ss) { ss = ss || 1; const l = Math.hypot(dir[0], dir[1], dir[2]) || 1, d = [dir[0] / l, dir[1] / l, dir[2] / l], up = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const z0 = [d[1] * up[2] - d[2] * up[1], d[2] * up[0] - d[0] * up[2], d[0] * up[1] - d[1] * up[0]], zl = Math.hypot(...z0) || 1, w = [z0[0] / zl, z0[1] / zl, z0[2] / zl], n2 = [d[1] * w[2] - d[2] * w[1], d[2] * w[0] - d[0] * w[2], d[0] * w[1] - d[1] * w[0]];
+  const bx = (c, L, W2, T, col, kind) => present.push({ geo: 'box', m: [d[0] * L, d[1] * L, d[2] * L, 0, w[0] * W2, w[1] * W2, w[2] * W2, 0, n2[0] * T, n2[1] * T, n2[2] * T, 0, c[0], c[1], c[2], 1], col, kind });
+  const at = k => [hx + d[0] * k, hy + d[1] * k, hz + d[2] * k];
+  bx(at(-0.45), 0.9, 0.13, 0.13, [0.12, 0.1, 0.14], 2); bx(at(0.02), 0.12, 1.15, 0.18, [0.2, 0.18, 0.24], 2); // grip, guard
+  bx(at(2.7 * ss), 5.2 * ss, 0.62 * Math.sqrt(ss), 0.11, [0.08, 0.08, 0.11], 2); // the blade
+  for (const s of [-1, 1]) present.push({ geo: 'box', m: [d[0] * 5.0 * ss, d[1] * 5.0 * ss, d[2] * 5.0 * ss, 0, w[0] * 0.05, w[1] * 0.05, w[2] * 0.05, 0, n2[0] * 0.13, n2[1] * 0.13, n2[2] * 0.13, 0, ...at(2.7 * ss).map((v, k) => v + w[k] * s * 0.32 * Math.sqrt(ss)), 1], col: edge.map(v => v * glow), kind: 5 }); }
+window.__NK = { boss: () => G.boss, rewind: nkRewind, hist: () => G.nkHist.length, holes: () => G.room.nkHoles ? G.room.nkHoles.size : -1, grab: () => G.nkGrab && G.nkGrab.kind, swordGrab: nkSwordGrab, handGrab: nkHandGrab };
 
 // ============================================================================
 // e4_view.js — turn game state into draw lists for the renderer
@@ -5951,7 +6474,8 @@ const View = (() => {
       out.push({ geo: 'sphere', m: M4.trs(e.x, y0, e.z, 0, 0.22 * sp, 0.22 * sp, 0.22 * sp), col: c, kind: 5 });
       for (let n = 0; n < 4; n++) { const a = n * Math.PI / 4 + t * 0.8; out.push({ geo: 'box', m: M4.trs(e.x, y0, e.z, a, 0.8 * sp, 0.05, 0.05), col: c.map(v => v * 0.7), kind: 5 }); }
       return; }
-    const s = e.d.scale || 1, sc = s * (e.spawnT > 0 ? clamp01(1 - e.spawnT / 1.6) : 1), col = e.flash > 0 ? [1.7, 1.6, 1.5] : e.d.col, kind = ghostKind || 9, y = e.hop || 0;
+    const mkL = mkLook(e); if (mkL && mkL.hide) return;
+    const s = (e.d.scale || 1) * (mkL && mkL.scale !== undefined ? mkL.scale : 1), sc = s * (e.spawnT > 0 ? clamp01(1 - e.spawnT / 1.6) : 1), col = e.flash > 0 ? [1.7, 1.6, 1.5] : mkL ? mkL.col : e.d.col, kind = ghostKind || (mkL ? mkL.kind : 9), y = e.hop || 0;
     const sh = (e.st2 === 'warn' || e.mated || e.check) ? Math.sin(t * 45) * 0.05 : 0;
     if (e.type === 'bReflect') {
       if (e.form) pieceItems(e.form, e.x, y, e.z, e.face, 0.82, [0.9, 0.9, 0.95], ghostKind || 2, out, null, e.finv);
@@ -6109,6 +6633,7 @@ const View = (() => {
       const eh = (PH[F] || 1.4) * 0.62 * sc * B; eyesAt(out, x, y + (FI ? 0.4 : eh), z, face, 1.1 * B, 1.5); };
     const halves = (sep, sink, spin) => { // the victim split down the middle, halves sliding apart
       const px2 = -sa, pz2 = ca; for (const sd of [-1, 1]) { const h = []; enemyItems(e, h, 0, t); warp(h, Ex, Ez, -sink, 0.62, 1 - sink * 0.3, spin * sd, sd * sep * 0.5); for (const it of h) it.m = M4.mul(M4.trs(px2 * sd * sep, 0, pz2 * sd * sep), it.m); for (const it of h) out.push(it); } };
+    if (X.kind === 'handCrush') { showE = mcExecDraw(X, out, decals, t, en, pre, post, pieceItems); } else
     if (X.kind === 'pawnStab') {
       if (!X.fired) { const k = ss(pre), x = lerp(Sx, Ex - ca * 0.75, k), z = lerp(Sz, Ez - sa * 0.75, k); pf(x, 0.05 * Math.sin(k * Math.PI), z, a, 0.35 * k); showE = true; }
       else { pf(Ex - ca * 0.75, 0, Ez - sa * 0.75, a, 0.35 * (1 - post)); showE = false; const sep = ss(clamp01(post / 0.5)) * 0.7; halves(sep, ss(clamp01((post - 0.45) / 0.55)) * 2, post * 0.6);
@@ -6590,7 +7115,7 @@ const IC = (() => {
 // ============================================================================
 const UI = (() => {
     const ROOM_NAMES = ['門廳', '畫廊', '長廊', '書房', '舞廳', '溫室'];
-  const floorName = i => { const f = floorOf(i); if (f.t === 'mc') return f.final ? '鏡底' : '鏡城 ' + '一二三四五六七八'[f.k || 0] + (f.theme && f.theme !== 'hall' ? '・' + MC_THEME[f.theme] : ''); return f.t === 'boss' ? BOSS[f.kind].name : ROOMT[f.t] && f.t !== 'room' ? ROOMT[f.t][1] : ROOM_NAMES[f.rn] || '棋盤'; };
+  const floorName = i => { const f = floorOf(i); if (f.mc) return f.final ? '鏡底' : BOSS[f.kind].name; if (f.t === 'mc') return f.final ? '鏡底' : '鏡城 ' + '一二三四五六七八'[f.k || 0] + (f.theme && f.theme !== 'hall' ? '・' + MC_THEME[f.theme] : ''); return f.t === 'boss' ? BOSS[f.kind].name : ROOMT[f.t] && f.t !== 'room' ? ROOMT[f.t][1] : ROOM_NAMES[f.rn] || '棋盤'; };
   let toastT = null;
   function hud(on) { $('#hud').hidden = !on; $('#touch').hidden = !on; }
   function update() {
@@ -6675,7 +7200,7 @@ const UI = (() => {
     if (G.fate && G.fate.live && G.state === 'play' && !TUT.dodge && G.PV) { const s = Gfx.project(G.PV, G.fate.x, 1.6, G.fate.z); if (mk._k !== 1) { mk._k = 1; mk.innerHTML = '<b>!</b>' + IC.speed; } mk.hidden = false; mk.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`; }
     else mk.hidden = true;
   }
-  function nodeIc(k) { const f = G.run && G.run.floors[k]; if (!f) return ['dot', '']; if (f.t === 'mc') return [f.final ? 'boss' : 'spn', IC.mirror]; if (f.t === 'boss') return ['boss' + (BOSS[f.kind] && BOSS[f.kind].inv ? ' invb' : ''), IC[BOSS[f.kind] ? BOSS[f.kind].body : 'king']]; if (f.t === 'choice') return ['q', '?']; if (f.t !== 'room' && ROOMT[f.t]) return ['spn', IC[ROOMT[f.t][0]]]; return ['dot', '']; }
+  function nodeIc(k) { const f = G.run && G.run.floors[k]; if (!f) return ['dot', '']; if (f.mc && !f.final) return ['boss', IC.knight]; if (f.t === 'mc' || f.mc) return [f.final ? 'boss' : 'spn', IC.mirror]; if (f.t === 'boss') return ['boss' + (BOSS[f.kind] && BOSS[f.kind].inv ? ' invb' : ''), IC[BOSS[f.kind] ? BOSS[f.kind].body : 'king']]; if (f.t === 'choice') return ['q', '?']; if (f.t !== 'room' && ROOMT[f.t]) return ['spn', IC[ROOMT[f.t][0]]]; return ['dot', '']; }
   function miniRoute(i) { const nd = k => { const [c, h] = nodeIc(k); return `<span class="n ${c} ${k === i ? 'cur' : ''}">${h}</span>`; };
     const N = G.run ? G.run.floors.length : ROOMS_PER_RUN; let nx = ''; for (let k = i + 1; k < Math.min(N, i + 3); k++) nx += '<i class="ar">›</i>' + nd(k);
     return `<span class="rtm"><b>${i + 1}</b><span>/${G.mode === 'endless' ? '∞' : N}</span>${nd(i)}${nx}</span>`; }
@@ -6760,7 +7285,7 @@ const UI = (() => {
   function startSelected() { const md = MODES[META.get().modeSel] ? META.get().modeSel : 'normal'; if (md === 'challenge') { bossPick(); return; } $('#title').hidden = true; if (!localStorage_get('mirror.intro') && !window.__fast) UI.intro(() => startRun(md)); else startRun(md); }
   function bossPick() { const o = META.get(), best = o.best || {}, el = $('#bosspick') || (() => { const d = document.createElement('div'); d.id = 'bosspick'; d.className = 'ov'; document.body.appendChild(d); return d; })();
     el.innerHTML = `<div class="bpwrap"><h2>Boss 挑戰</h2><small>帶著 5 個隨機增益，單挑一隻 Boss，越快越好</small><div class="hsel">${Array.from({ length: 10 }, (_, k) => `<i data-h="${k + 1}" class="${k < (o.cHearts || 4) ? 'on' : ''}"></i>`).join('')}<b>${o.cHearts || 4}</b></div>${(() => { const bp = k => `<button class="bp ${k[0] === 'i' ? 'inv' : ''} ${STAR_BOSSES.includes(k) ? 'stb' : ''}" data-b="${k}"><span class="pa">${IC[BOSS[k].body]}</span><b>${BOSS[k].name}</b><small>${best['c_' + k] ? IC.clock + fmtT(best['c_' + k]) : '—'}</small></button>`;
-      return `<div class="bpg">${ALL_BOSSES.map(bp).join('')}</div><h3 class="bph">${IC.star}<span>星之系列</span></h3><div class="bpg">${STAR_BOSSES.map(bp).join('')}</div>`; })()}<button class="btn ib" data-x="1">${IC.door}</button></div>`;
+      return `<div class="bpg">${ALL_BOSSES.map(bp).join('')}</div><h3 class="bph">${IC.star}<span>星之系列</span></h3><div class="bpg">${STAR_BOSSES.map(bp).join('')}</div><h3 class="bph">${IC.mirror}<span>鏡之系列</span></h3><div class="bpg">${MIRROR_BOSSES.map(bp).join('')}</div>`; })()}<button class="btn ib" data-x="1">${IC.door}</button></div>`;
     el.hidden = false; el.onclick = ev => { const b = ev.target.closest('[data-b]'); const hb = ev.target.closest('[data-h]'); if (hb) { const o2 = META.get(); o2.cHearts = +hb.dataset.h; META.set(o2); Snd.S.ui(); bossPick(); return; }
       if (b) { el.hidden = true; $('#title').hidden = true; startRun('challenge', b.dataset.b); const P = G.P, h = META.get().cHearts || 4; P.maxHp = h + (P.tr.skin || 0); P.hp = P.maxHp; return; } if (ev.target.closest('[data-x]')) el.hidden = true; }; }
   function modeRow() { const o = META.get(), md = MODES[o.modeSel] ? o.modeSel : 'normal', best = o.best || {};
@@ -6790,7 +7315,7 @@ const UI = (() => {
   function pumpHint() { if (hBusy || !hq.length) return; if (window.__modal || G.state !== 'play') { clearTimeout(hT); hT = setTimeout(pumpHint, 400); return; }
     const h = $('#hint'); h.innerHTML = hq.shift(); h.classList.remove('show'); void h.offsetWidth; h.classList.add('show'); hBusy = 1; setTimeout(() => { hBusy = 0; pumpHint(); }, 4200); }
   function fate() { const f = $('#fatecard'); f.classList.remove('show'); void f.offsetWidth; f.classList.add('show'); }
-  function boss(on) { $('#bossbar').hidden = !on; if (on && G.room.bossKind) { const B = G.boss; $('#bossbar b').innerHTML = BOSS[G.room.bossKind].name + (B && B.type === 'bKing' && !G.room.chess ? ' ' + IC.crown.repeat(Math.max(0, B.lives || 0)) : ''); } }
+  function boss(on) { $('#bossbar').hidden = !on; if (on && G.room.bossKind) { const B = G.boss; $('#bossbar b').innerHTML = (B && B.bname || BOSS[G.room.bossKind].name) + (B && B.type === 'bKing' && !G.room.chess ? ' ' + IC.crown.repeat(Math.max(0, B.lives || 0)) : ''); } }
   function fade(cb) { const f = $('#fade'); f.classList.add('on'); setTimeout(() => { cb(); f.classList.remove('on'); }, 450); }
   function choose(list) {
     const c = $('#choose');
@@ -7011,7 +7536,7 @@ const MUI = (() => {
   const $ = s => document.querySelector(s);
   const inner = n => (IC[n] || '').replace(/<svg[^>]*>/, '').replace('</svg>', '');
   const fz = (base, top) => `<span class="fz">${IC[base] || IC.star}${top ? `<span class="fzt">${IC[top]}</span>` : ''}</span>`; /* (a fusion with no piece of its own shows a star) */
-  const BOSSES = ['bKnight', 'bPawn', 'bBishop', 'bRook', 'bQueen', 'bKing', 'iKnight', 'iPawn', 'iBishop', 'iRook', 'iQueen', 'iKing', 'bStar', 'bLance', 'bWall'];
+  const BOSSES = ['bKnight', 'bPawn', 'bBishop', 'bRook', 'bQueen', 'bKing', 'iKnight', 'iPawn', 'iBishop', 'iRook', 'iQueen', 'iKing', 'bStar', 'bLance', 'bWall', 'bMirror', 'bNight'];
   const EXECS = [['pawnStab', 'pawn', '兵刺'], ['knightStomp', 'knight', '馬踏'], ['bishopSlash', 'bishop', '斜斬'], ['rookRam', 'rook', '城撞'], ['queenCrown', 'queen', '八方連斬'], ['kingResign', 'king', '王的認輸'], ['engulf', 'swallow', '吞噬'], ['spike', 'blade', '黑刺'], ['crush', 'quake', '壓碎'], ['shatter', 'shard', '碎鏡']];
   let cardT = null;
   function card(html, cls, ms = 2600) { let c = $('#revcard'); if (!c) { c = document.createElement('div'); c.id = 'revcard'; document.body.appendChild(c); } c.className = cls; c.innerHTML = html; void c.offsetWidth; c.classList.add('show'); clearTimeout(cardT); cardT = setTimeout(() => c.classList.remove('show'), ms); }
